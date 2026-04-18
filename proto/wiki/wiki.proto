@@ -1,0 +1,110 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+package wiki;
+
+option go_package = "github.com/TenshoOHASHI/knowhub/proto/wiki";
+
+
+// 記事の型を定義
+message Article {
+  string id=1;
+  string title=2;
+  string content=3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+
+}
+
+
+// 記事を取得
+message CreateArticleRequest {
+  string title = 1;
+  string content = 2;
+}
+
+// 記事を返す
+message CreateArticleResponse {
+  Article article = 1;
+}
+
+// 特定の記事を取得
+message GetArticleRequest {
+  string id = 1;
+}
+
+// 特定の記事を返す
+message GetArticleResponse {
+  Article Article = 1;
+}
+
+// 全記事を取得
+message ListArticleRequest {
+ // ページネーション等は後で
+}
+
+// 複数の記事を返す
+message ListArticleResponse {
+  repeated Article article = 1; // 複数記事
+}
+
+// 記事を更新（部分更新）
+message UpdateArticleRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string content = 3;
+  }
+
+
+// 更新した記事を返す
+message UpdateArticleResponse {
+  Article article = 1;
+}
+
+// 特定の記事を削除
+message DeleteArticleRequest {
+  string id = 1;
+}
+
+
+// 削除した結果を返す
+message DeleteArticleResponse {
+
+}
+
+// 記事の状態
+enum ArticleStatus {
+    ARTICLE_STATUS_UNSPECIFIED = 0;  // proto3の慣例: 0は「未指定」
+    ARTICLE_STATUS_DRAFT = 1;        // 下書き
+    ARTICLE_STATUS_PUBLISHED = 2;    // 公開済み
+    ARTICLE_STATUS_ARCHIVED = 3;     // アーカイブ
+  }
+
+  // ユーザーロール
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_ADMIN = 1;     // 投稿・編集可能（あなた）
+    ROLE_VIEWER = 2;    // 閲覧のみ（その他）
+  }
+
+
+// proto-gen-validateの例（参考）：
+// message CreateArticleRequest {
+//   string title = 1 [(validate.rules).string = {
+//     min_len: 1,        // 1文字以上
+//     max_len: 200       // 200文字以内
+//   }];
+//   string content = 2 [(validate.rules).string = {
+//     min_len: 1
+//   }];
+// }
+
+service WikiServices {
+  rpc Create(CreateArticleRequest) returns(CreateArticleResponse);
+  rpc Get(GetArticleRequest) returns(GetArticleResponse);
+  rpc List(ListArticleRequest) returns(ListArticleResponse);
+  rpc Update(UpdateArticleRequest) returns(UpdateArticleResponse);
+  rpc Delete(DeleteArticleRequest) returns(google.protobuf.Empty);
+}
