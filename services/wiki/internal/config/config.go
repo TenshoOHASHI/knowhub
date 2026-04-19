@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	DBUser     string
@@ -11,7 +15,8 @@ type Config struct {
 	GRPCPort   string
 }
 
-func Load() *Config {
+func Load(path string) *Config {
+	godotenv.Load(path)
 	return &Config{
 		DBUser:     os.Getenv("MYSQL_USER"),
 		DBPassword: os.Getenv("MYSQL_PASSWORD"),

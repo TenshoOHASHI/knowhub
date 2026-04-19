@@ -14,11 +14,12 @@ import (
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/handler"
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/repository"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 	// 初期設定
-	cfg := config.Load()
+	cfg := config.Load("../../.env")
 	dns := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
 		cfg.DBUser,
 		cfg.DBPassword,
@@ -51,6 +52,7 @@ func main() {
 
 	s := grpc.NewServer()
 	pb.RegisterWikiServicesServer(s, wikiHandler)
+	reflection.Register(s)
 
 	log.Printf("Wiki Service started on :%s", cfg.GRPCPort)
 	if err := s.Serve(lis); err != nil {
