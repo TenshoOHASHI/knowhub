@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql" // init関数だけ使う（database/sqlに登録する）
+	"github.com/redis/go-redis/v9"
 
 	"log"
 	"net"
@@ -38,11 +39,21 @@ func main() {
 
 	defer db.Close()
 
-	// repositoryを生成
-	repo := repository.NewMysqlRepository(db)
+	// redisに接続
+	rdb := redis.NewClient(&redis.Options{
+		Addr: cfg.RedisHost + ":" + cfg.RedisPort,
+	})
+
+	defer rdb.Close()
+
+	// CQRS: Command と Query を作成
+	// repo := repository.NewMysqlRepository(db)
+	commandRepo := repository.NewMysqlCommandRepository(db)
+	queryRepo := repository.NewMysqlQueryRepository(rdb, db)
 
 	//  handlerを生成
-	wikiHandler := handler.NewWikiHandler(repo)
+	// wikiHandler := handler.NewWikiHandler(repo)
+	wikiCQRSHandler := handler.NewWikiCQRSHandler(commandRepo, queryRepo)
 
 	// grpcサーバを起動
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
@@ -51,7 +62,7 @@ func main() {
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterWikiServicesServer(s, wikiHandler)
+	pb.RegisterWikiServicesServer(s, wikiCQRSHandler)
 	reflection.Register(s)
 
 	log.Printf("Wiki Service started on :%s", cfg.GRPCPort)

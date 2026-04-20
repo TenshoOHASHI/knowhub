@@ -13,6 +13,8 @@ type Config struct {
 	DBPort     string
 	DBName     string
 	GRPCPort   string
+	RedisHost  string
+	RedisPort  string
 }
 
 func Load(path string) *Config {
@@ -24,6 +26,8 @@ func Load(path string) *Config {
 		DBPort:     getEnv("MYSQL_PORT", "3306"),
 		DBName:     os.Getenv("MYSQL_DATABASE"),
 		GRPCPort:   getEnv("GRPC_PORT", "50052"),
+		RedisHost:  getEnv("REDIS_HOST", "localhost"),
+		RedisPort:  getEnv("REDIS_PORT", "6379"),
 	}
 }
 

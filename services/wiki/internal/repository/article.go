@@ -28,19 +28,6 @@ func NewMysqlRepository(db *sql.DB) ArticleRepository {
 	return &mysqlRepository{db: db}
 }
 
-func (r *mysqlRepository) Create(ctx context.Context, article *model.Article) error {
-	// プレスホルダー(SQLインジェクション対策)
-	query := `INSERT INTO articles (id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
-	_, err := r.db.ExecContext(ctx, query,
-		article.ID,
-		article.Title,
-		article.Content,
-		article.CreatedAt,
-		article.UpdatedAt,
-	)
-	return err
-}
-
 func (r *mysqlRepository) FindById(ctx context.Context, id string) (*model.Article, error) {
 	query := `SELECT id, title, content, created_at, updated_at From articles WHERE id=?`
 
@@ -82,6 +69,19 @@ func (r *mysqlRepository) FindAll(ctx context.Context) ([]*model.Article, error)
 		articles = append(articles, &article)
 	}
 	return articles, nil
+}
+
+func (r *mysqlRepository) Create(ctx context.Context, article *model.Article) error {
+	// プレスホルダー(SQLインジェクション対策)
+	query := `INSERT INTO articles (id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+	_, err := r.db.ExecContext(ctx, query,
+		article.ID,
+		article.Title,
+		article.Content,
+		article.CreatedAt,
+		article.UpdatedAt,
+	)
+	return err
 }
 
 func (r *mysqlRepository) Save(ctx context.Context, article *model.Article) error {
