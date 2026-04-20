@@ -1,10 +1,10 @@
-# テスト
+# Auth Services
 ツールをダウンロード
 ```bash
 brew install grpcurl
 ```
 
-# gRPC リフレクション（サービス一覧を返す機能）が有効にする必要がある
+## gRPC リフレクション（サービス一覧を返す機能）が有効にする必要がある
 ```go
  import (
       // ... 既存のimport ...
@@ -21,42 +21,71 @@ brew install grpcurl
   }
 ```
 
-#  サービス一覧を確認
+## サービス一覧を確認
 ```bash
 grpcurl -plaintext localhost:50052 list
 ```
 
-# メソッド一覧を確認
+## メソッド一覧を確認
 ```bash
 grpcurl -plaintext localhost:50052 list wiki.WikiServices
 ```
 
-# 記事を作成
+## 記事を作成
 ```bash
 grpcurl -plaintext -d '{"title": "Go入門", "content": "gRPCとは..."}' \
   localhost:50052 wiki.WikiServices/Create
 ```
 
-# 記事一覧を取得
+## 記事一覧を取得
 ```bash
 grpcurl -plaintext localhost:50052 wiki.WikiServices/List
 ```
 
-# 記事一覧１件取得(Createで返ったIDを使う)
+## 記事一覧１件取得(Createで返ったIDを使う)
 ```bash
 grpcurl -plaintext -d '{"id": "ここにIDを入れる"}' \
     localhost:50052 wiki.WikiServices/Get
 ```
 
 
-# List（全記事取得）
+## List（全記事取得）
+```bash
 grpcurl -plaintext localhost:50052 wiki.WikiServices/List
+```
 
-
-# Update（記事更新）
+## Update（記事更新）
+```bash
 grpcurl -plaintext -d '{"id": "f8a1d7c6-8e80-4ff5-9ea4-63c5064694f8", "title": "Go中級"}' \
   localhost:50052 wiki.WikiServices/Update
-
-# Delete（記事削除）
+```
+## Delete（記事削除）
+```bash
 grpcurl -plaintext -d '{"id": "f8a1d7c6-8e80-4ff5-9ea4-63c5064694f8"}' \
   localhost:50052 wiki.WikiServices/Delete
+```
+
+# Auth Services
+
+## サービス一覧を確認
+```bash
+grpcurl -plaintext localhost:50051 list
+```
+
+## メソッド一覧を確認
+```bash
+grpcurl -plaintext localhost:50051 list auth.AuthService
+```
+
+
+## ユーザー登録
+```bash
+grpcurl -plaintext -d '{"username": "testuser", "email": "test@example.com", "password": "password123"}' \
+  localhost:50051 auth.AuthService/Register
+```
+
+##　ログイン
+```bash
+grpcurl -plaintext -d '{"email": "test@example.com", "password": "password123"}' \
+  localhost:50051 auth.AuthService/Login
+```

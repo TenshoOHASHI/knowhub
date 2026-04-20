@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"log"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
 	"github.com/TenshoOHASHI/knowhub/services/auth/internal/model"
@@ -13,6 +13,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 type UserHandler struct {
@@ -37,13 +39,18 @@ func (h *UserHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 	// 作成・保存
 	err = h.repo.Create(ctx, user)
 	if err != nil {
+		if mysqlErr, ok := err.(*mysql.MySQLError); ok && mysqlErr.Number == 1062 {
+			return nil, status.Error(codes.AlreadyExists, "email already exists")
+		}
 		// return nil, status.Error(codes.Internal, "Failed to save user")
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to save user: %v", err))
+		log.Printf("failed to save user: %v", err) // ← サーバーログに詳細
+		return nil, status.Error(codes.Internal, "Failed to save user: %")
 
 	}
 
 	token, err := jwt.GenerateToken(user.ID, req.Username)
 	if err != nil {
+		log.Printf("Failed to crate token: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to create token")
 	}
 	return &pb.RegisterResponse{

@@ -81,7 +81,10 @@ func (r *mysqlRepository) Create(ctx context.Context, article *model.Article) er
 		article.CreatedAt,
 		article.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *mysqlRepository) Save(ctx context.Context, article *model.Article) error {
@@ -94,7 +97,10 @@ func (r *mysqlRepository) Save(ctx context.Context, article *model.Article) erro
 		article.UpdatedAt,
 		article.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *mysqlRepository) Delete(ctx context.Context, id string) error {
@@ -102,5 +108,8 @@ func (r *mysqlRepository) Delete(ctx context.Context, id string) error {
 	// INSERT/UPDATE/DELETEは０件更新でも sql.ErrNoRows にならない
 	_, err := r.db.ExecContext(ctx, query, id)
 
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
