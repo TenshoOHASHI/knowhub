@@ -31,7 +31,8 @@ type Profile struct {
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Bio           string                 `protobuf:"bytes,3,opt,name=bio,proto3" json:"bio,omitempty"`
 	GithubUrl     string                 `protobuf:"bytes,4,opt,name=github_url,json=githubUrl,proto3" json:"github_url,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -92,6 +93,13 @@ func (x *Profile) GetGithubUrl() string {
 		return x.GithubUrl
 	}
 	return ""
+}
+
+func (x *Profile) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
 }
 
 func (x *Profile) GetUpdatedAt() *timestamppb.Timestamp {
@@ -727,11 +735,203 @@ func (x *DeletePortfolioItemRequest) GetId() string {
 	return ""
 }
 
+type GetPortfolioItemRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPortfolioItemRequest) Reset() {
+	*x = GetPortfolioItemRequest{}
+	mi := &file_proto_profile_profile_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPortfolioItemRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPortfolioItemRequest) ProtoMessage() {}
+
+func (x *GetPortfolioItemRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_profile_profile_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPortfolioItemRequest.ProtoReflect.Descriptor instead.
+func (*GetPortfolioItemRequest) Descriptor() ([]byte, []int) {
+	return file_proto_profile_profile_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetPortfolioItemRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetPortfolioItemResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Item          *PortfolioItem         `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPortfolioItemResponse) Reset() {
+	*x = GetPortfolioItemResponse{}
+	mi := &file_proto_profile_profile_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPortfolioItemResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPortfolioItemResponse) ProtoMessage() {}
+
+func (x *GetPortfolioItemResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_profile_profile_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPortfolioItemResponse.ProtoReflect.Descriptor instead.
+func (*GetPortfolioItemResponse) Descriptor() ([]byte, []int) {
+	return file_proto_profile_profile_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetPortfolioItemResponse) GetItem() *PortfolioItem {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+type CreateProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Bio           string                 `protobuf:"bytes,2,opt,name=bio,proto3" json:"bio,omitempty"`
+	GithubUrl     string                 `protobuf:"bytes,3,opt,name=github_url,json=githubUrl,proto3" json:"github_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProfileRequest) Reset() {
+	*x = CreateProfileRequest{}
+	mi := &file_proto_profile_profile_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProfileRequest) ProtoMessage() {}
+
+func (x *CreateProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_profile_profile_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProfileRequest.ProtoReflect.Descriptor instead.
+func (*CreateProfileRequest) Descriptor() ([]byte, []int) {
+	return file_proto_profile_profile_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateProfileRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetBio() string {
+	if x != nil {
+		return x.Bio
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetGithubUrl() string {
+	if x != nil {
+		return x.GithubUrl
+	}
+	return ""
+}
+
+type CreateProfileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Profile       *Profile               `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProfileResponse) Reset() {
+	*x = CreateProfileResponse{}
+	mi := &file_proto_profile_profile_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProfileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProfileResponse) ProtoMessage() {}
+
+func (x *CreateProfileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_profile_profile_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProfileResponse.ProtoReflect.Descriptor instead.
+func (*CreateProfileResponse) Descriptor() ([]byte, []int) {
+	return file_proto_profile_profile_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateProfileResponse) GetProfile() *Profile {
+	if x != nil {
+		return x.Profile
+	}
+	return nil
+}
+
 var File_proto_profile_profile_proto protoreflect.FileDescriptor
 
 const file_proto_profile_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/profile/profile.proto\x12\x04auth\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x9b\x01\n" +
+	"\x1bproto/profile/profile.proto\x12\aprofile\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x01\n" +
 	"\aProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x10\n" +
@@ -739,7 +939,9 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\n" +
 	"github_url\x18\x04 \x01(\tR\tgithubUrl\x129\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xbc\x01\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xbc\x01\n" +
 	"\rPortfolioItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -748,26 +950,26 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\tR\x06status\x129\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x13\n" +
-	"\x11GetProfileRequest\"=\n" +
-	"\x12GetProfileResponse\x12'\n" +
-	"\aProfile\x18\x01 \x01(\v2\r.auth.ProfileR\aProfile\"]\n" +
+	"\x11GetProfileRequest\"@\n" +
+	"\x12GetProfileResponse\x12*\n" +
+	"\aProfile\x18\x01 \x01(\v2\x10.profile.ProfileR\aProfile\"]\n" +
 	"\x14UpdateProfileRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x10\n" +
 	"\x03bio\x18\x02 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
-	"github_url\x18\x03 \x01(\tR\tgithubUrl\"@\n" +
-	"\x15UpdateProfileResponse\x12'\n" +
-	"\aprofile\x18\x01 \x01(\v2\r.auth.ProfileR\aprofile\"~\n" +
+	"github_url\x18\x03 \x01(\tR\tgithubUrl\"C\n" +
+	"\x15UpdateProfileResponse\x12*\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.profile.ProfileR\aprofile\"~\n" +
 	"\x1aCreatePortfolioItemRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x10\n" +
 	"\x03url\x18\x03 \x01(\tR\x03url\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"F\n" +
-	"\x1bCreatePortfolioItemResponse\x12'\n" +
-	"\x04item\x18\x01 \x01(\v2\x13.auth.PortfolioItemR\x04item\"\x1b\n" +
-	"\x19ListPortfolioItemsRequest\"G\n" +
-	"\x1aListPortfolioItemsResponse\x12)\n" +
-	"\x05items\x18\x01 \x03(\v2\x13.auth.PortfolioItemR\x05items\"\xcf\x01\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\"I\n" +
+	"\x1bCreatePortfolioItemResponse\x12*\n" +
+	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\"\x1b\n" +
+	"\x19ListPortfolioItemsRequest\"J\n" +
+	"\x1aListPortfolioItemsResponse\x12,\n" +
+	"\x05items\x18\x01 \x03(\v2\x16.profile.PortfolioItemR\x05items\"\xcf\x01\n" +
 	"\x1aUpdatePortfolioItemRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12%\n" +
@@ -777,19 +979,32 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\x06_titleB\x0e\n" +
 	"\f_descriptionB\x06\n" +
 	"\x04_urlB\t\n" +
-	"\a_status\"F\n" +
-	"\x1bUpdatePortfolioItemResponse\x12'\n" +
-	"\x04item\x18\x01 \x01(\v2\x13.auth.PortfolioItemR\x04item\",\n" +
+	"\a_status\"I\n" +
+	"\x1bUpdatePortfolioItemResponse\x12*\n" +
+	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\",\n" +
 	"\x1aDeletePortfolioItemRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id2\xfd\x03\n" +
-	"\x0eProfileService\x12?\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\")\n" +
+	"\x17GetPortfolioItemRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"F\n" +
+	"\x18GetPortfolioItemResponse\x12*\n" +
+	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\"]\n" +
+	"\x14CreateProfileRequest\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x10\n" +
+	"\x03bio\x18\x02 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
-	"GetProfile\x12\x17.auth.GetProfileRequest\x1a\x18.auth.GetProfileResponse\x12H\n" +
-	"\rUpdateProfile\x12\x1a.auth.UpdateProfileRequest\x1a\x1b.auth.UpdateProfileResponse\x12Z\n" +
-	"\x13CreatePortfolioItem\x12 .auth.CreatePortfolioItemRequest\x1a!.auth.CreatePortfolioItemResponse\x12W\n" +
-	"\x12ListPortfolioItems\x12\x1f.auth.ListPortfolioItemsRequest\x1a .auth.ListPortfolioItemsResponse\x12Z\n" +
-	"\x13UpdatePortfolioItem\x12 .auth.UpdatePortfolioItemRequest\x1a!.auth.UpdatePortfolioItemResponse\x12O\n" +
-	"\x13DeletePortfolioItem\x12 .auth.DeletePortfolioItemRequest\x1a\x16.google.protobuf.EmptyB/Z-github.com/TenshoOHASHI/knowhub/proto/profileb\x06proto3"
+	"github_url\x18\x03 \x01(\tR\tgithubUrl\"C\n" +
+	"\x15CreateProfileResponse\x12*\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.profile.ProfileR\aprofile2\xc7\x05\n" +
+	"\x0eProfileService\x12E\n" +
+	"\n" +
+	"GetProfile\x12\x1a.profile.GetProfileRequest\x1a\x1b.profile.GetProfileResponse\x12N\n" +
+	"\rUpdateProfile\x12\x1d.profile.UpdateProfileRequest\x1a\x1e.profile.UpdateProfileResponse\x12N\n" +
+	"\rCreateProfile\x12\x1d.profile.CreateProfileRequest\x1a\x1e.profile.CreateProfileResponse\x12`\n" +
+	"\x13CreatePortfolioItem\x12#.profile.CreatePortfolioItemRequest\x1a$.profile.CreatePortfolioItemResponse\x12]\n" +
+	"\x12ListPortfolioItems\x12\".profile.ListPortfolioItemsRequest\x1a#.profile.ListPortfolioItemsResponse\x12W\n" +
+	"\x10GetPortfolioItem\x12 .profile.GetPortfolioItemRequest\x1a!.profile.GetPortfolioItemResponse\x12`\n" +
+	"\x13UpdatePortfolioItem\x12#.profile.UpdatePortfolioItemRequest\x1a$.profile.UpdatePortfolioItemResponse\x12R\n" +
+	"\x13DeletePortfolioItem\x12#.profile.DeletePortfolioItemRequest\x1a\x16.google.protobuf.EmptyB/Z-github.com/TenshoOHASHI/knowhub/proto/profileb\x06proto3"
 
 var (
 	file_proto_profile_profile_proto_rawDescOnce sync.Once
@@ -803,49 +1018,60 @@ func file_proto_profile_profile_proto_rawDescGZIP() []byte {
 	return file_proto_profile_profile_proto_rawDescData
 }
 
-var file_proto_profile_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_proto_profile_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_proto_profile_profile_proto_goTypes = []any{
-	(*Profile)(nil),                     // 0: auth.Profile
-	(*PortfolioItem)(nil),               // 1: auth.PortfolioItem
-	(*GetProfileRequest)(nil),           // 2: auth.GetProfileRequest
-	(*GetProfileResponse)(nil),          // 3: auth.GetProfileResponse
-	(*UpdateProfileRequest)(nil),        // 4: auth.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),       // 5: auth.UpdateProfileResponse
-	(*CreatePortfolioItemRequest)(nil),  // 6: auth.CreatePortfolioItemRequest
-	(*CreatePortfolioItemResponse)(nil), // 7: auth.CreatePortfolioItemResponse
-	(*ListPortfolioItemsRequest)(nil),   // 8: auth.ListPortfolioItemsRequest
-	(*ListPortfolioItemsResponse)(nil),  // 9: auth.ListPortfolioItemsResponse
-	(*UpdatePortfolioItemRequest)(nil),  // 10: auth.UpdatePortfolioItemRequest
-	(*UpdatePortfolioItemResponse)(nil), // 11: auth.UpdatePortfolioItemResponse
-	(*DeletePortfolioItemRequest)(nil),  // 12: auth.DeletePortfolioItemRequest
-	(*timestamppb.Timestamp)(nil),       // 13: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 14: google.protobuf.Empty
+	(*Profile)(nil),                     // 0: profile.Profile
+	(*PortfolioItem)(nil),               // 1: profile.PortfolioItem
+	(*GetProfileRequest)(nil),           // 2: profile.GetProfileRequest
+	(*GetProfileResponse)(nil),          // 3: profile.GetProfileResponse
+	(*UpdateProfileRequest)(nil),        // 4: profile.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),       // 5: profile.UpdateProfileResponse
+	(*CreatePortfolioItemRequest)(nil),  // 6: profile.CreatePortfolioItemRequest
+	(*CreatePortfolioItemResponse)(nil), // 7: profile.CreatePortfolioItemResponse
+	(*ListPortfolioItemsRequest)(nil),   // 8: profile.ListPortfolioItemsRequest
+	(*ListPortfolioItemsResponse)(nil),  // 9: profile.ListPortfolioItemsResponse
+	(*UpdatePortfolioItemRequest)(nil),  // 10: profile.UpdatePortfolioItemRequest
+	(*UpdatePortfolioItemResponse)(nil), // 11: profile.UpdatePortfolioItemResponse
+	(*DeletePortfolioItemRequest)(nil),  // 12: profile.DeletePortfolioItemRequest
+	(*GetPortfolioItemRequest)(nil),     // 13: profile.GetPortfolioItemRequest
+	(*GetPortfolioItemResponse)(nil),    // 14: profile.GetPortfolioItemResponse
+	(*CreateProfileRequest)(nil),        // 15: profile.CreateProfileRequest
+	(*CreateProfileResponse)(nil),       // 16: profile.CreateProfileResponse
+	(*timestamppb.Timestamp)(nil),       // 17: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 18: google.protobuf.Empty
 }
 var file_proto_profile_profile_proto_depIdxs = []int32{
-	13, // 0: auth.Profile.updated_at:type_name -> google.protobuf.Timestamp
-	13, // 1: auth.PortfolioItem.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 2: auth.GetProfileResponse.Profile:type_name -> auth.Profile
-	0,  // 3: auth.UpdateProfileResponse.profile:type_name -> auth.Profile
-	1,  // 4: auth.CreatePortfolioItemResponse.item:type_name -> auth.PortfolioItem
-	1,  // 5: auth.ListPortfolioItemsResponse.items:type_name -> auth.PortfolioItem
-	1,  // 6: auth.UpdatePortfolioItemResponse.item:type_name -> auth.PortfolioItem
-	2,  // 7: auth.ProfileService.GetProfile:input_type -> auth.GetProfileRequest
-	4,  // 8: auth.ProfileService.UpdateProfile:input_type -> auth.UpdateProfileRequest
-	6,  // 9: auth.ProfileService.CreatePortfolioItem:input_type -> auth.CreatePortfolioItemRequest
-	8,  // 10: auth.ProfileService.ListPortfolioItems:input_type -> auth.ListPortfolioItemsRequest
-	10, // 11: auth.ProfileService.UpdatePortfolioItem:input_type -> auth.UpdatePortfolioItemRequest
-	12, // 12: auth.ProfileService.DeletePortfolioItem:input_type -> auth.DeletePortfolioItemRequest
-	3,  // 13: auth.ProfileService.GetProfile:output_type -> auth.GetProfileResponse
-	5,  // 14: auth.ProfileService.UpdateProfile:output_type -> auth.UpdateProfileResponse
-	7,  // 15: auth.ProfileService.CreatePortfolioItem:output_type -> auth.CreatePortfolioItemResponse
-	9,  // 16: auth.ProfileService.ListPortfolioItems:output_type -> auth.ListPortfolioItemsResponse
-	11, // 17: auth.ProfileService.UpdatePortfolioItem:output_type -> auth.UpdatePortfolioItemResponse
-	14, // 18: auth.ProfileService.DeletePortfolioItem:output_type -> google.protobuf.Empty
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	17, // 0: profile.Profile.created_at:type_name -> google.protobuf.Timestamp
+	17, // 1: profile.Profile.updated_at:type_name -> google.protobuf.Timestamp
+	17, // 2: profile.PortfolioItem.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: profile.GetProfileResponse.Profile:type_name -> profile.Profile
+	0,  // 4: profile.UpdateProfileResponse.profile:type_name -> profile.Profile
+	1,  // 5: profile.CreatePortfolioItemResponse.item:type_name -> profile.PortfolioItem
+	1,  // 6: profile.ListPortfolioItemsResponse.items:type_name -> profile.PortfolioItem
+	1,  // 7: profile.UpdatePortfolioItemResponse.item:type_name -> profile.PortfolioItem
+	1,  // 8: profile.GetPortfolioItemResponse.item:type_name -> profile.PortfolioItem
+	0,  // 9: profile.CreateProfileResponse.profile:type_name -> profile.Profile
+	2,  // 10: profile.ProfileService.GetProfile:input_type -> profile.GetProfileRequest
+	4,  // 11: profile.ProfileService.UpdateProfile:input_type -> profile.UpdateProfileRequest
+	15, // 12: profile.ProfileService.CreateProfile:input_type -> profile.CreateProfileRequest
+	6,  // 13: profile.ProfileService.CreatePortfolioItem:input_type -> profile.CreatePortfolioItemRequest
+	8,  // 14: profile.ProfileService.ListPortfolioItems:input_type -> profile.ListPortfolioItemsRequest
+	13, // 15: profile.ProfileService.GetPortfolioItem:input_type -> profile.GetPortfolioItemRequest
+	10, // 16: profile.ProfileService.UpdatePortfolioItem:input_type -> profile.UpdatePortfolioItemRequest
+	12, // 17: profile.ProfileService.DeletePortfolioItem:input_type -> profile.DeletePortfolioItemRequest
+	3,  // 18: profile.ProfileService.GetProfile:output_type -> profile.GetProfileResponse
+	5,  // 19: profile.ProfileService.UpdateProfile:output_type -> profile.UpdateProfileResponse
+	16, // 20: profile.ProfileService.CreateProfile:output_type -> profile.CreateProfileResponse
+	7,  // 21: profile.ProfileService.CreatePortfolioItem:output_type -> profile.CreatePortfolioItemResponse
+	9,  // 22: profile.ProfileService.ListPortfolioItems:output_type -> profile.ListPortfolioItemsResponse
+	14, // 23: profile.ProfileService.GetPortfolioItem:output_type -> profile.GetPortfolioItemResponse
+	11, // 24: profile.ProfileService.UpdatePortfolioItem:output_type -> profile.UpdatePortfolioItemResponse
+	18, // 25: profile.ProfileService.DeletePortfolioItem:output_type -> google.protobuf.Empty
+	18, // [18:26] is the sub-list for method output_type
+	10, // [10:18] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_proto_profile_profile_proto_init() }
@@ -860,7 +1086,7 @@ func file_proto_profile_profile_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_profile_profile_proto_rawDesc), len(file_proto_profile_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

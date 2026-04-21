@@ -12,6 +12,7 @@ type Profile struct {
 	Title     string
 	Bio       string
 	GithubURL string
+	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
@@ -29,6 +30,7 @@ func NewProfile(title, bio, githubUrl string) (*Profile, error) {
 		Title:     title,
 		Bio:       bio,
 		GithubURL: githubUrl,
+		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}, nil
 }

@@ -71,7 +71,7 @@ func (h *WikiCQRSHandler) List(ctx context.Context, req *pb.ListArticleRequest) 
 	}
 
 	return &pb.ListArticleResponse{
-		Article: toProductArticles(articles),
+		Article: toProductCQRSArticles(articles),
 	}, nil
 }
 
@@ -103,7 +103,7 @@ func (h *WikiCQRSHandler) Update(ctx context.Context, req *pb.UpdateArticleReque
 	}
 
 	return &pb.UpdateArticleResponse{
-		Article: toProductArticle(article),
+		Article: toProductCQRSArticle(article),
 	}, nil
 }
 

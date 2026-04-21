@@ -21,12 +21,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProfileService_GetProfile_FullMethodName          = "/auth.ProfileService/GetProfile"
-	ProfileService_UpdateProfile_FullMethodName       = "/auth.ProfileService/UpdateProfile"
-	ProfileService_CreatePortfolioItem_FullMethodName = "/auth.ProfileService/CreatePortfolioItem"
-	ProfileService_ListPortfolioItems_FullMethodName  = "/auth.ProfileService/ListPortfolioItems"
-	ProfileService_UpdatePortfolioItem_FullMethodName = "/auth.ProfileService/UpdatePortfolioItem"
-	ProfileService_DeletePortfolioItem_FullMethodName = "/auth.ProfileService/DeletePortfolioItem"
+	ProfileService_GetProfile_FullMethodName          = "/profile.ProfileService/GetProfile"
+	ProfileService_UpdateProfile_FullMethodName       = "/profile.ProfileService/UpdateProfile"
+	ProfileService_CreateProfile_FullMethodName       = "/profile.ProfileService/CreateProfile"
+	ProfileService_CreatePortfolioItem_FullMethodName = "/profile.ProfileService/CreatePortfolioItem"
+	ProfileService_ListPortfolioItems_FullMethodName  = "/profile.ProfileService/ListPortfolioItems"
+	ProfileService_GetPortfolioItem_FullMethodName    = "/profile.ProfileService/GetPortfolioItem"
+	ProfileService_UpdatePortfolioItem_FullMethodName = "/profile.ProfileService/UpdatePortfolioItem"
+	ProfileService_DeletePortfolioItem_FullMethodName = "/profile.ProfileService/DeletePortfolioItem"
 )
 
 // ProfileServiceClient is the client API for ProfileService service.
@@ -36,9 +38,11 @@ type ProfileServiceClient interface {
 	// Profile
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
 	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
+	CreateProfile(ctx context.Context, in *CreateProfileRequest, opts ...grpc.CallOption) (*CreateProfileResponse, error)
 	// Portfolio
 	CreatePortfolioItem(ctx context.Context, in *CreatePortfolioItemRequest, opts ...grpc.CallOption) (*CreatePortfolioItemResponse, error)
 	ListPortfolioItems(ctx context.Context, in *ListPortfolioItemsRequest, opts ...grpc.CallOption) (*ListPortfolioItemsResponse, error)
+	GetPortfolioItem(ctx context.Context, in *GetPortfolioItemRequest, opts ...grpc.CallOption) (*GetPortfolioItemResponse, error)
 	UpdatePortfolioItem(ctx context.Context, in *UpdatePortfolioItemRequest, opts ...grpc.CallOption) (*UpdatePortfolioItemResponse, error)
 	DeletePortfolioItem(ctx context.Context, in *DeletePortfolioItemRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -71,6 +75,16 @@ func (c *profileServiceClient) UpdateProfile(ctx context.Context, in *UpdateProf
 	return out, nil
 }
 
+func (c *profileServiceClient) CreateProfile(ctx context.Context, in *CreateProfileRequest, opts ...grpc.CallOption) (*CreateProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateProfileResponse)
+	err := c.cc.Invoke(ctx, ProfileService_CreateProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *profileServiceClient) CreatePortfolioItem(ctx context.Context, in *CreatePortfolioItemRequest, opts ...grpc.CallOption) (*CreatePortfolioItemResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreatePortfolioItemResponse)
@@ -85,6 +99,16 @@ func (c *profileServiceClient) ListPortfolioItems(ctx context.Context, in *ListP
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPortfolioItemsResponse)
 	err := c.cc.Invoke(ctx, ProfileService_ListPortfolioItems_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *profileServiceClient) GetPortfolioItem(ctx context.Context, in *GetPortfolioItemRequest, opts ...grpc.CallOption) (*GetPortfolioItemResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPortfolioItemResponse)
+	err := c.cc.Invoke(ctx, ProfileService_GetPortfolioItem_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +142,11 @@ type ProfileServiceServer interface {
 	// Profile
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
 	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
+	CreateProfile(context.Context, *CreateProfileRequest) (*CreateProfileResponse, error)
 	// Portfolio
 	CreatePortfolioItem(context.Context, *CreatePortfolioItemRequest) (*CreatePortfolioItemResponse, error)
 	ListPortfolioItems(context.Context, *ListPortfolioItemsRequest) (*ListPortfolioItemsResponse, error)
+	GetPortfolioItem(context.Context, *GetPortfolioItemRequest) (*GetPortfolioItemResponse, error)
 	UpdatePortfolioItem(context.Context, *UpdatePortfolioItemRequest) (*UpdatePortfolioItemResponse, error)
 	DeletePortfolioItem(context.Context, *DeletePortfolioItemRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedProfileServiceServer()
@@ -139,11 +165,17 @@ func (UnimplementedProfileServiceServer) GetProfile(context.Context, *GetProfile
 func (UnimplementedProfileServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateProfile not implemented")
 }
+func (UnimplementedProfileServiceServer) CreateProfile(context.Context, *CreateProfileRequest) (*CreateProfileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateProfile not implemented")
+}
 func (UnimplementedProfileServiceServer) CreatePortfolioItem(context.Context, *CreatePortfolioItemRequest) (*CreatePortfolioItemResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePortfolioItem not implemented")
 }
 func (UnimplementedProfileServiceServer) ListPortfolioItems(context.Context, *ListPortfolioItemsRequest) (*ListPortfolioItemsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPortfolioItems not implemented")
+}
+func (UnimplementedProfileServiceServer) GetPortfolioItem(context.Context, *GetPortfolioItemRequest) (*GetPortfolioItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPortfolioItem not implemented")
 }
 func (UnimplementedProfileServiceServer) UpdatePortfolioItem(context.Context, *UpdatePortfolioItemRequest) (*UpdatePortfolioItemResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePortfolioItem not implemented")
@@ -208,6 +240,24 @@ func _ProfileService_UpdateProfile_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProfileService_CreateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServiceServer).CreateProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProfileService_CreateProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServiceServer).CreateProfile(ctx, req.(*CreateProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProfileService_CreatePortfolioItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreatePortfolioItemRequest)
 	if err := dec(in); err != nil {
@@ -240,6 +290,24 @@ func _ProfileService_ListPortfolioItems_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProfileServiceServer).ListPortfolioItems(ctx, req.(*ListPortfolioItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProfileService_GetPortfolioItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPortfolioItemRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProfileServiceServer).GetPortfolioItem(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProfileService_GetPortfolioItem_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProfileServiceServer).GetPortfolioItem(ctx, req.(*GetPortfolioItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -284,7 +352,7 @@ func _ProfileService_DeletePortfolioItem_Handler(srv interface{}, ctx context.Co
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ProfileService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "auth.ProfileService",
+	ServiceName: "profile.ProfileService",
 	HandlerType: (*ProfileServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -296,12 +364,20 @@ var ProfileService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProfileService_UpdateProfile_Handler,
 		},
 		{
+			MethodName: "CreateProfile",
+			Handler:    _ProfileService_CreateProfile_Handler,
+		},
+		{
 			MethodName: "CreatePortfolioItem",
 			Handler:    _ProfileService_CreatePortfolioItem_Handler,
 		},
 		{
 			MethodName: "ListPortfolioItems",
 			Handler:    _ProfileService_ListPortfolioItems_Handler,
+		},
+		{
+			MethodName: "GetPortfolioItem",
+			Handler:    _ProfileService_GetPortfolioItem_Handler,
 		},
 		{
 			MethodName: "UpdatePortfolioItem",

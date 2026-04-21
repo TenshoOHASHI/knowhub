@@ -40,3 +40,18 @@ func NewPortfolioItem(title, description, url string, status PortfolioStatus) (*
 		CreatedAt:   time.Now(),
 	}, nil
 }
+
+func (i *PortfolioItem) Update(title, description, url string, status PortfolioStatus) {
+	if title != "" {
+		i.Title = title
+	}
+	if description != "" {
+		i.Description = description
+	}
+	if url != "" {
+		i.URL = url
+	}
+	if status == StatusDeveloping || status == StatusCompleted {
+		i.Status = status
+	}
+}

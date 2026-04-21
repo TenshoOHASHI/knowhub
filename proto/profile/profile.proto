@@ -4,7 +4,7 @@ import "google/protobuf/empty.proto";
 
 
 
-package auth;
+package profile;
 
 option go_package = "github.com/TenshoOHASHI/knowhub/proto/profile";
 
@@ -14,7 +14,8 @@ message Profile {
   string title = 2;
   string bio = 3;
   string github_url = 4;
-  google.protobuf.Timestamp updated_at = 5;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
 }
 
 // ポートフォリオアイテム
@@ -79,14 +80,40 @@ message DeletePortfolioItemRequest {
   string id = 1;
 }
 
+
+message GetPortfolioItemRequest {
+  string id = 1;
+}
+
+
+message GetPortfolioItemResponse {
+  PortfolioItem item = 1;
+}
+
+
+
+message CreateProfileRequest {
+  string title = 1;
+  string bio = 2;
+  string github_url = 3;
+}
+
+message CreateProfileResponse {
+  Profile profile = 1;
+}
+
+
+
 service ProfileService {
   // Profile
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
 
   // Portfolio
   rpc CreatePortfolioItem(CreatePortfolioItemRequest) returns (CreatePortfolioItemResponse);
   rpc ListPortfolioItems(ListPortfolioItemsRequest) returns (ListPortfolioItemsResponse);
+  rpc GetPortfolioItem(GetPortfolioItemRequest) returns (GetPortfolioItemResponse);
   rpc UpdatePortfolioItem(UpdatePortfolioItemRequest) returns (UpdatePortfolioItemResponse);
   rpc DeletePortfolioItem(DeletePortfolioItemRequest) returns (google.protobuf.Empty);
 }

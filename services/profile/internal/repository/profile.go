@@ -12,6 +12,8 @@ type ProfileRepository interface {
 	FindFirst(ctx context.Context) (*model.Profile, error)
 	// UpdateProfile
 	Save(ctx context.Context, profile *model.Profile) error
+	// CreateProfile
+	Create(ctx context.Context, profile *model.Profile) error
 }
 
 type mysqlProfileRepository struct {
@@ -23,12 +25,12 @@ func NewMysqlProfileRepository(db *sql.DB) ProfileRepository {
 }
 
 func (r *mysqlProfileRepository) FindFirst(ctx context.Context) (*model.Profile, error) {
-	query := `SELECT id, title, bio, github_url, updated_at From profiles ORDER BY updated_at DESC LIMIT 1`
+	query := `SELECT id, title, bio, github_url, created_at, updated_at From profiles ORDER BY updated_at DESC LIMIT 1`
 	row := r.db.QueryRowContext(ctx, query)
 	var profile model.Profile
 
 	// フィールドごとにScanする
-	err := row.Scan(&profile.ID, &profile.Title, &profile.Bio, &profile.GithubURL, &profile.UpdatedAt)
+	err := row.Scan(&profile.ID, &profile.Title, &profile.Bio, &profile.GithubURL, &profile.CreatedAt, &profile.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -39,14 +41,24 @@ func (r *mysqlProfileRepository) FindFirst(ctx context.Context) (*model.Profile,
 }
 
 func (r *mysqlProfileRepository) Save(ctx context.Context, profile *model.Profile) error {
-	query := `UPDATE profiles SET title=?, bio=?, github_url=?, updated_at=? WHERE id=?`
+	query := `UPDATE profiles SET title=?, bio=?, github_url=?, created_at=?, updated_at=? WHERE id=?`
 	_, err := r.db.ExecContext(ctx, query,
 		profile.Title,
 		profile.Bio,
 		profile.GithubURL,
+		profile.CreatedAt,
 		profile.UpdatedAt,
 		profile.ID,
 	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *mysqlProfileRepository) Create(ctx context.Context, profile *model.Profile) error {
+	query := `INSERT INTO profiles (id, title, bio, github_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := r.db.ExecContext(ctx, query, &profile.ID, &profile.Title, &profile.Bio, &profile.GithubURL, &profile.CreatedAt, &profile.UpdatedAt)
 	if err != nil {
 		return err
 	}

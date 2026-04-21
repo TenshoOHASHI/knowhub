@@ -4,6 +4,7 @@ go 1.25.4
 
 require (
 	github.com/TenshoOHASHI/knowhub/proto/auth v0.0.0-00010101000000-000000000000
+	github.com/TenshoOHASHI/knowhub/proto/profile v0.0.0-00010101000000-000000000000
 	github.com/TenshoOHASHI/knowhub/proto/wiki v0.0.0
 	google.golang.org/grpc v1.80.0
 )
@@ -19,3 +20,5 @@ require (
 replace github.com/TenshoOHASHI/knowhub/proto/wiki => ../../proto/wiki
 
 replace github.com/TenshoOHASHI/knowhub/proto/auth => ../../proto/auth
+
+replace github.com/TenshoOHASHI/knowhub/proto/profile => ../../proto/profile

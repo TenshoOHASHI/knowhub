@@ -13,10 +13,14 @@ type PortfolioItemRepository interface {
 	Create(ctx context.Context, portfolioItem *model.PortfolioItem) error
 	// ListPortfolioItems
 	FindAll(ctx context.Context) ([]*model.PortfolioItem, error)
+	// GetPortfolioItems
+	FindById(ctx context.Context, id string) (*model.PortfolioItem, error)
 	// UpdatePortfolioItem
 	Save(ctx context.Context, portfolioItem *model.PortfolioItem) error
 	// DeletePortfolioItem
 	Delete(ctx context.Context, id string) error
+	// GetPortfolioItem
+
 }
 
 // portfolioItem.go
@@ -47,7 +51,7 @@ func (r *mysqlPortfolioItemRepository) Create(ctx context.Context, portfolioItem
 }
 
 func (r *mysqlPortfolioItemRepository) FindAll(ctx context.Context) ([]*model.PortfolioItem, error) {
-	query := `SELECT id, title, description, url, status created_at FROM portfolio_items`
+	query := `SELECT id, title, description, url, status, created_at FROM portfolio_items`
 
 	rows, err := r.db.QueryContext(ctx, query)
 
@@ -66,8 +70,23 @@ func (r *mysqlPortfolioItemRepository) FindAll(ctx context.Context) ([]*model.Po
 	return portfolioItems, nil
 }
 
+func (r *mysqlPortfolioItemRepository) FindById(ctx context.Context, id string) (*model.PortfolioItem, error) {
+	query := `SELECT id, title, description, url, status, created_at FROM portfolio_items WHERE id=?`
+
+	row := r.db.QueryRowContext(ctx, query, id)
+
+	var item model.PortfolioItem
+	err := row.Scan(&item.ID, &item.Title, &item.Description, &item.URL, &item.Status, &item.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
+		return nil, err
+	}
+	return &item, nil
+}
 func (r *mysqlPortfolioItemRepository) Save(ctx context.Context, portfolioItem *model.PortfolioItem) error {
-	query := `UPDATE portfolio_items SET title=?, description=?, url=?, status=?, WHERE id=?`
+	query := `UPDATE portfolio_items SET title=?, description=?, url=?, status=? WHERE id=?`
 	_, err := r.db.ExecContext(ctx, query, portfolioItem.Title, portfolioItem.Description, portfolioItem.URL, portfolioItem.Status, portfolioItem.ID)
 	if err != nil {
 		return err

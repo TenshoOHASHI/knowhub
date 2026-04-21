@@ -1,3 +1,6 @@
 .env
 data/
 services/auth/keys
+WORKFLOW.md
+Makefile
+doc/
