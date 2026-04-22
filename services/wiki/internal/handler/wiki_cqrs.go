@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/wiki" // 生成されたprotoコード
+	// 生成されたprotoコード
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/model"
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/repository"
 	"google.golang.org/grpc/codes"
@@ -16,23 +17,25 @@ import (
 // CQRS ハンドラー
 type WikiCQRSHandler struct {
 	pb.UnimplementedWikiServicesServer
-	commandRepo repository.ArticleCommandRepository // Create/Save/Delete
-	queryRepo   repository.ArticleQueryRepository   // FindList/FindByList
+	commandRepo  repository.ArticleCommandRepository // Create/Save/Delete
+	queryRepo    repository.ArticleQueryRepository   // FindList/FindByList
+	categoryRepo repository.CategoryRepository       // Category CRUD
 }
 
 // ハンドラー側で、repoをラップ
 // 使う側は、ArticleRepositoryを満たす必要がある
-func NewWikiCQRSHandler(commandRepo repository.ArticleCommandRepository, queryRepo repository.ArticleQueryRepository) *WikiCQRSHandler {
+func NewWikiCQRSHandler(commandRepo repository.ArticleCommandRepository, queryRepo repository.ArticleQueryRepository, categoryRepo repository.CategoryRepository) *WikiCQRSHandler {
 	return &WikiCQRSHandler{
-		commandRepo: commandRepo,
-		queryRepo:   queryRepo,
+		commandRepo:  commandRepo,
+		queryRepo:    queryRepo,
+		categoryRepo: categoryRepo,
 	}
 }
 
 func (h *WikiCQRSHandler) Create(ctx context.Context, req *pb.CreateArticleRequest) (*pb.CreateArticleResponse, error) {
 	// ドメインのバリデーションチェック
 	// 記事のインスタンスを作成
-	article, err := model.NewArticle(req.Title, req.Content)
+	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -119,11 +122,12 @@ func (h *WikiCQRSHandler) Delete(ctx context.Context, req *pb.DeleteArticleReque
 // modelからprotoに変換
 func toProductCQRSArticle(a *model.Article) *pb.Article {
 	return &pb.Article{
-		Id:        a.ID,
-		Title:     a.Title,
-		Content:   a.Content,
-		CreatedAt: timestamppb.New(a.CreatedAt),
-		UpdatedAt: timestamppb.New(a.UpdatedAt),
+		Id:         a.ID,
+		Title:      a.Title,
+		Content:    a.Content,
+		CategoryId: a.CategoryID,
+		CreatedAt:  timestamppb.New(a.CreatedAt),
+		UpdatedAt:  timestamppb.New(a.UpdatedAt),
 	}
 }
 
@@ -135,4 +139,54 @@ func toProductCQRSArticles(articles []*model.Article) []*pb.Article {
 	}
 
 	return result
+}
+
+// ===== Category RPC =====
+
+func (h *WikiCQRSHandler) ListCategories(ctx context.Context, req *pb.ListCategoriesRequest) (*pb.ListCategoriesResponse, error) {
+	categories, err := h.categoryRepo.FindAll(ctx)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to list categories")
+	}
+
+	var pbCategories []*pb.Category
+	for _, c := range categories {
+		pbCategories = append(pbCategories, &pb.Category{
+			Id:       c.ID,
+			Name:     c.Name,
+			ParentId: c.ParentID,
+		})
+	}
+
+	return &pb.ListCategoriesResponse{
+		Categories: pbCategories,
+	}, nil
+}
+
+func (h *WikiCQRSHandler) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.CreateCategoryResponse, error) {
+	category, err := model.NewCategory(req.Name, req.ParentId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	err = h.categoryRepo.Create(ctx, category)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to create category")
+	}
+
+	return &pb.CreateCategoryResponse{
+		Category: &pb.Category{
+			Id:       category.ID,
+			Name:     category.Name,
+			ParentId: category.ParentID,
+		},
+	}, nil
+}
+
+func (h *WikiCQRSHandler) DeleteCategory(ctx context.Context, req *pb.DeleteCategoryRequest) (*emptypb.Empty, error) {
+	err := h.categoryRepo.Delete(ctx, req.Id)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to delete category")
+	}
+	return &emptypb.Empty{}, nil
 }

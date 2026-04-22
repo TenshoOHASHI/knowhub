@@ -132,8 +132,9 @@ type Article struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CategoryId    string                 `protobuf:"bytes,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"` // 追加
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,6 +190,13 @@ func (x *Article) GetContent() string {
 	return ""
 }
 
+func (x *Article) GetCategoryId() string {
+	if x != nil {
+		return x.CategoryId
+	}
+	return ""
+}
+
 func (x *Article) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -208,6 +216,7 @@ type CreateArticleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -252,6 +261,13 @@ func (x *CreateArticleRequest) GetTitle() string {
 func (x *CreateArticleRequest) GetContent() string {
 	if x != nil {
 		return x.Content
+	}
+	return ""
+}
+
+func (x *CreateArticleRequest) GetCategoryId() string {
+	if x != nil {
+		return x.CategoryId
 	}
 	return ""
 }
@@ -661,22 +677,308 @@ func (*DeleteArticleResponse) Descriptor() ([]byte, []int) {
 	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{10}
 }
 
+type Category struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ParentId      string                 `protobuf:"bytes,3,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // 親カテゴリID（空文字 = ルート）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Category) Reset() {
+	*x = Category{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Category) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Category) ProtoMessage() {}
+
+func (x *Category) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Category.ProtoReflect.Descriptor instead.
+func (*Category) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *Category) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Category) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Category) GetParentId() string {
+	if x != nil {
+		return x.ParentId
+	}
+	return ""
+}
+
+// カテゴリ一覧取得
+type ListCategoriesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCategoriesRequest) Reset() {
+	*x = ListCategoriesRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCategoriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCategoriesRequest) ProtoMessage() {}
+
+func (x *ListCategoriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCategoriesRequest.ProtoReflect.Descriptor instead.
+func (*ListCategoriesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{12}
+}
+
+type ListCategoriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    []*Category            `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCategoriesResponse) Reset() {
+	*x = ListCategoriesResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCategoriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCategoriesResponse) ProtoMessage() {}
+
+func (x *ListCategoriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCategoriesResponse.ProtoReflect.Descriptor instead.
+func (*ListCategoriesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListCategoriesResponse) GetCategories() []*Category {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+// カテゴリ作成
+type CreateCategoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ParentId      string                 `protobuf:"bytes,2,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // 空文字 = ルートカテゴリ
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCategoryRequest) Reset() {
+	*x = CreateCategoryRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCategoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCategoryRequest) ProtoMessage() {}
+
+func (x *CreateCategoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCategoryRequest.ProtoReflect.Descriptor instead.
+func (*CreateCategoryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CreateCategoryRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateCategoryRequest) GetParentId() string {
+	if x != nil {
+		return x.ParentId
+	}
+	return ""
+}
+
+type CreateCategoryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Category      *Category              `protobuf:"bytes,1,opt,name=category,proto3" json:"category,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCategoryResponse) Reset() {
+	*x = CreateCategoryResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCategoryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCategoryResponse) ProtoMessage() {}
+
+func (x *CreateCategoryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCategoryResponse.ProtoReflect.Descriptor instead.
+func (*CreateCategoryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateCategoryResponse) GetCategory() *Category {
+	if x != nil {
+		return x.Category
+	}
+	return nil
+}
+
+type DeleteCategoryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteCategoryRequest) Reset() {
+	*x = DeleteCategoryRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteCategoryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteCategoryRequest) ProtoMessage() {}
+
+func (x *DeleteCategoryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteCategoryRequest.ProtoReflect.Descriptor instead.
+func (*DeleteCategoryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *DeleteCategoryRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 var File_proto_wiki_wiki_proto protoreflect.FileDescriptor
 
 const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbf\x01\n" +
+	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe0\x01\n" +
 	"\aArticle\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
-	"\acontent\x18\x03 \x01(\tR\acontent\x129\n" +
+	"\acontent\x18\x03 \x01(\tR\acontent\x12\x1f\n" +
+	"\vcategory_id\x18\x04 \x01(\tR\n" +
+	"categoryId\x129\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"F\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"g\n" +
 	"\x14CreateArticleRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\tR\acontent\"@\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\tR\n" +
+	"categoryId\"@\n" +
 	"\x15CreateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"#\n" +
 	"\x11GetArticleRequest\x12\x0e\n" +
@@ -697,7 +999,23 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"&\n" +
 	"\x14DeleteArticleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
-	"\x15DeleteArticleResponse*\x84\x01\n" +
+	"\x15DeleteArticleResponse\"K\n" +
+	"\bCategory\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\tparent_id\x18\x03 \x01(\tR\bparentId\"\x17\n" +
+	"\x15ListCategoriesRequest\"H\n" +
+	"\x16ListCategoriesResponse\x12.\n" +
+	"\n" +
+	"categories\x18\x01 \x03(\v2\x0e.wiki.CategoryR\n" +
+	"categories\"H\n" +
+	"\x15CreateCategoryRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
+	"\tparent_id\x18\x02 \x01(\tR\bparentId\"D\n" +
+	"\x16CreateCategoryResponse\x12*\n" +
+	"\bcategory\x18\x01 \x01(\v2\x0e.wiki.CategoryR\bcategory\"'\n" +
+	"\x15DeleteCategoryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id*\x84\x01\n" +
 	"\rArticleStatus\x12\x1e\n" +
 	"\x1aARTICLE_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ARTICLE_STATUS_DRAFT\x10\x01\x12\x1c\n" +
@@ -707,13 +1025,16 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"ROLE_ADMIN\x10\x01\x12\x0f\n" +
-	"\vROLE_VIEWER\x10\x022\xc9\x02\n" +
+	"\vROLE_VIEWER\x10\x022\xaa\x04\n" +
 	"\fWikiServices\x12A\n" +
 	"\x06Create\x12\x1a.wiki.CreateArticleRequest\x1a\x1b.wiki.CreateArticleResponse\x128\n" +
 	"\x03Get\x12\x17.wiki.GetArticleRequest\x1a\x18.wiki.GetArticleResponse\x12;\n" +
 	"\x04List\x12\x18.wiki.ListArticleRequest\x1a\x19.wiki.ListArticleResponse\x12A\n" +
 	"\x06Update\x12\x1a.wiki.UpdateArticleRequest\x1a\x1b.wiki.UpdateArticleResponse\x12<\n" +
-	"\x06Delete\x12\x1a.wiki.DeleteArticleRequest\x1a\x16.google.protobuf.EmptyB,Z*github.com/TenshoOHASHI/knowhub/proto/wikib\x06proto3"
+	"\x06Delete\x12\x1a.wiki.DeleteArticleRequest\x1a\x16.google.protobuf.Empty\x12K\n" +
+	"\x0eListCategories\x12\x1b.wiki.ListCategoriesRequest\x1a\x1c.wiki.ListCategoriesResponse\x12K\n" +
+	"\x0eCreateCategory\x12\x1b.wiki.CreateCategoryRequest\x1a\x1c.wiki.CreateCategoryResponse\x12E\n" +
+	"\x0eDeleteCategory\x12\x1b.wiki.DeleteCategoryRequest\x1a\x16.google.protobuf.EmptyB,Z*github.com/TenshoOHASHI/knowhub/proto/wikib\x06proto3"
 
 var (
 	file_proto_wiki_wiki_proto_rawDescOnce sync.Once
@@ -728,46 +1049,60 @@ func file_proto_wiki_wiki_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_wiki_wiki_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_proto_wiki_wiki_proto_goTypes = []any{
-	(ArticleStatus)(0),            // 0: wiki.ArticleStatus
-	(Role)(0),                     // 1: wiki.Role
-	(*Article)(nil),               // 2: wiki.Article
-	(*CreateArticleRequest)(nil),  // 3: wiki.CreateArticleRequest
-	(*CreateArticleResponse)(nil), // 4: wiki.CreateArticleResponse
-	(*GetArticleRequest)(nil),     // 5: wiki.GetArticleRequest
-	(*GetArticleResponse)(nil),    // 6: wiki.GetArticleResponse
-	(*ListArticleRequest)(nil),    // 7: wiki.ListArticleRequest
-	(*ListArticleResponse)(nil),   // 8: wiki.ListArticleResponse
-	(*UpdateArticleRequest)(nil),  // 9: wiki.UpdateArticleRequest
-	(*UpdateArticleResponse)(nil), // 10: wiki.UpdateArticleResponse
-	(*DeleteArticleRequest)(nil),  // 11: wiki.DeleteArticleRequest
-	(*DeleteArticleResponse)(nil), // 12: wiki.DeleteArticleResponse
-	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 14: google.protobuf.Empty
+	(ArticleStatus)(0),             // 0: wiki.ArticleStatus
+	(Role)(0),                      // 1: wiki.Role
+	(*Article)(nil),                // 2: wiki.Article
+	(*CreateArticleRequest)(nil),   // 3: wiki.CreateArticleRequest
+	(*CreateArticleResponse)(nil),  // 4: wiki.CreateArticleResponse
+	(*GetArticleRequest)(nil),      // 5: wiki.GetArticleRequest
+	(*GetArticleResponse)(nil),     // 6: wiki.GetArticleResponse
+	(*ListArticleRequest)(nil),     // 7: wiki.ListArticleRequest
+	(*ListArticleResponse)(nil),    // 8: wiki.ListArticleResponse
+	(*UpdateArticleRequest)(nil),   // 9: wiki.UpdateArticleRequest
+	(*UpdateArticleResponse)(nil),  // 10: wiki.UpdateArticleResponse
+	(*DeleteArticleRequest)(nil),   // 11: wiki.DeleteArticleRequest
+	(*DeleteArticleResponse)(nil),  // 12: wiki.DeleteArticleResponse
+	(*Category)(nil),               // 13: wiki.Category
+	(*ListCategoriesRequest)(nil),  // 14: wiki.ListCategoriesRequest
+	(*ListCategoriesResponse)(nil), // 15: wiki.ListCategoriesResponse
+	(*CreateCategoryRequest)(nil),  // 16: wiki.CreateCategoryRequest
+	(*CreateCategoryResponse)(nil), // 17: wiki.CreateCategoryResponse
+	(*DeleteCategoryRequest)(nil),  // 18: wiki.DeleteCategoryRequest
+	(*timestamppb.Timestamp)(nil),  // 19: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),          // 20: google.protobuf.Empty
 }
 var file_proto_wiki_wiki_proto_depIdxs = []int32{
-	13, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
-	13, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
+	19, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
+	19, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 2: wiki.CreateArticleResponse.article:type_name -> wiki.Article
 	2,  // 3: wiki.GetArticleResponse.Article:type_name -> wiki.Article
 	2,  // 4: wiki.ListArticleResponse.article:type_name -> wiki.Article
 	2,  // 5: wiki.UpdateArticleResponse.article:type_name -> wiki.Article
-	3,  // 6: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
-	5,  // 7: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
-	7,  // 8: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
-	9,  // 9: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
-	11, // 10: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
-	4,  // 11: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
-	6,  // 12: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
-	8,  // 13: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
-	10, // 14: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
-	14, // 15: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	13, // 6: wiki.ListCategoriesResponse.categories:type_name -> wiki.Category
+	13, // 7: wiki.CreateCategoryResponse.category:type_name -> wiki.Category
+	3,  // 8: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
+	5,  // 9: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
+	7,  // 10: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
+	9,  // 11: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
+	11, // 12: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
+	14, // 13: wiki.WikiServices.ListCategories:input_type -> wiki.ListCategoriesRequest
+	16, // 14: wiki.WikiServices.CreateCategory:input_type -> wiki.CreateCategoryRequest
+	18, // 15: wiki.WikiServices.DeleteCategory:input_type -> wiki.DeleteCategoryRequest
+	4,  // 16: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
+	6,  // 17: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
+	8,  // 18: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
+	10, // 19: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
+	20, // 20: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
+	15, // 21: wiki.WikiServices.ListCategories:output_type -> wiki.ListCategoriesResponse
+	17, // 22: wiki.WikiServices.CreateCategory:output_type -> wiki.CreateCategoryResponse
+	20, // 23: wiki.WikiServices.DeleteCategory:output_type -> google.protobuf.Empty
+	16, // [16:24] is the sub-list for method output_type
+	8,  // [8:16] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_proto_wiki_wiki_proto_init() }
@@ -782,7 +1117,7 @@ func file_proto_wiki_wiki_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_wiki_wiki_proto_rawDesc), len(file_proto_wiki_wiki_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   11,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

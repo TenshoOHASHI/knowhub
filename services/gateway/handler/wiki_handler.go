@@ -51,8 +51,9 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	// リクエスト用の構造体を用意
 	// Wiki Service:  「titleが1文字以上か」→ model.NewArticle() で弾く
 	var req struct {
-		Title   string `json:"title"`
-		Content string `json:"content"`
+		Title      string `json:"title"`
+		Content    string `json:"content"`
+		CategoryID string `json:"category_id"`
 	}
 
 	// リクエストbodyをjsonからGo構造体に変換
@@ -64,8 +65,9 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	// gRPC
 	resp, err := h.client.Create(r.Context(), &pb.CreateArticleRequest{
-		Title:   req.Title,
-		Content: req.Content,
+		Title:      req.Title,
+		Content:    req.Content,
+		CategoryId: req.CategoryID,
 	})
 
 	if err != nil {
@@ -121,4 +123,57 @@ func (h *WikiHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent) // 204 =　Bodyなし
+}
+
+// ===== Category =====
+
+// GET /api/categories
+func (h *WikiHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.client.ListCategories(r.Context(), &pb.ListCategoriesRequest{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// POST /api/categories
+func (h *WikiHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Name     string `json:"name"`
+		ParentID string `json:"parent_id"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	resp, err := h.client.CreateCategory(r.Context(), &pb.CreateCategoryRequest{
+		Name:     req.Name,
+		ParentId: req.ParentID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
+// DELETE /api/categories/{id}
+func (h *WikiHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	_, err := h.client.DeleteCategory(r.Context(), &pb.DeleteCategoryRequest{
+		Id: id,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

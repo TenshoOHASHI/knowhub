@@ -47,13 +47,12 @@ func main() {
 	defer rdb.Close()
 
 	// CQRS: Command と Query を作成
-	// repo := repository.NewMysqlRepository(db)
-	commandRepo := repository.NewMysqlCommandRepository(db)
+	commandRepo := repository.NewMysqlCommandRepository(rdb, db)
 	queryRepo := repository.NewMysqlQueryRepository(rdb, db)
+	categoryRepo := repository.NewMysqlCategoryRepository(db)
 
-	//  handlerを生成
-	// wikiHandler := handler.NewWikiHandler(repo)
-	wikiCQRSHandler := handler.NewWikiCQRSHandler(commandRepo, queryRepo)
+	// handlerを生成
+	wikiCQRSHandler := handler.NewWikiCQRSHandler(commandRepo, queryRepo, categoryRepo)
 
 	// grpcサーバを起動
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)

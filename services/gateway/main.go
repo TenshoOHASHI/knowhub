@@ -27,7 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to wiki service %v", err)
 	}
-	defer authConn.Close()
+	defer profileConn.Close()
 
 	// gRPCのハンドラーを作成
 	wikiHandler := handler.NewWikiHandler(wikiConn)
@@ -43,6 +43,11 @@ func main() {
 	mux.HandleFunc("POST /api/articles", wikiHandler.CreateArticle)
 	mux.HandleFunc("PUT /api/articles/{id}", wikiHandler.UpdateArticle)
 	mux.HandleFunc("DELETE /api/articles/{id}", wikiHandler.DeleteArticle)
+
+	// categories
+	mux.HandleFunc("GET /api/categories", wikiHandler.ListCategories)
+	mux.HandleFunc("POST /api/categories", wikiHandler.CreateCategory)
+	mux.HandleFunc("DELETE /api/categories/{id}", wikiHandler.DeleteCategory)
 
 	// auth
 	mux.HandleFunc("POST /api/user/register", authHandler.Register)
@@ -61,5 +66,25 @@ func main() {
 	mux.HandleFunc("DELETE /api/portfolio/{id}", profileHandler.DeletePortfolioItem)
 
 	log.Println("API Gateway started on: 8080")
-	log.Fatal(http.ListenAndServe(":8080", mux)) // ルーティングを登録
+	log.Fatal(http.ListenAndServe(":8080", corsMiddleware(mux))) // ルーティングを登録
+}
+
+// middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 許可するオリジン
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		// 許可するメソッド
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		// 許可するヘッダー
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// プリフライトリクエスト（OPTIONS）は即レスポンス
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

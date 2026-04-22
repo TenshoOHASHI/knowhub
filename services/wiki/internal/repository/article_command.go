@@ -3,8 +3,11 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
 
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/model"
+	"github.com/redis/go-redis/v9"
 )
 
 // CommandRepository はWrite操作のみ
@@ -15,24 +18,33 @@ type ArticleCommandRepository interface {
 }
 
 type mysqlCommandRepository struct {
-	db *sql.DB
+	db  *sql.DB
+	rdb *redis.Client
 }
 
-func NewMysqlCommandRepository(db *sql.DB) ArticleCommandRepository {
-	return &mysqlCommandRepository{db: db}
+func NewMysqlCommandRepository(rdb *redis.Client, db *sql.DB) ArticleCommandRepository {
+	return &mysqlCommandRepository{rdb: rdb, db: db}
 }
 
 func (r *mysqlCommandRepository) Create(ctx context.Context, article *model.Article) error {
 	// プレスホルダー(SQLインジェクション対策)
-	query := `INSERT INTO articles (id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+	query := `INSERT INTO articles (id, title, content, category_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
 	_, err := r.db.ExecContext(ctx, query,
 		article.ID,
 		article.Title,
 		article.Content,
+		article.CategoryID,
 		article.CreatedAt,
 		article.UpdatedAt,
 	)
-	return err
+	if err != nil {
+		log.Printf("Create INSERT error: %v", err)
+		return err
+	}
+
+	// キャッシュ無効化 — 一覧キャッシュを削除
+	r.rdb.Del(ctx, "articles:list")
+	return nil
 }
 
 func (r *mysqlCommandRepository) Save(ctx context.Context, article *model.Article) error {
@@ -45,6 +57,12 @@ func (r *mysqlCommandRepository) Save(ctx context.Context, article *model.Articl
 		article.UpdatedAt,
 		article.ID,
 	)
+	if err != nil {
+		log.Printf("INSERT error: %v", err) // これを追加
+	}
+
+	// Save — 個別キャッシュ + 一覧キャッシュを削除
+	r.rdb.Del(ctx, fmt.Sprintf("article:%s", article.ID))
 	return err
 }
 
@@ -53,5 +71,6 @@ func (r *mysqlCommandRepository) Delete(ctx context.Context, id string) error {
 	// INSERT/UPDATE/DELETEは０件更新でも sql.ErrNoRows にならない
 	_, err := r.db.ExecContext(ctx, query, id)
 
+	r.rdb.Del(ctx, "articles:list")
 	return err
 }

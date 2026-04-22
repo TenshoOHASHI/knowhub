@@ -30,7 +30,7 @@ func NewWikiHandler(repo repository.ArticleRepository) *WikiHandler {
 func (h *WikiHandler) Create(ctx context.Context, req *pb.CreateArticleRequest) (*pb.CreateArticleResponse, error) {
 	// ドメインのバリデーションチェック
 	// 記事のインスタンスを作成
-	article, err := model.NewArticle(req.Title, req.Content)
+	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -117,11 +117,12 @@ func (h *WikiHandler) Delete(ctx context.Context, req *pb.DeleteArticleRequest) 
 // modelからprotoに変換
 func toProductArticle(a *model.Article) *pb.Article {
 	return &pb.Article{
-		Id:        a.ID,
-		Title:     a.Title,
-		Content:   a.Content,
-		CreatedAt: timestamppb.New(a.CreatedAt),
-		UpdatedAt: timestamppb.New(a.UpdatedAt),
+		Id:         a.ID,
+		Title:      a.Title,
+		Content:    a.Content,
+		CategoryId: a.CategoryID,
+		CreatedAt:  timestamppb.New(a.CreatedAt),
+		UpdatedAt:  timestamppb.New(a.UpdatedAt),
 	}
 }
 

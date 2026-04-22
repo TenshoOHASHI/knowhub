@@ -42,7 +42,7 @@ func (r *mysqlQueryRepository) FindById(ctx context.Context, id string) (*model.
 	}
 
 	// キャッシュミス
-	query := `SELECT id, title, content, created_at, updated_at From articles WHERE id=?`
+	query := `SELECT id, title, content, category_id, created_at, updated_at FROM articles WHERE id=?`
 
 	// 1件取得
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -50,7 +50,7 @@ func (r *mysqlQueryRepository) FindById(ctx context.Context, id string) (*model.
 	// 型を定義
 	var article model.Article
 	// DBデータを構造体にマッピング
-	err = row.Scan(&article.ID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt)
+	err = row.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.CreatedAt, &article.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -78,18 +78,18 @@ func (r *mysqlQueryRepository) FindAll(ctx context.Context) ([]*model.Article, e
 	}
 
 	// キャッシュミス
-	query := `SELECT id, title, content, created_at, updated_at FROM articles`
+	query := `SELECT id, title, content, category_id, created_at, updated_at FROM articles ORDER BY created_at DESC`
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close() // 接続が終わったら。プールに戻す
+	defer rows.Close()
 
 	var articles []*model.Article
 	for rows.Next() {
 		var article model.Article
-		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt)
+		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.CreatedAt, &article.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
