@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext value={{ toast }}>
       {children}
       {/* 画面右上にトースト表示 */}
-      <div className='fixed top-18 right-4 z-50 space-y-2'>
+      <div className='fixed top-20 right-4 z-50 space-y-2'>
         {toasts.map((t) => (
           <div
             key={t.id}

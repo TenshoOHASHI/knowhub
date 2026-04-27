@@ -6,6 +6,7 @@ import KeyboardShortcuts from '@/components/KeyBoardShortcuts';
 import { SidebarProvider } from '@/context/SidebarContext';
 import Footer from '@/components/Footer';
 import { ToastProvider } from '@/context/ToastContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,14 +35,14 @@ export default function RootLayout({
     >
       <body className='h-screen flex flex-col bg-white dark:bg-stone-900 text-black dark:text-stone-100 overflow-hidden'>
         <ToastProvider>
-          {/* NavBarの閉鎖更新関数をNavbarで共有し、閉鎖状態をWikiページで管理 */}
-          <SidebarProvider>
-            <Navbar />
-            <main className='flex-1 overflow-hidden'>{children}</main>
-          </SidebarProvider>
-          <Footer />
-
-          <KeyboardShortcuts />
+          <AuthProvider>
+            <SidebarProvider>
+              <Navbar />
+              <main className='flex-1 overflow-hidden'>{children}</main>
+            </SidebarProvider>
+            <Footer />
+            <KeyboardShortcuts />
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>

@@ -397,6 +397,94 @@ func (x *VerifyTokenResponse) GetUser() *User {
 	return nil
 }
 
+type FindByIDRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FindByIDRequest) Reset() {
+	*x = FindByIDRequest{}
+	mi := &file_proto_auth_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FindByIDRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FindByIDRequest) ProtoMessage() {}
+
+func (x *FindByIDRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FindByIDRequest.ProtoReflect.Descriptor instead.
+func (*FindByIDRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FindByIDRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type FindByResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FindByResponse) Reset() {
+	*x = FindByResponse{}
+	mi := &file_proto_auth_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FindByResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FindByResponse) ProtoMessage() {}
+
+func (x *FindByResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FindByResponse.ProtoReflect.Descriptor instead.
+func (*FindByResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FindByResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
 var File_proto_auth_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_auth_proto_rawDesc = "" +
@@ -426,11 +514,17 @@ const file_proto_auth_auth_proto_rawDesc = "" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"5\n" +
 	"\x13VerifyTokenResponse\x12\x1e\n" +
 	"\x04user\x18\x01 \x01(\v2\n" +
-	".auth.UserR\x04user2\xbe\x01\n" +
+	".auth.UserR\x04user\"!\n" +
+	"\x0fFindByIDRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"0\n" +
+	"\x0eFindByResponse\x12\x1e\n" +
+	"\x04user\x18\x01 \x01(\v2\n" +
+	".auth.UserR\x04user2\xf7\x01\n" +
 	"\vAuthService\x129\n" +
 	"\bRegister\x12\x15.auth.RegisterRequest\x1a\x16.auth.RegisterResponse\x120\n" +
 	"\x05Login\x12\x12.auth.LoginRequest\x1a\x13.auth.LoginResponse\x12B\n" +
-	"\vVerifyToken\x12\x18.auth.VerifyTokenRequest\x1a\x19.auth.VerifyTokenResponseB,Z*github.com/TenshoOHASHI/knowhub/proto/authb\x06proto3"
+	"\vVerifyToken\x12\x18.auth.VerifyTokenRequest\x1a\x19.auth.VerifyTokenResponse\x127\n" +
+	"\bFindByID\x12\x15.auth.FindByIDRequest\x1a\x14.auth.FindByResponseB,Z*github.com/TenshoOHASHI/knowhub/proto/authb\x06proto3"
 
 var (
 	file_proto_auth_auth_proto_rawDescOnce sync.Once
@@ -444,7 +538,7 @@ func file_proto_auth_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_auth_proto_rawDescData
 }
 
-var file_proto_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_auth_auth_proto_goTypes = []any{
 	(*User)(nil),                  // 0: auth.User
 	(*RegisterRequest)(nil),       // 1: auth.RegisterRequest
@@ -453,24 +547,29 @@ var file_proto_auth_auth_proto_goTypes = []any{
 	(*LoginResponse)(nil),         // 4: auth.LoginResponse
 	(*VerifyTokenRequest)(nil),    // 5: auth.VerifyTokenRequest
 	(*VerifyTokenResponse)(nil),   // 6: auth.VerifyTokenResponse
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(*FindByIDRequest)(nil),       // 7: auth.FindByIDRequest
+	(*FindByResponse)(nil),        // 8: auth.FindByResponse
+	(*timestamppb.Timestamp)(nil), // 9: google.protobuf.Timestamp
 }
 var file_proto_auth_auth_proto_depIdxs = []int32{
-	7, // 0: auth.User.create_at:type_name -> google.protobuf.Timestamp
+	9, // 0: auth.User.create_at:type_name -> google.protobuf.Timestamp
 	0, // 1: auth.RegisterResponse.user:type_name -> auth.User
 	0, // 2: auth.LoginResponse.user:type_name -> auth.User
 	0, // 3: auth.VerifyTokenResponse.user:type_name -> auth.User
-	1, // 4: auth.AuthService.Register:input_type -> auth.RegisterRequest
-	3, // 5: auth.AuthService.Login:input_type -> auth.LoginRequest
-	5, // 6: auth.AuthService.VerifyToken:input_type -> auth.VerifyTokenRequest
-	2, // 7: auth.AuthService.Register:output_type -> auth.RegisterResponse
-	4, // 8: auth.AuthService.Login:output_type -> auth.LoginResponse
-	6, // 9: auth.AuthService.VerifyToken:output_type -> auth.VerifyTokenResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	0, // 4: auth.FindByResponse.user:type_name -> auth.User
+	1, // 5: auth.AuthService.Register:input_type -> auth.RegisterRequest
+	3, // 6: auth.AuthService.Login:input_type -> auth.LoginRequest
+	5, // 7: auth.AuthService.VerifyToken:input_type -> auth.VerifyTokenRequest
+	7, // 8: auth.AuthService.FindByID:input_type -> auth.FindByIDRequest
+	2, // 9: auth.AuthService.Register:output_type -> auth.RegisterResponse
+	4, // 10: auth.AuthService.Login:output_type -> auth.LoginResponse
+	6, // 11: auth.AuthService.VerifyToken:output_type -> auth.VerifyTokenResponse
+	8, // 12: auth.AuthService.FindByID:output_type -> auth.FindByResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_auth_proto_init() }
@@ -484,7 +583,7 @@ func file_proto_auth_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_auth_proto_rawDesc), len(file_proto_auth_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

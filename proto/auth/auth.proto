@@ -48,10 +48,19 @@ message VerifyTokenResponse {
   User user = 1;
 }
 
+message FindByIDRequest {
+  string id = 1;
+}
+
+message FindByResponse {
+  User user = 1;
+}
+
 // RPC
 // protoの型はネットワーク上を流れるので、パスワードはuserに含めない
 service AuthService{
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc FindByID(FindByIDRequest) returns (FindByResponse);
 }

@@ -39,12 +39,14 @@ export default function ConfirmModal({
         <p className='text-gray-600 dark:text-stone-400 mb-6'>{message}</p>
         <div className='flex justify-end gap-3'>
           <button
+            type="button"
             onClick={onCancel}
             className='px-4 py-2 border border-black dark:border-stone-600 rounded-lg'
           >
             キャンセル
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700'
           >

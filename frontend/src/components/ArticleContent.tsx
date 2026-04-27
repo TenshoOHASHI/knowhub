@@ -2,6 +2,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeSlug from 'rehype-slug';
 import MermaidDiagram from './MermaidDiagram';
 import 'highlight.js/styles/github.css';
 import 'highlight.js/styles/github-dark.css';
@@ -12,7 +13,7 @@ export default function ArticleContent({ content }: { content: string }) {
     <div className='prose max-w-none dark:prose-invert'>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight, rehypeSlug]}
         components={{
           code({ className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');

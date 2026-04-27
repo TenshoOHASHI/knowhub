@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
-	"log"
+	"log/slog"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
 	"github.com/TenshoOHASHI/knowhub/services/auth/internal/model"
@@ -43,14 +43,14 @@ func (h *UserHandler) Register(ctx context.Context, req *pb.RegisterRequest) (*p
 			return nil, status.Error(codes.AlreadyExists, "email already exists")
 		}
 		// return nil, status.Error(codes.Internal, "Failed to save user")
-		log.Printf("failed to save user: %v", err) // ← サーバーログに詳細
+		slog.Error("failed to save user", "error", err)
 		return nil, status.Error(codes.Internal, "Failed to save user: %")
 
 	}
 
 	token, err := jwt.GenerateToken(user.ID, req.Username)
 	if err != nil {
-		log.Printf("Failed to crate token: %v", err)
+		slog.Error("failed to create token", "error", err)
 		return nil, status.Error(codes.Internal, "Failed to create token")
 	}
 	return &pb.RegisterResponse{
@@ -85,6 +85,35 @@ func (h *UserHandler) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	return &pb.LoginResponse{
 		User:  toProtoUser(user),
 		Token: token,
+	}, nil
+}
+
+func (h *UserHandler) VerifyToken(ctx context.Context, req *pb.VerifyTokenRequest) (*pb.VerifyTokenResponse, error) {
+	// トークンを検証
+	claims, err := jwt.VerifyToken(req.Token)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "invalid token")
+	}
+
+	user, err := h.repo.FindByID(ctx, claims.UserID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "user not found")
+	}
+	return &pb.VerifyTokenResponse{
+		User: toProtoUser(user),
+	}, nil
+}
+
+func (h *UserHandler) FindByID(ctx context.Context, req *pb.FindByIDRequest) (*pb.FindByResponse, error) {
+	user, err := h.repo.FindByID(ctx, req.Id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "user not found")
+		}
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+	return &pb.FindByResponse{
+		User: toProtoUser(user),
 	}, nil
 }
 

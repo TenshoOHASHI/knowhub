@@ -30,7 +30,7 @@ func NewWikiHandler(repo repository.ArticleRepository) *WikiHandler {
 func (h *WikiHandler) Create(ctx context.Context, req *pb.CreateArticleRequest) (*pb.CreateArticleResponse, error) {
 	// ドメインのバリデーションチェック
 	// 記事のインスタンスを作成
-	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId)
+	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId, req.Visibility)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -84,7 +84,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 	}
 
 	// NOTE: optionalを指定しているため、*string(nilになる可能性がある)
-	var title, content string // もしnilの場合は、ゼロ値の空文字で初期化される
+	var title, content, visibility string // もしnilの場合は、ゼロ値の空文字で初期化される
 	if req.Title != nil {
 		title = *req.Title
 	}
@@ -93,8 +93,12 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 		content = *req.Content
 	}
 
+	if req.Visibility != nil {
+		visibility = *req.Visibility
+	}
+
 	// ここの引数はポインターアドレスを渡す必要があるみたいです？
-	article.Update(title, content) // メソッドを呼び出し、既存の値を上書き
+	article.Update(title, content, visibility) // メソッドを呼び出し、既存の値を上書き
 	err = h.repo.Save(ctx, article)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to update article")
@@ -121,6 +125,7 @@ func toProductArticle(a *model.Article) *pb.Article {
 		Title:      a.Title,
 		Content:    a.Content,
 		CategoryId: a.CategoryID,
+		Visibility: a.Visibility,
 		CreatedAt:  timestamppb.New(a.CreatedAt),
 		UpdatedAt:  timestamppb.New(a.UpdatedAt),
 	}

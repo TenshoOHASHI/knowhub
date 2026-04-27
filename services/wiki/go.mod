@@ -3,6 +3,7 @@ module github.com/TenshoOHASHI/knowhub/services/wiki
 go 1.25.4
 
 require (
+	github.com/TenshoOHASHI/knowhub/pkg v0.0.0-00010101000000-000000000000
 	github.com/TenshoOHASHI/knowhub/proto/wiki v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
@@ -21,7 +22,10 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
 // ローカルのprotoパッケージを参照
 replace github.com/TenshoOHASHI/knowhub/proto/wiki => ../../proto/wiki
+
+replace github.com/TenshoOHASHI/knowhub/pkg => ../pkg

@@ -16,6 +16,12 @@ message Profile {
   string github_url = 4;
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;
+  string avatar_url = 7;
+  string twitter_url = 8;
+  string linkedin_url = 9;
+  string skills = 10; // JSON array string
+  string languages = 11; // JSON array: [{"name":"Japanese","level":"Native"}]
+  string wantedly_url = 12;
 }
 
 // ポートフォリオアイテム
@@ -26,6 +32,8 @@ message PortfolioItem {
   string url = 4;             // URL
   string status = 5;          // "developing" / "completed"
   google.protobuf.Timestamp created_at = 6;
+  string category = 7;        // "project" / "assignment" / "contribution"
+  string tech_stack = 8;      // JSON array: ["Go","React","MySQL"]
 }
 
 // RPCS
@@ -39,6 +47,12 @@ message UpdateProfileRequest {
     string title = 1;
     string bio = 2;
     string github_url = 3;
+    string avatar_url = 4;
+    string twitter_url = 5;
+    string linkedin_url = 6;
+    string skills = 7;
+    string languages = 8;
+    string wantedly_url = 9;
   }
 
 message UpdateProfileResponse {
@@ -52,6 +66,8 @@ message CreatePortfolioItemRequest {
   string description = 2;
   string url = 3;
   string status = 4;
+  string category = 5;
+  string tech_stack = 6;
 }
 
 message CreatePortfolioItemResponse {
@@ -70,6 +86,8 @@ message UpdatePortfolioItemRequest {
   optional string description = 3;
   optional string url = 4;
   optional string status = 5;
+  optional string category = 6;
+  optional string tech_stack = 7;
 }
 
 message UpdatePortfolioItemResponse {
@@ -96,6 +114,12 @@ message CreateProfileRequest {
   string title = 1;
   string bio = 2;
   string github_url = 3;
+  string avatar_url = 4;
+  string twitter_url = 5;
+  string linkedin_url = 6;
+  string skills = 7;
+  string languages = 8;
+  string wantedly_url = 9;
 }
 
 message CreateProfileResponse {

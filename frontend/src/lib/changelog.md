@@ -1,0 +1,132 @@
+## 2026-04-27 Wiki 記事の公開/限定公開（visibility）機能
+- DB: articles に visibility カラム追加（VARCHAR(20) DEFAULT 'public'）
+- Proto: Article / Create/UpdateRequest に visibility フィールド追加 + Go コード再生成
+- Backend: Article model（NewArticle / Update）に Visibility 追加、無効値は "public" にフォールバック
+- Backend: CQRS / 旧リポの INSERT/UPDATE/SELECT クエリに visibility 追加
+- Backend: gRPC Handler（wiki_cqrs / wiki）の Create/Update/toProto に visibility マッピング追加
+- Gateway: wiki_handler.go の Create/Update JSON body に visibility 追加、swagger/types.go 更新
+- Frontend: Article interface / saveArticle 引数に visibility 追加
+- Frontend: Editor に公開設定セレクトボックス追加（一般公開 / 限定公開）
+- Frontend: Wiki 一覧で locked 記事に鍵アイコンバッジ + プレビュー文マスク表示
+- Frontend: 記事詳細で locked 時にぼかしオーバーレイ + TOC 非表示
+- Test: visibility のデフォルト値・locked・Update に関するテストケース追加
+
+## 2026-04-27 Server Action → Client Component + api.ts 移行
+- Frontend: api.ts に Server/Client 自動切替追加（typeof window で絶対URL/相対URL切替）
+- Frontend: mutation 関数を api.ts に統合（saveArticle / deleteArticle / saveProfile / savePortfolioItem / deletePortfolioItem）
+- Frontend: Editor.tsx を useActionState → onSubmit + api.ts に変更
+- Frontend: ProfileManager.tsx を useActionState → onSubmit + api.ts に変更
+- Frontend: PortfolioManager.tsx のハードコード URL → api.ts に変更
+- Frontend: Server Action ファイル（article.ts / profile.ts）をアーカイブ化
+- Gateway: Auth middleware を Cookie + Authorization Bearer 両対応に変更
+- .env: タイプミス修正（PROFILE_ADDR / ALLOWED_CREDENTIALS / LOG_LEVEL 二重定義）
+
+## 2026-04-26 フロントエンド認証（Login / Logout / Auth Guard）
+- Gateway: Auth middleware GET スキップ追加（GET /api/user/me は認証必要）
+- Gateway: Login/Register レスポンス body に token 追加
+- Gateway: FindByID RPC 追加（Proto 再生成 + Auth Handler + Repository）
+- Gateway: /api/user/me エンドポイント追加
+- Frontend: Next.js rewrites で /api/* → Gateway プロキシ（Cookie 自動転送）
+- Frontend: Route Handlers（login / register / logout）で HttpOnly Cookie セット/削除
+- Frontend: AuthContext（checkAuth / login / logout）+ AuthProvider（layout.tsx）
+- Frontend: Login ページ作成
+- Frontend: Admin ページ認証ガード（isLoggedIn チェック → /login リダイレクト）
+- Frontend: Navbar ログイン状態でリンク切り替え（Admin / Logout はログイン時のみ）
+- Frontend: api.ts の API_BASE を '/api' に統一
+- Frontend: Server Actions に fetchWithAuth 追加（cookies() で Gateway に Cookie 転送）
+
+## 2026-04-26 Swagger/OpenAPI ドキュメント生成
+- Gateway: swag + http-swagger パッケージ導入
+- Gateway: main.go に Swagger アノテーション追加 + /swagger/ ルート追加
+- Gateway: auth / wiki / profile ハンドラーに全18個の API アノテーション追加
+- Gateway: swagger/types.go にリクエスト構造体（9個）を別パッケージで定義
+- Gateway: @Param をインライン object{} → swagger.TypeName 構造体参照に変更
+- Gateway: Auth middleware に /swagger/ プレフィックスを認証ホワイトリストに追加
+
+## 2026-04-26 CORS 環境変数化 & Error response cleanup
+- Gateway: config パッケージ作成（CORS / サービスアドレス / ポート / LogLevel を .env で管理）
+- Gateway: CoreMiddleware の CORS 設定を環境変数から読み込むように変更
+- Gateway: main.go の Logger 初期化順序を config.Load → loggerpkg.New に修正
+- Gateway: ポートを cfg.Port に統一（ハードコード解消）
+- 全サービス: dbutil.Wrap(db) で DB クエリログ出力（wiki / profile / auth）
+
+## 2026-04-25 slog構造化ログ & Graceful Shutdown
+- 共通パッケージ `pkg/logger` 作成（slog + lumberjack ログローテーション）
+- 共通パッケージ `pkg/server` 作成（Graceful Shutdown + DB Close）
+- 全サービス（Auth / Wiki / Profile / Gateway）の main.go を slog + Graceful Shutdown 対応
+- 全サービスの config に LogLevel 追加（環境変数 LOG_LEVEL で切替）
+- DB Ping ヘルスチェック追加（起動時に接続確認）
+- Gateway: CORS ミドルウェアを middleware パッケージに分離（CoreMiddleware）
+- Gateway: dialService 関数で gRPC 接続を共通化 + 接続状態ログ出力
+- `log.Printf` / `log.Fatalf` / `panic` を `slog.Info` / `slog.Error` + `os.Exit(1)` に統一
+
+## 2026-04-25 JWT認証ミドルウェア & UI修正
+- Auth Service に VerifyToken ハンドラー実装（gRPC）
+- Auth Repository に FindByID 追加
+- Gateway に JWT 認証ミドルウェア追加（Cookie検証 + context に userID 保存）
+- Gateway main.go に CORS → Auth → Router のミドルウェアチェーン構築
+- Portfolio ページに作成日表示追加（created_at）
+- PortfolioCard にカレンダーアイコン付き日付表示追加
+- PortfolioManager 一覧をページネーション対応（3件/ページ + ドットインジケーター）
+- トップページ Hub グラデーションをモノクロームに変更（from-stone-700 to-stone-400）
+
+## 2026-04-25 トップページリデザイン & ブランディング
+- プロジェクト名を knowhub → TenHub に変更
+- トップページをハードコード Hero セクションにリデザイン（プロフィール依存を削除）
+- Hero セクション（グラデーションタイトル + タグライン + タイピングライン）
+- フローティング技術キーワード背景（Go, gRPC, CQRS, Next.js など）
+- Values をマインドマップ風 UI に変更（中心 Mindset ノード + 放射状 pill ノード）
+- What is TenHub セクション（ホバーで左→右 下線アニメーション）
+- ProtocolBuffers カスタム SVG アイコン追加（react-icons/si に無いため）
+- Navbar にロゴ画像追加 + TenHub ブランディング
+- Profile に wantedly_url 追加（全層: Proto / Model / Repository / Handler / Gateway / Frontend）
+- ProfileManager に Wantedly URL 入力欄追加
+- Profile ページ About セクション削除（Bio 重複解消）
+
+## 2026-04-24 Portfolio リデザイン & Wiki 目次追加
+- Portfolio ページを Client Component 化（スライダー + カードレイアウト）
+- Portfolio に category / tech_stack カラム追加（DB migration）
+- PortfolioCard にステータスバッジ + カテゴリーバッジ + Tech Stack タグ追加
+- CardSlider コンポーネント実装（CSS snap + ナビボタン、4枚以上で表示）
+- PortfolioManager にカテゴリー選択・Tech Stack 入力欄追加
+- Admin ページに「ポートフォリオ」タブ追加（CRUD対応）
+- Wiki 記事詳細ページに目次（TOC）サイドバー追加
+- ArticleContent の h2/h3 に ID 付与（slugify）
+- TableOfContents コンポーネント（IntersectionObserver で現在地ハイライト）
+
+## 2026-04-24 Profile ページリデザイン
+- Profile に avatar_url / twitter_url / linkedin_url / skills カラム追加（DB migration）
+- Proto フィールド追加（Profile, UpdateProfileRequest, CreateProfileRequest）
+- バックエンド model / repository / handler / gateway 更新
+- Profile ページを Client Component 化（Hero / Skills / About セクション）
+- motion ライブラリでフェードイン・スタガー・スクロールアニメーション追加
+- Skills に react-icons/si アイコンマッピング追加
+- ProfileManager に新フィールド入力欄追加（Avatar / Twitter / LinkedIn / Skills）
+- Server Action 更新（新フィールド送信 + Skills JSON 変換）
+
+## 2026-04-24 コンポーネント分割 & カテゴリ連携
+- Admin ページをコンポーネント分割（Editor, EditorPreview, Markdown, CategoryManager に分離）
+- Server Action 追加（`actions/article.ts`）で記事更新ロジックを分離
+- Sidebar を API 連携のカテゴリツリーに刷新（ハードコード削除 → `getCategories`）
+- WikiClient にカテゴリ絞り込み追加（URL パラメータ `?category=id`）
+- WikiClient 記事カードUI改善（stripMarkdown + ホバーアニメーション + 空状態UI）
+- Admin タブ切り替え（記事作成 / カテゴリ管理）
+
+## 2026-04-23 カテゴリ管理 & UI改善 & CRUD改良
+- カテゴリ作成・削除機能（Admin タブ追加）
+- 削除確認モーダル（ConfirmModal 統合）
+- ルート/子カテゴリの視覚的区別（アイコン + インデント）
+- サイドバー カテゴリツリー表示（API連携 + buildTree）
+- Wikiページの更新機能追加（Server Action）
+
+## 2026-04-22 Markdown対応 & エディタ強化
+- Markdown → HTML レンダリング（react-markdown）
+- Mermaid図表対応（フローチャート・ER図）
+- シンタックスハイライト（rehype-highlight）
+- プレビュー拡大モーダル
+- Markdownリファレンスパネル
+
+## 2026-04-21 Wikiページ改善
+- サイドバー追加（カテゴリ一覧）
+- 記事検索バー
+- 戻るボタン（記事詳細ページ）

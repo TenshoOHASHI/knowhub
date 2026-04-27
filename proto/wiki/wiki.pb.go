@@ -7,13 +7,14 @@
 package wiki
 
 import (
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
 )
 
 const (
@@ -135,6 +136,7 @@ type Article struct {
 	CategoryId    string                 `protobuf:"bytes,4,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"` // 追加
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Visibility    string                 `protobuf:"bytes,7,opt,name=visibility,proto3" json:"visibility,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,12 +213,20 @@ func (x *Article) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Article) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
 // 記事を取得
 type CreateArticleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -268,6 +278,13 @@ func (x *CreateArticleRequest) GetContent() string {
 func (x *CreateArticleRequest) GetCategoryId() string {
 	if x != nil {
 		return x.CategoryId
+	}
+	return ""
+}
+
+func (x *CreateArticleRequest) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
 	}
 	return ""
 }
@@ -495,6 +512,7 @@ type UpdateArticleRequest struct {
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	Content       *string                `protobuf:"bytes,3,opt,name=content,proto3,oneof" json:"content,omitempty"`
+	Visibility    *string                `protobuf:"bytes,4,opt,name=visibility,proto3,oneof" json:"visibility,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -546,6 +564,13 @@ func (x *UpdateArticleRequest) GetTitle() string {
 func (x *UpdateArticleRequest) GetContent() string {
 	if x != nil && x.Content != nil {
 		return *x.Content
+	}
+	return ""
+}
+
+func (x *UpdateArticleRequest) GetVisibility() string {
+	if x != nil && x.Visibility != nil {
+		return *x.Visibility
 	}
 	return ""
 }
@@ -963,7 +988,7 @@ var File_proto_wiki_wiki_proto protoreflect.FileDescriptor
 
 const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe0\x01\n" +
+	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x80\x02\n" +
 	"\aArticle\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -973,12 +998,18 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"g\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\a \x01(\tR\n" +
+	"visibility\"\x87\x01\n" +
 	"\x14CreateArticleRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x1f\n" +
 	"\vcategory_id\x18\x03 \x01(\tR\n" +
-	"categoryId\"@\n" +
+	"categoryId\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\x04 \x01(\tR\n" +
+	"visibility\"@\n" +
 	"\x15CreateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"#\n" +
 	"\x11GetArticleRequest\x12\x0e\n" +
@@ -987,14 +1018,18 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\aArticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aArticle\"\x14\n" +
 	"\x12ListArticleRequest\">\n" +
 	"\x13ListArticleResponse\x12'\n" +
-	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"v\n" +
+	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"\xaa\x01\n" +
 	"\x14UpdateArticleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x1d\n" +
-	"\acontent\x18\x03 \x01(\tH\x01R\acontent\x88\x01\x01B\b\n" +
+	"\acontent\x18\x03 \x01(\tH\x01R\acontent\x88\x01\x01\x12#\n" +
+	"\n" +
+	"visibility\x18\x04 \x01(\tH\x02R\n" +
+	"visibility\x88\x01\x01B\b\n" +
 	"\x06_titleB\n" +
 	"\n" +
-	"\b_content\"@\n" +
+	"\b_contentB\r\n" +
+	"\v_visibility\"@\n" +
 	"\x15UpdateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"&\n" +
 	"\x14DeleteArticleRequest\x12\x0e\n" +

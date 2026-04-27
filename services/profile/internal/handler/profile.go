@@ -38,7 +38,7 @@ func (h *ProfileHandler) CreateProfile(ctx context.Context, req *pb.CreateProfil
 		return nil, status.Error(codes.Internal, "failed to check profile")
 	}
 
-	profile, err := model.NewProfile(req.Title, req.Bio, req.GithubUrl)
+	profile, err := model.NewProfile(req.Title, req.Bio, req.GithubUrl, req.AvatarUrl, req.TwitterUrl, req.LinkedinUrl, req.WantedlyUrl, req.Skills, req.Languages)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -90,7 +90,7 @@ func (h *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 		return nil, status.Error(codes.Internal, "failed to find profile")
 	}
 
-	profile.Update(req.Title, req.Bio, req.GithubUrl)
+	profile.Update(req.Title, req.Bio, req.GithubUrl, req.AvatarUrl, req.TwitterUrl, req.LinkedinUrl, req.WantedlyUrl, req.Skills, req.Languages)
 	err = h.profileRepo.Save(ctx, profile)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to update profile")
@@ -103,7 +103,7 @@ func (h *ProfileHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfil
 
 func (h *ProfileHandler) CreatePortfolioItem(ctx context.Context, req *pb.CreatePortfolioItemRequest) (*pb.CreatePortfolioItemResponse, error) {
 
-	item, err := model.NewPortfolioItem(req.Title, req.Description, req.Url, model.PortfolioStatus(req.Status))
+	item, err := model.NewPortfolioItem(req.Title, req.Description, req.Url, model.PortfolioStatus(req.Status), req.Category, req.TechStack)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -156,7 +156,17 @@ func (h *ProfileHandler) UpdatePortfolioItem(ctx context.Context, req *pb.Update
 		portfolioStatus = model.PortfolioStatus(*req.Status)
 	}
 
-	item.Update(title, description, url, portfolioStatus)
+	var category string
+	if req.Category != nil {
+		category = *req.Category
+	}
+
+	var techStack string
+	if req.TechStack != nil {
+		techStack = *req.TechStack
+	}
+
+	item.Update(title, description, url, portfolioStatus, category, techStack)
 	err = h.portfolioItemRepo.Save(ctx, item)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to update portfolio item")
@@ -177,12 +187,18 @@ func (h *ProfileHandler) DeletePortfolioItem(ctx context.Context, req *pb.Delete
 
 func toProfile(p *model.Profile) *pb.Profile {
 	return &pb.Profile{
-		Id:        p.ID,
-		Title:     p.Title,
-		Bio:       p.Bio,
-		GithubUrl: p.GithubURL,
-		CreatedAt: timestamppb.New(p.CreatedAt),
-		UpdatedAt: timestamppb.New(p.UpdatedAt),
+		Id:          p.ID,
+		Title:       p.Title,
+		Bio:         p.Bio,
+		GithubUrl:   p.GithubURL,
+		AvatarUrl:   p.AvatarURL,
+		TwitterUrl:  p.TwitterURL,
+		LinkedinUrl: p.LinkedinURL,
+		WantedlyUrl: p.WantedlyURL,
+		Skills:      p.Skills,
+		Languages:   p.Languages,
+		CreatedAt:   timestamppb.New(p.CreatedAt),
+		UpdatedAt:   timestamppb.New(p.UpdatedAt),
 	}
 }
 
@@ -193,6 +209,8 @@ func toPortfolioItem(item *model.PortfolioItem) *pb.PortfolioItem {
 		Description: item.Description,
 		Url:         item.URL,
 		Status:      string(item.Status),
+		Category:    item.Category,
+		TechStack:   item.TechStack,
 		CreatedAt:   timestamppb.New(item.CreatedAt),
 	}
 }

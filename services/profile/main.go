@@ -3,20 +3,27 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
+	"os"
 
-	pb "github.com/TenshoOHASHI/knowhub/proto/profile" // 生成されたprotoコード
+	loggerpkg "github.com/TenshoOHASHI/knowhub/pkg/logger"
+	"github.com/TenshoOHASHI/knowhub/pkg/server"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/dbutil"
+
+	pb "github.com/TenshoOHASHI/knowhub/proto/profile"
 	"github.com/TenshoOHASHI/knowhub/services/profile/internal/config"
 	"github.com/TenshoOHASHI/knowhub/services/profile/internal/handler"
 	"github.com/TenshoOHASHI/knowhub/services/profile/internal/repository"
+
 	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
+	// Config
 	cfg := config.Load("../../.env")
 	dns := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
 		cfg.DBUser,
@@ -26,33 +33,50 @@ func main() {
 		cfg.DBName,
 	)
 
-	// mysqlに接続
+	// Logger
+	logger := loggerpkg.New("Profile", cfg.LogLevel)
+	slog.SetDefault(logger)
+
+	// MySQL
 	db, err := sql.Open("mysql", dns)
-
 	if err != nil {
-		// 終了
-		panic(err)
+		slog.Error("failed to connect DB", "error", err)
+		os.Exit(1)
 	}
+	if err := db.Ping(); err != nil {
+		slog.Error("DB ping failed", "error", err)
+		os.Exit(1)
+	}
+	slog.Info("DB connected")
 
-	defer db.Close()
+	// DB をログ付きラッパーで包む
+	loggedDB := dbutil.Wrap(db)
 
-	profileRepo := repository.NewMysqlProfileRepository(db)
-	portfolioRepo := repository.NewMysqlPortfolioItemRepository(db)
+	// Repository & Handler
+	profileRepo := repository.NewMysqlProfileRepository(loggedDB)
+	portfolioRepo := repository.NewMysqlPortfolioItemRepository(loggedDB)
 	profileHandler := handler.NewProfileHandler(profileRepo, portfolioRepo)
 
-	// grpcサーバを起動
+	// gRPC server
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		slog.Error("failed to listen", "error", err)
+		os.Exit(1)
 	}
 
 	s := grpc.NewServer()
 	pb.RegisterProfileServiceServer(s, profileHandler)
 	reflection.Register(s)
 
-	log.Printf("Profile Service started on :%s", cfg.GRPCPort)
-	// サーバ開始（ブロックする）
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	// goroutine でサーバー起動
+	go func() {
+		slog.Info("Profile Service started", "port", cfg.GRPCPort)
+		if err := s.Serve(lis); err != nil {
+			slog.Error("failed to serve", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Graceful Shutdown
+	server.WaitForShutdown(s, db)
 }

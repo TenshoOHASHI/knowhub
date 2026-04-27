@@ -19,11 +19,13 @@ type PortfolioItem struct {
 	Title       string
 	Description string
 	URL         string
-	Status      PortfolioStatus // StatusDeveloping か StatusCompletedしか型が合わない
+	Status      PortfolioStatus
+	Category    string
+	TechStack   string
 	CreatedAt   time.Time
 }
 
-func NewPortfolioItem(title, description, url string, status PortfolioStatus) (*PortfolioItem, error) {
+func NewPortfolioItem(title, description, url string, status PortfolioStatus, category, techStack string) (*PortfolioItem, error) {
 	if title == "" || description == "" {
 		return nil, fmt.Errorf("title and description are required")
 	}
@@ -31,17 +33,22 @@ func NewPortfolioItem(title, description, url string, status PortfolioStatus) (*
 	if status != StatusDeveloping && status != StatusCompleted {
 		return nil, fmt.Errorf("status must be developing or completed")
 	}
+	if category == "" {
+		category = "project"
+	}
 	return &PortfolioItem{
 		ID:          uuid.New().String(),
 		Title:       title,
 		Description: description,
 		URL:         url,
 		Status:      status,
+		Category:    category,
+		TechStack:   techStack,
 		CreatedAt:   time.Now(),
 	}, nil
 }
 
-func (i *PortfolioItem) Update(title, description, url string, status PortfolioStatus) {
+func (i *PortfolioItem) Update(title, description, url string, status PortfolioStatus, category, techStack string) {
 	if title != "" {
 		i.Title = title
 	}
@@ -54,4 +61,8 @@ func (i *PortfolioItem) Update(title, description, url string, status PortfolioS
 	if status == StatusDeveloping || status == StatusCompleted {
 		i.Status = status
 	}
+	if category != "" {
+		i.Category = category
+	}
+	i.TechStack = techStack
 }

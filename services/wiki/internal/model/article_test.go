@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewArticle_Success(t *testing.T) {
-	article, err := model.NewArticle("Go入門", "gRPCとは...")
+	article, err := model.NewArticle("Go入門", "gRPCとは...", "123", "public")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestNewArticle_Success(t *testing.T) {
 }
 
 func TestNewArticle_Empty(t *testing.T) {
-	_, err := model.NewArticle("", "content")
+	_, err := model.NewArticle("", "content", "123", "public")
 
 	//　nilの場合
 	if err == nil {
@@ -51,7 +51,7 @@ func TestNewArticle_Empty(t *testing.T) {
 }
 
 func TestNewArticle_EmptyContent(t *testing.T) {
-	_, err := model.NewArticle("title", "")
+	_, err := model.NewArticle("title", "", "123", "public")
 
 	//　nilの場合
 	if err == nil {
@@ -65,13 +65,41 @@ func TestNewArticle_EmptyContent(t *testing.T) {
 
 }
 
+func TestNewArticle_DefaultVisibility(t *testing.T) {
+	article, err := model.NewArticle("title", "content", "123", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if article.Visibility != "public" {
+		t.Errorf("expected visibility public, got %s", article.Visibility)
+	}
+
+	article2, err := model.NewArticle("title", "content", "123", "invalid")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if article2.Visibility != "public" {
+		t.Errorf("expected visibility public for invalid value, got %s", article2.Visibility)
+	}
+}
+
+func TestNewArticle_LockedVisibility(t *testing.T) {
+	article, err := model.NewArticle("title", "content", "123", "locked")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if article.Visibility != "locked" {
+		t.Errorf("expected visibility locked, got %s", article.Visibility)
+	}
+}
+
 func TestUpdate(t *testing.T) {
 	// Title, Content, UpdatedAt
-	article, _ := model.NewArticle("Go入門", "content")
+	article, _ := model.NewArticle("Go入門", "content", "123", "public")
 	originalContent := article.Content
 	createAt := article.CreatedAt
 
-	article.Update("Go中級", "")
+	article.Update("Go中級", "", "")
 
 	if article.Title != "Go中級" {
 		t.Errorf("expected title Go中級, got %v", article.Title)
@@ -88,5 +116,21 @@ func TestUpdate(t *testing.T) {
 	// 作成時刻と違っていれば、更新時刻が更新されている
 	if article.UpdatedAt.Equal(createAt) {
 		t.Error("UpdatedAt should not change")
+	}
+}
+
+func TestUpdate_Visibility(t *testing.T) {
+	article, _ := model.NewArticle("Go入門", "content", "123", "public")
+
+	article.Update("", "", "locked")
+
+	if article.Visibility != "locked" {
+		t.Errorf("expected visibility locked, got %s", article.Visibility)
+	}
+
+	// 空文字なら変更されない
+	article.Update("", "", "")
+	if article.Visibility != "locked" {
+		t.Errorf("expected visibility locked (unchanged), got %s", article.Visibility)
 	}
 }

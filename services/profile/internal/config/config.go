@@ -13,6 +13,7 @@ type Config struct {
 	DBPort     string
 	DBName     string
 	GRPCPort   string
+	LogLevel   string
 }
 
 func Load(path string) *Config {
@@ -24,6 +25,7 @@ func Load(path string) *Config {
 		DBPort:     getEnv("MYSQL_PORT", "3306"),
 		DBName:     os.Getenv("MYSQL_DATABASE"),
 		GRPCPort:   getEnv("GRPC_PORT_PROFILE", "50050"),
+		LogLevel:   os.Getenv("LOG_LEVEL"),
 	}
 }
 

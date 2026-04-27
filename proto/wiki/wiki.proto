@@ -16,6 +16,7 @@ message Article {
   string category_id = 4;          // 追加
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;
+  string visibility = 7;
 
 }
 
@@ -25,6 +26,7 @@ message CreateArticleRequest {
   string title = 1;
   string content = 2;
   string category_id = 3;
+  string visibility = 4;
 }
 
 // 記事を返す
@@ -57,6 +59,7 @@ message UpdateArticleRequest {
   string id = 1;
   optional string title = 2;
   optional string content = 3;
+  optional string visibility = 4;
   }
 
 

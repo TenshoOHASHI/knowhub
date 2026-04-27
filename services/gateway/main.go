@@ -1,43 +1,59 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
+	loggerpkg "github.com/TenshoOHASHI/knowhub/pkg/logger"
+
+	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
+
+	"github.com/TenshoOHASHI/knowhub/services/gateway/config"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/handler"
+	"github.com/TenshoOHASHI/knowhub/services/gateway/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	_ "github.com/TenshoOHASHI/knowhub/services/gateway/docs" // 自動生成先
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title TenHub API Gateway
+// @version 1.0
+// @description TenHub テクニカルナレッジベースプラットフォームのAPI
+// @host localhost:8080
+// @BasePath /
+// @schemas http
 func main() {
-	authConn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to connect to wiki service %v", err)
-	}
+	// config
+	cfg := config.Load("../../.env")
+	// Logger
+	logger := loggerpkg.New("Gateway", cfg.LogLevel)
+	slog.SetDefault(logger)
+
+	// gRPC connections
+	authConn := dialService("auth", cfg.AuthAddr)
+	wikiConn := dialService("wiki", cfg.WikiAddr)
+	profileConn := dialService("profile", cfg.ProfileAddr)
+
+	// close connection
 	defer authConn.Close()
-
-	// クライアント側の接続を用意(TCPはfalseにする＝デジタル証明書)
-	wikiConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to connect to wiki service %v", err)
-	}
 	defer wikiConn.Close()
-
-	profileConn, err := grpc.NewClient("localhost:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("failed to connect to wiki service %v", err)
-	}
 	defer profileConn.Close()
 
-	// gRPCのハンドラーを作成
+	// Handlers
 	wikiHandler := handler.NewWikiHandler(wikiConn)
 	authHandler := handler.NewAuthHandler(authConn)
 	profileHandler := handler.NewProfileHandle(profileConn)
+	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
 
-	// ルーティング
+	// Routes
 	mux := http.NewServeMux()
 
-	//　wiki
+	// wiki
 	mux.HandleFunc("GET /api/articles", wikiHandler.ListArticles)
 	mux.HandleFunc("GET /api/articles/{id}", wikiHandler.GetArticle)
 	mux.HandleFunc("POST /api/articles", wikiHandler.CreateArticle)
@@ -52,39 +68,69 @@ func main() {
 	// auth
 	mux.HandleFunc("POST /api/user/register", authHandler.Register)
 	mux.HandleFunc("POST /api/user/login", authHandler.Login)
+	mux.HandleFunc("GET /api/user/me", authHandler.Me)
 
 	// profile
 	mux.HandleFunc("GET /api/profile", profileHandler.GetProfile)
 	mux.HandleFunc("POST /api/profile", profileHandler.CreateProfile)
 	mux.HandleFunc("PUT /api/profile", profileHandler.UpdateProfile)
 
-	// item
+	// portfolio
 	mux.HandleFunc("GET /api/portfolio", profileHandler.ListPortfolioItem)
 	mux.HandleFunc("GET /api/portfolio/{id}", profileHandler.GetPortfolioItem)
 	mux.HandleFunc("POST /api/portfolio", profileHandler.CreatePortfolioItem)
 	mux.HandleFunc("PUT /api/portfolio/{id}", profileHandler.UpdatePortfolioItem)
 	mux.HandleFunc("DELETE /api/portfolio/{id}", profileHandler.DeletePortfolioItem)
 
-	log.Println("API Gateway started on: 8080")
-	log.Fatal(http.ListenAndServe(":8080", corsMiddleware(mux))) // ルーティングを登録
+	// upload
+	mux.HandleFunc("POST /api/upload", uploadHandler.Upload)
+
+	// static file serving for uploads (development)
+	// ルートディレクトの指定、静的ファイルサーバ、リクエストされたパスのファイルを読み込んでレスポンスとして返す、また、プレフィックスを削除
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
+
+	// Swagger(*スラッシュ付き)
+	mux.Handle("/swagger/", httpSwagger.Handler(
+		httpSwagger.URL("doc.json"),
+	))
+
+	// CORS -> Auth -> Routing
+	// Ensure upload directory exists
+	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
+		slog.Error("failed to create upload directory", "error", err)
+		os.Exit(1)
+	}
+
+	authMW := middleware.NewAuthMiddleware(pb.NewAuthServiceClient(authConn))
+	handler := middleware.NewCoreMiddleware(cfg.AllowedOrigin, cfg.AllowedMethods, cfg.AllowedHeaders, cfg.AllowedCredential).CorsMiddleware(authMW.RequireAuth(mux))
+
+	// goroutine でサーバー起動
+	go func() {
+		slog.Info("API Gateway started", "port", cfg.Port)
+		if err := http.ListenAndServe(":"+cfg.Port, handler); err != nil {
+			slog.Error("failed to serve", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Graceful Shutdown（Gateway は DB なし）
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+	slog.Info("shutting down", "signal", sig)
+	slog.Info("server stopped gracefully")
 }
 
-// middleware
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 許可するオリジン
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-		// 許可するメソッド
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		// 許可するヘッダー
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+func dialService(serviceName, addr string) *grpc.ClientConn {
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		slog.Error("failed to connect to service", "service", serviceName, "error", err)
+		os.Exit(1)
+	}
 
-		// プリフライトリクエスト（OPTIONS）は即レスポンス
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	conn.Connect()
+	state := conn.GetState()
+	slog.Info("connected to service", "service", serviceName, "addr", addr, "state", state)
 
-		next.ServeHTTP(w, r)
-	})
+	return conn
 }

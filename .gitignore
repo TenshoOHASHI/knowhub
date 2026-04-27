@@ -1,6 +1,8 @@
 .env
 data/
+logs/
 services/auth/keys
 WORKFLOW.md
 Makefile
 doc/
+uploads/

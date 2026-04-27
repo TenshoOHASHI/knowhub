@@ -1,142 +1,139 @@
 'use client';
 
 import { useSidebar } from '@/context/SidebarContext';
+import { getCategories } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FiFolder } from 'react-icons/fi';
+import { GoBook } from 'react-icons/go';
+import type { Category } from '@/lib/types';
 
-const CATEGORIES = [
-  { name: 'Go', count: 0 },
-  { name: 'gRPC', count: 1 },
-  { name: 'Database', count: 2 },
-  { name: 'DevOps', count: 3 },
-  { name: 'Docker', count: 4 },
-  { name: 'TypeScript', count: 0 },
-  { name: 'React', count: 1 },
-  { name: 'Next.js', count: 2 },
-  { name: 'Authentication', count: 3 },
-  { name: 'Testing', count: 4 },
-  { name: 'Architecture', count: 0 },
-  { name: 'CI/CD', count: 1 },
-  { name: 'Security', count: 2 },
-  { name: 'Networking', count: 3 },
-  { name: 'OS', count: 4 },
-  { name: 'Algorithms', count: 0 },
-  { name: 'Design Patterns', count: 1 },
-  { name: 'Git', count: 2 },
-  { name: 'Linux', count: 3 },
-  { name: 'Kubernetes', count: 4 },
-  { name: 'AWS', count: 0 },
-  { name: 'GCP', count: 1 },
-  { name: 'Azure', count: 2 },
-  { name: 'Terraform', count: 3 },
-  { name: 'Ansible', count: 4 },
-  { name: 'GraphQL', count: 0 },
-  { name: 'REST API', count: 1 },
-  { name: 'WebSocket', count: 2 },
-  { name: 'Microservices', count: 3 },
-  { name: 'Monolith', count: 4 },
-  { name: 'Event Driven', count: 0 },
-  { name: 'Domain Driven Design', count: 1 },
-  { name: 'Clean Architecture', count: 2 },
-  { name: 'Hexagonal', count: 3 },
-  { name: 'CQRS', count: 4 },
-  { name: 'Event Sourcing', count: 0 },
-  { name: 'Redis', count: 1 },
-  { name: 'Message Queue', count: 2 },
-  { name: 'Kafka', count: 3 },
-  { name: 'RabbitMQ', count: 4 },
-  { name: 'PostgreSQL', count: 0 },
-  { name: 'MongoDB', count: 1 },
-  { name: 'SQLite', count: 2 },
-  { name: 'Elasticsearch', count: 3 },
-  { name: 'Nginx', count: 4 },
-  { name: 'Apache', count: 0 },
-  { name: 'Caddy', count: 1 },
-  { name: 'Prometheus', count: 2 },
-  { name: 'Grafana', count: 3 },
-  { name: 'Logging', count: 4 },
-  { name: 'Tracing', count: 0 },
-  { name: 'Observability', count: 1 },
-  { name: 'SRE', count: 2 },
-  { name: 'DevSecOps', count: 3 },
-  { name: 'Agile', count: 4 },
-  { name: 'Scrum', count: 0 },
-  { name: 'Kanban', count: 1 },
-  { name: 'Code Review', count: 2 },
-  { name: 'Pair Programming', count: 3 },
-  { name: 'TDD', count: 4 },
-  { name: 'BDD', count: 0 },
-  { name: 'DDD', count: 1 },
-  { name: 'SOLID', count: 2 },
-  { name: 'DRY', count: 3 },
-  { name: 'KISS', count: 4 },
-  { name: 'YAGNI', count: 0 },
-  { name: 'Design Principles', count: 1 },
-  { name: 'Refactoring', count: 2 },
-  { name: 'Performance', count: 3 },
-  { name: 'Scalability', count: 4 },
-  { name: 'Reliability', count: 0 },
-  { name: 'Monitoring', count: 1 },
-  { name: 'Alerting', count: 2 },
-  { name: 'Incident Response', count: 3 },
-  { name: 'Post Mortem', count: 4 },
-  { name: 'On Call', count: 0 },
-  { name: 'Runbooks', count: 1 },
-  { name: 'Documentation', count: 2 },
-  { name: 'API Design', count: 3 },
-  { name: 'Versioning', count: 4 },
-  { name: 'Dependency Management', count: 0 },
-  { name: 'Build Tools', count: 1 },
-  { name: 'Webpack', count: 2 },
-  { name: 'Vite', count: 3 },
-  { name: 'ESBuild', count: 4 },
-  { name: 'Turbopack', count: 0 },
-  { name: 'Bun', count: 1 },
-  { name: 'Deno', count: 2 },
-  { name: 'Rust', count: 3 },
-  { name: 'Python', count: 4 },
-  { name: 'Java', count: 0 },
-  { name: 'CSharp', count: 1 },
-  { name: 'Swift', count: 2 },
-  { name: 'Kotlin', count: 3 },
-  { name: 'Flutter', count: 4 },
-  { name: 'iOS', count: 0 },
-  { name: 'Android', count: 1 },
-  { name: 'Mobile', count: 2 },
-  { name: 'PWA', count: 3 },
-  { name: 'Accessibility', count: 4 },
-  { name: 'I18n', count: 0 },
-  { name: 'SEO', count: 1 },
-  { name: 'Web Performance', count: 2 },
-  { name: 'Core Web Vitals', count: 3 },
-  { name: 'Browser', count: 4 },
-  { name: 'HTTP', count: 0 },
-  { name: 'TCPIP', count: 1 },
-  { name: 'DNS', count: 2 },
-] as const;
+interface CategoryNode extends Category {
+  children: CategoryNode[];
+}
+
+// ツリー構造の閉鎖管理
+function CategoryTree({ nodes }: { nodes: CategoryNode[] }) {
+  return (
+    <ul className='space-y-1'>
+      {nodes.map((node) => (
+        // ノードを取り出す
+        <CategoryItem key={node.id} node={node} />
+      ))}
+    </ul>
+  );
+}
+
+// 再帰的に繰り返す
+function CategoryItem({ node }: { node: CategoryNode }) {
+  const [open, setOpen] = useState(false);
+  const hasChildren = node.children.length > 0;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('category');
+
+  const handleClick = () => {
+    if (hasChildren) setOpen(!open);
+    // カテゴリで絞り込み（URLパラメータを変更）
+    router.push(`/wiki?category=${node.id}`);
+  };
+
+  const isSelected = selectedId === node.id;
+
+  return (
+    <li>
+      {/* 子ノードが存在するなら、開く、また閉じる */}
+      <button
+        //  子ノードをクリックし、URLパラメータを変更し、カテゴリidを取得
+        onClick={handleClick}
+        className={`flex items-center gap-2 w-full text-left text-sm
+            py-1 px-2 rounded
+            hover:bg-gray-100 dark:hover:bg-stone-800
+            ${
+              isSelected
+                ? 'font-bold text-black dark:text-stone-100 bg-gray-100 dark:bg-stone-800'
+                : 'text-gray-600 dark:text-stone-400 hover:text-black dark:hover:text-stone-100'
+            }`}
+      >
+        {/* 子ノードが存在し、且つ開いていれば、 */}
+        {hasChildren && (open ? '▾' : '▸')}
+        <FiFolder className='shrink-0' />
+        <span>{node.name}</span>
+      </button>
+      {open && hasChildren && (
+        <ul className='ml-4 mt-1 space-y-1'>
+          {node.children.map((child) => (
+            <CategoryItem key={child.id} node={child} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+// 配列をマップにIDとして変換
+function buildTree(categories: Category[]): CategoryNode[] {
+  if (!categories || !Array.isArray(categories)) return [];
+  // id → CategoryNode のマップを作る
+  const map = new Map<string, CategoryNode>();
+  categories.forEach((c) => map.set(c.id, { ...c, children: [] }));
+
+  // ツリー構築
+  const roots: CategoryNode[] = [];
+  categories.forEach((c) => {
+    const node = map.get(c.id)!;
+    if (!c.parent_id) {
+      roots.push(node); // ルートカテゴリ
+    } else {
+      const parent = map.get(c.parent_id);
+      parent?.children.push(node); // 親の子として追加
+    }
+  });
+
+  return roots;
+}
 
 export default function Sidebar() {
   const { isOpen } = useSidebar();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedId = searchParams.get('category');
+
+  useEffect(() => {
+    getCategories()
+      .then((data) => setCategories(data.categories || []))
+      .catch(console.error);
+  }, []);
 
   if (!isOpen) return null;
+
+  const tree = buildTree(categories);
 
   return (
     <aside className='w-48 border-r border-black dark:border-stone-600 shrink-0 overflow-y-auto h-full thin-scrollbar'>
       <h2 className='font-semibold mb-3 text-md sticky top-0 bg-white dark:bg-stone-900/90 py-4 px-4 z-10'>
         カテゴリ
       </h2>
-      <ul className='space-y-2 px-4 pb-4'>
-        {CATEGORIES.map((cat) => (
-          <li key={cat.name}>
-            <button className='flex items-center gap-2 w-full text-left text-sm text-gray-600 dark:text-stone-400 hover:text-black dark:hover:text-stone-100'>
-              <FiFolder className='shrink-0' />
-              <span>{cat.name}</span>
-              <span className='text-xs text-gray-400 dark:text-stone-500'>
-                ({cat.count})
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div className='px-4 pb-2'>
+        <button
+          onClick={() => router.push('/wiki')}
+          className={`text-sm px-2 py-1 rounded w-full text-left
+            ${
+              !selectedId
+                ? 'font-bold text-black dark:text-stone-100 bg-gray-100 dark:bg-stone-800'
+                : 'text-gray-500 hover:text-black dark:hover:text-stone-100'
+            }`}
+        >
+          <GoBook className='inline' /> <span className='ml-1'>すべて</span>
+        </button>
+      </div>
+      {categories.length == 0 && (
+        <p className='text-sm text-center'>データが存在しません。</p>
+      )}
+      <div className='px-4 pb-4'>
+        <CategoryTree nodes={tree} />
+      </div>
     </aside>
   );
 }

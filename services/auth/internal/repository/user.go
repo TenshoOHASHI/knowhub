@@ -4,22 +4,21 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/dbutil"
 	"github.com/TenshoOHASHI/knowhub/services/auth/internal/model"
 )
 
 type UserRepository interface {
 	Create(ctx context.Context, user *model.User) error
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByID(ctx context.Context, id string) (*model.User, error)
 }
 
 type mysqlRepository struct {
-	db *sql.DB
+	db dbutil.DB
 }
 
-// UserRepositoryの構造体はUserRepositoryのインターフェースの実装を満たさないといけない
-// dbの依存が逆転する
-// db -> interface -> model
-func NewMysqlRepository(db *sql.DB) UserRepository {
+func NewMysqlRepository(db dbutil.DB) UserRepository {
 	return &mysqlRepository{
 		db: db,
 	}
@@ -49,6 +48,19 @@ func (r *mysqlRepository) FindByEmail(ctx context.Context, email string) (*model
 	// ポインターに直接値を書き込む
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
 	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *mysqlRepository) FindByID(ctx context.Context, id string) (*model.User, error) {
+	var user model.User
+	query := `SELECT id, username, email, password_hash, created_at FROM users WHERE id=? `
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &user.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, sql.ErrNoRows
+		}
 		return nil, err
 	}
 	return &user, nil

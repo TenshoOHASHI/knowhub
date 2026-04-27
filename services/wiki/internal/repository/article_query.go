@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/dbutil"
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/model"
 	"github.com/redis/go-redis/v9"
 )
@@ -21,10 +22,10 @@ type ArticleQueryRepository interface {
 
 type mysqlQueryRepository struct {
 	rdb *redis.Client
-	db  *sql.DB // フォールバック用（キャッシュミス時にMysqlから読む）
+	db  dbutil.DB // フォールバック用（キャッシュミス時にMysqlから読む）
 }
 
-func NewMysqlQueryRepository(rdb *redis.Client, db *sql.DB) ArticleQueryRepository {
+func NewMysqlQueryRepository(rdb *redis.Client, db dbutil.DB) ArticleQueryRepository {
 	return &mysqlQueryRepository{
 		rdb: rdb,
 		db:  db}
@@ -42,7 +43,7 @@ func (r *mysqlQueryRepository) FindById(ctx context.Context, id string) (*model.
 	}
 
 	// キャッシュミス
-	query := `SELECT id, title, content, category_id, created_at, updated_at FROM articles WHERE id=?`
+	query := `SELECT id, title, content, category_id, visibility, created_at, updated_at FROM articles WHERE id=?`
 
 	// 1件取得
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -50,7 +51,7 @@ func (r *mysqlQueryRepository) FindById(ctx context.Context, id string) (*model.
 	// 型を定義
 	var article model.Article
 	// DBデータを構造体にマッピング
-	err = row.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.CreatedAt, &article.UpdatedAt)
+	err = row.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.CreatedAt, &article.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -78,7 +79,7 @@ func (r *mysqlQueryRepository) FindAll(ctx context.Context) ([]*model.Article, e
 	}
 
 	// キャッシュミス
-	query := `SELECT id, title, content, category_id, created_at, updated_at FROM articles ORDER BY created_at DESC`
+	query := `SELECT id, title, content, category_id, visibility, created_at, updated_at FROM articles ORDER BY created_at DESC`
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -89,7 +90,7 @@ func (r *mysqlQueryRepository) FindAll(ctx context.Context) ([]*model.Article, e
 	var articles []*model.Article
 	for rows.Next() {
 		var article model.Article
-		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.CreatedAt, &article.UpdatedAt)
+		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.CreatedAt, &article.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

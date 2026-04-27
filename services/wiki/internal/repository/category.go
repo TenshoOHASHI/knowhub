@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/dbutil"
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/model"
 )
 
@@ -14,10 +14,10 @@ type CategoryRepository interface {
 }
 
 type mysqlCategoryRepository struct {
-	db *sql.DB
+	db dbutil.DB
 }
 
-func NewMysqlCategoryRepository(db *sql.DB) CategoryRepository {
+func NewMysqlCategoryRepository(db dbutil.DB) CategoryRepository {
 	return &mysqlCategoryRepository{db: db}
 }
 

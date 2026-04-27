@@ -4,7 +4,10 @@ go 1.25.4
 
 replace github.com/TenshoOHASHI/knowhub/proto/profile => ../../proto/profile
 
+replace github.com/TenshoOHASHI/knowhub/pkg => ../pkg
+
 require (
+	github.com/TenshoOHASHI/knowhub/pkg v0.0.0-00010101000000-000000000000
 	github.com/TenshoOHASHI/knowhub/proto/profile v0.0.0-00010101000000-000000000000
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
@@ -19,4 +22,5 @@ require (
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )

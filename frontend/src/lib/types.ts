@@ -9,6 +9,9 @@ export interface PortfolioItem {
   description: string;
   url: string;
   status: PortfolioStatus;
+  category: string;
+  tech_stack: string; // JSON string
+  created_at: { seconds: number };
   updated_at: { seconds: number };
 }
 
@@ -17,6 +20,7 @@ export interface Article {
   title: string;
   content: string;
   category_id: string;
+  visibility: string;
   created_at: { seconds: number };
   updated_at: { seconds: number };
 }
@@ -26,6 +30,12 @@ export interface Profile {
   title: string;
   bio: string;
   github_url: string;
+  avatar_url: string;
+  twitter_url: string;
+  linkedin_url: string;
+  wantedly_url: string;
+  skills: string; // JSON string
+  languages: string; // JSON string: [{name, level}]
   created_at: { seconds: number };
   updated_at: { seconds: number };
 }

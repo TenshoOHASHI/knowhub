@@ -15,6 +15,7 @@ type Config struct {
 	GRPCPort   string
 	RedisHost  string
 	RedisPort  string
+	LogLevel   string
 }
 
 func Load(path string) *Config {
@@ -28,6 +29,7 @@ func Load(path string) *Config {
 		GRPCPort:   getEnv("GRPC_PORT", "50052"),
 		RedisHost:  getEnv("REDIS_HOST", "localhost"),
 		RedisPort:  getEnv("REDIS_PORT", "6379"),
+		LogLevel:   os.Getenv("LOG_LEVEL"),
 	}
 }
 

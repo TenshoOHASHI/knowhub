@@ -1,0 +1,615 @@
+basePath: /
+definitions:
+  swagger.CreateArticleRequest:
+    properties:
+      category_id:
+        example: "1"
+        type: string
+      content:
+        example: |-
+          # Hello World
+          本文です
+        type: string
+      title:
+        example: Go入門ガイド
+        type: string
+    type: object
+  swagger.CreateCategoryRequest:
+    properties:
+      name:
+        example: Go
+        type: string
+      parent_id:
+        example: ""
+        type: string
+    type: object
+  swagger.CreatePortfolioItemRequest:
+    properties:
+      category:
+        example: Web Application
+        type: string
+      description:
+        example: 技術ナレッジベースプラットフォーム
+        type: string
+      status:
+        example: developing
+        type: string
+      tech_stack:
+        example: Go,Next.js,MySQL
+        type: string
+      title:
+        example: TenHub
+        type: string
+      url:
+        example: https://github.com/user/project
+        type: string
+    type: object
+  swagger.CreateProfileRequest:
+    properties:
+      avatar_url:
+        example: https://example.com/avatar.png
+        type: string
+      bio:
+        example: Go が好きです
+        type: string
+      github_url:
+        example: https://github.com/user
+        type: string
+      languages:
+        example: Japanese,English
+        type: string
+      linkedin_url:
+        example: https://linkedin.com/in/user
+        type: string
+      skills:
+        example: Go,TypeScript,MySQL
+        type: string
+      title:
+        example: Backend Engineer
+        type: string
+      twitter_url:
+        example: https://twitter.com/user
+        type: string
+      wantedly_url:
+        example: https://www.wantedly.com/id/user
+        type: string
+    type: object
+  swagger.LoginRequest:
+    properties:
+      email:
+        example: test@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  swagger.RegisterRequest:
+    properties:
+      email:
+        example: test@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+      username:
+        example: testuser
+        type: string
+    type: object
+  swagger.UpdateArticleRequest:
+    properties:
+      content:
+        example: 更新内容
+        type: string
+      title:
+        example: 更新タイトル
+        type: string
+    type: object
+  swagger.UpdatePortfolioItemRequest:
+    properties:
+      category:
+        example: CLI Tool
+        type: string
+      description:
+        example: 更新説明
+        type: string
+      status:
+        example: completed
+        type: string
+      tech_stack:
+        example: Go,Docker
+        type: string
+      title:
+        example: 更新タイトル
+        type: string
+      url:
+        example: https://example.com
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: TenHub テクニカルナレッジベースプラットフォームのAPI
+  title: TenHub API Gateway
+  version: "1.0"
+paths:
+  /api/articles:
+    get:
+      description: 全ての記事を新しい順で返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: 記事一覧取得
+      tags:
+      - wiki
+    post:
+      consumes:
+      - application/json
+      description: 新しい記事を作成する
+      parameters:
+      - description: 記事データ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.CreateArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: 記事作成
+      tags:
+      - wiki
+  /api/articles/{id}:
+    delete:
+      description: 指定したIDの記事を削除する
+      parameters:
+      - description: 記事ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: 記事削除
+      tags:
+      - wiki
+    get:
+      description: 指定したIDの記事を返す
+      parameters:
+      - description: 記事ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: 記事詳細取得
+      tags:
+      - wiki
+    put:
+      consumes:
+      - application/json
+      description: 指定したIDの記事を更新する（部分更新対応）
+      parameters:
+      - description: 記事ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新データ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.UpdateArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: 記事更新
+      tags:
+      - wiki
+  /api/categories:
+    get:
+      description: 全てのカテゴリを階層構造で返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: カテゴリ一覧取得
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: 新しいカテゴリを作成する（parent_id で階層化可能）
+      parameters:
+      - description: カテゴリデータ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: カテゴリ作成
+      tags:
+      - categories
+  /api/categories/{id}:
+    delete:
+      description: 指定したIDのカテゴリを削除する
+      parameters:
+      - description: カテゴリID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: カテゴリ削除
+      tags:
+      - categories
+  /api/portfolio:
+    get:
+      description: 全てのポートフォリオアイテムを返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ポートフォリオ一覧取得
+      tags:
+      - portfolio
+    post:
+      consumes:
+      - application/json
+      description: 新しいポートフォリオアイテムを作成する
+      parameters:
+      - description: ポートフォリオデータ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.CreatePortfolioItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ポートフォリオ作成
+      tags:
+      - portfolio
+  /api/portfolio/{id}:
+    delete:
+      description: 指定したIDのポートフォリオアイテムを削除する
+      parameters:
+      - description: ポートフォリオID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ポートフォリオ削除
+      tags:
+      - portfolio
+    get:
+      description: 指定したIDのポートフォリオアイテムを返す
+      parameters:
+      - description: ポートフォリオID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ポートフォリオ詳細取得
+      tags:
+      - portfolio
+    put:
+      consumes:
+      - application/json
+      description: 指定したIDのポートフォリオアイテムを更新する（部分更新対応）
+      parameters:
+      - description: ポートフォリオID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新データ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.UpdatePortfolioItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ポートフォリオ更新
+      tags:
+      - portfolio
+  /api/profile:
+    get:
+      description: 自身のプロフィールを取得する
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: プロフィール取得
+      tags:
+      - profile
+    post:
+      consumes:
+      - application/json
+      description: 新しいプロフィールを作成する
+      parameters:
+      - description: プロフィールデータ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: プロフィール作成
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: 自身のプロフィールを更新する（特定のIDは不要）
+      parameters:
+      - description: 更新データ
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: プロフィール更新
+      tags:
+      - profile
+  /api/user/login:
+    post:
+      consumes:
+      - application/json
+      description: メールアドレスとパスワードで認証し、JWTをHttpOnly Cookieにセットする
+      parameters:
+      - description: ログイン情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ログイン
+      tags:
+      - auth
+  /api/user/me:
+    get:
+      description: Cookie の JWT を検証してユーザー情報を返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+      summary: ログインユーザー情報
+      tags:
+      - auth
+  /api/user/register:
+    post:
+      consumes:
+      - application/json
+      description: 新しいユーザーを作成し、JWTをHttpOnly Cookieにセットする
+      parameters:
+      - description: 登録情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/swagger.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: ユーザー登録
+      tags:
+      - auth
+swagger: "2.0"

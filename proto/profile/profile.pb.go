@@ -32,6 +32,12 @@ type Profile struct {
 	GithubUrl     string                 `protobuf:"bytes,4,opt,name=github_url,json=githubUrl,proto3" json:"github_url,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,7,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	TwitterUrl    string                 `protobuf:"bytes,8,opt,name=twitter_url,json=twitterUrl,proto3" json:"twitter_url,omitempty"`
+	LinkedinUrl   string                 `protobuf:"bytes,9,opt,name=linkedin_url,json=linkedinUrl,proto3" json:"linkedin_url,omitempty"`
+	Skills        string                 `protobuf:"bytes,10,opt,name=skills,proto3" json:"skills,omitempty"`       // JSON array string
+	Languages     string                 `protobuf:"bytes,11,opt,name=languages,proto3" json:"languages,omitempty"` // JSON array: [{"name":"Japanese","level":"Native"}]
+	WantedlyUrl   string                 `protobuf:"bytes,12,opt,name=wantedly_url,json=wantedlyUrl,proto3" json:"wantedly_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -108,6 +114,48 @@ func (x *Profile) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Profile) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *Profile) GetTwitterUrl() string {
+	if x != nil {
+		return x.TwitterUrl
+	}
+	return ""
+}
+
+func (x *Profile) GetLinkedinUrl() string {
+	if x != nil {
+		return x.LinkedinUrl
+	}
+	return ""
+}
+
+func (x *Profile) GetSkills() string {
+	if x != nil {
+		return x.Skills
+	}
+	return ""
+}
+
+func (x *Profile) GetLanguages() string {
+	if x != nil {
+		return x.Languages
+	}
+	return ""
+}
+
+func (x *Profile) GetWantedlyUrl() string {
+	if x != nil {
+		return x.WantedlyUrl
+	}
+	return ""
+}
+
 // ポートフォリオアイテム
 type PortfolioItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -117,6 +165,8 @@ type PortfolioItem struct {
 	Url           string                 `protobuf:"bytes,4,opt,name=url,proto3" json:"url,omitempty"`                 // URL
 	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`           // "developing" / "completed"
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Category      string                 `protobuf:"bytes,7,opt,name=category,proto3" json:"category,omitempty"`                    // "project" / "assignment" / "contribution"
+	TechStack     string                 `protobuf:"bytes,8,opt,name=tech_stack,json=techStack,proto3" json:"tech_stack,omitempty"` // JSON array: ["Go","React","MySQL"]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -191,6 +241,20 @@ func (x *PortfolioItem) GetCreatedAt() *timestamppb.Timestamp {
 		return x.CreatedAt
 	}
 	return nil
+}
+
+func (x *PortfolioItem) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *PortfolioItem) GetTechStack() string {
+	if x != nil {
+		return x.TechStack
+	}
+	return ""
 }
 
 type GetProfileRequest struct {
@@ -278,6 +342,12 @@ type UpdateProfileRequest struct {
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Bio           string                 `protobuf:"bytes,2,opt,name=bio,proto3" json:"bio,omitempty"`
 	GithubUrl     string                 `protobuf:"bytes,3,opt,name=github_url,json=githubUrl,proto3" json:"github_url,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	TwitterUrl    string                 `protobuf:"bytes,5,opt,name=twitter_url,json=twitterUrl,proto3" json:"twitter_url,omitempty"`
+	LinkedinUrl   string                 `protobuf:"bytes,6,opt,name=linkedin_url,json=linkedinUrl,proto3" json:"linkedin_url,omitempty"`
+	Skills        string                 `protobuf:"bytes,7,opt,name=skills,proto3" json:"skills,omitempty"`
+	Languages     string                 `protobuf:"bytes,8,opt,name=languages,proto3" json:"languages,omitempty"`
+	WantedlyUrl   string                 `protobuf:"bytes,9,opt,name=wantedly_url,json=wantedlyUrl,proto3" json:"wantedly_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -333,6 +403,48 @@ func (x *UpdateProfileRequest) GetGithubUrl() string {
 	return ""
 }
 
+func (x *UpdateProfileRequest) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetTwitterUrl() string {
+	if x != nil {
+		return x.TwitterUrl
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetLinkedinUrl() string {
+	if x != nil {
+		return x.LinkedinUrl
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetSkills() string {
+	if x != nil {
+		return x.Skills
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetLanguages() string {
+	if x != nil {
+		return x.Languages
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetWantedlyUrl() string {
+	if x != nil {
+		return x.WantedlyUrl
+	}
+	return ""
+}
+
 type UpdateProfileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Profile       *Profile               `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
@@ -384,6 +496,8 @@ type CreatePortfolioItemRequest struct {
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
 	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	Category      string                 `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`
+	TechStack     string                 `protobuf:"bytes,6,opt,name=tech_stack,json=techStack,proto3" json:"tech_stack,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -442,6 +556,20 @@ func (x *CreatePortfolioItemRequest) GetUrl() string {
 func (x *CreatePortfolioItemRequest) GetStatus() string {
 	if x != nil {
 		return x.Status
+	}
+	return ""
+}
+
+func (x *CreatePortfolioItemRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *CreatePortfolioItemRequest) GetTechStack() string {
+	if x != nil {
+		return x.TechStack
 	}
 	return ""
 }
@@ -577,6 +705,8 @@ type UpdatePortfolioItemRequest struct {
 	Description   *string                `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	Url           *string                `protobuf:"bytes,4,opt,name=url,proto3,oneof" json:"url,omitempty"`
 	Status        *string                `protobuf:"bytes,5,opt,name=status,proto3,oneof" json:"status,omitempty"`
+	Category      *string                `protobuf:"bytes,6,opt,name=category,proto3,oneof" json:"category,omitempty"`
+	TechStack     *string                `protobuf:"bytes,7,opt,name=tech_stack,json=techStack,proto3,oneof" json:"tech_stack,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -642,6 +772,20 @@ func (x *UpdatePortfolioItemRequest) GetUrl() string {
 func (x *UpdatePortfolioItemRequest) GetStatus() string {
 	if x != nil && x.Status != nil {
 		return *x.Status
+	}
+	return ""
+}
+
+func (x *UpdatePortfolioItemRequest) GetCategory() string {
+	if x != nil && x.Category != nil {
+		return *x.Category
+	}
+	return ""
+}
+
+func (x *UpdatePortfolioItemRequest) GetTechStack() string {
+	if x != nil && x.TechStack != nil {
+		return *x.TechStack
 	}
 	return ""
 }
@@ -827,6 +971,12 @@ type CreateProfileRequest struct {
 	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	Bio           string                 `protobuf:"bytes,2,opt,name=bio,proto3" json:"bio,omitempty"`
 	GithubUrl     string                 `protobuf:"bytes,3,opt,name=github_url,json=githubUrl,proto3" json:"github_url,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	TwitterUrl    string                 `protobuf:"bytes,5,opt,name=twitter_url,json=twitterUrl,proto3" json:"twitter_url,omitempty"`
+	LinkedinUrl   string                 `protobuf:"bytes,6,opt,name=linkedin_url,json=linkedinUrl,proto3" json:"linkedin_url,omitempty"`
+	Skills        string                 `protobuf:"bytes,7,opt,name=skills,proto3" json:"skills,omitempty"`
+	Languages     string                 `protobuf:"bytes,8,opt,name=languages,proto3" json:"languages,omitempty"`
+	WantedlyUrl   string                 `protobuf:"bytes,9,opt,name=wantedly_url,json=wantedlyUrl,proto3" json:"wantedly_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -882,6 +1032,48 @@ func (x *CreateProfileRequest) GetGithubUrl() string {
 	return ""
 }
 
+func (x *CreateProfileRequest) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetTwitterUrl() string {
+	if x != nil {
+		return x.TwitterUrl
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetLinkedinUrl() string {
+	if x != nil {
+		return x.LinkedinUrl
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetSkills() string {
+	if x != nil {
+		return x.Skills
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetLanguages() string {
+	if x != nil {
+		return x.Languages
+	}
+	return ""
+}
+
+func (x *CreateProfileRequest) GetWantedlyUrl() string {
+	if x != nil {
+		return x.WantedlyUrl
+	}
+	return ""
+}
+
 type CreateProfileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Profile       *Profile               `protobuf:"bytes,1,opt,name=profile,proto3" json:"profile,omitempty"`
@@ -930,7 +1122,7 @@ var File_proto_profile_profile_proto protoreflect.FileDescriptor
 
 const file_proto_profile_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x1bproto/profile/profile.proto\x12\aprofile\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x01\n" +
+	"\x1bproto/profile/profile.proto\x12\aprofile\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x92\x03\n" +
 	"\aProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x10\n" +
@@ -940,7 +1132,16 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xbc\x01\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\a \x01(\tR\tavatarUrl\x12\x1f\n" +
+	"\vtwitter_url\x18\b \x01(\tR\n" +
+	"twitterUrl\x12!\n" +
+	"\flinkedin_url\x18\t \x01(\tR\vlinkedinUrl\x12\x16\n" +
+	"\x06skills\x18\n" +
+	" \x01(\tR\x06skills\x12\x1c\n" +
+	"\tlanguages\x18\v \x01(\tR\tlanguages\x12!\n" +
+	"\fwantedly_url\x18\f \x01(\tR\vwantedlyUrl\"\xf7\x01\n" +
 	"\rPortfolioItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -948,37 +1149,56 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\x03url\x18\x04 \x01(\tR\x03url\x12\x16\n" +
 	"\x06status\x18\x05 \x01(\tR\x06status\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x13\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\bcategory\x18\a \x01(\tR\bcategory\x12\x1d\n" +
+	"\n" +
+	"tech_stack\x18\b \x01(\tR\ttechStack\"\x13\n" +
 	"\x11GetProfileRequest\"@\n" +
 	"\x12GetProfileResponse\x12*\n" +
-	"\aProfile\x18\x01 \x01(\v2\x10.profile.ProfileR\aProfile\"]\n" +
+	"\aProfile\x18\x01 \x01(\v2\x10.profile.ProfileR\aProfile\"\x99\x02\n" +
 	"\x14UpdateProfileRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x10\n" +
 	"\x03bio\x18\x02 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
-	"github_url\x18\x03 \x01(\tR\tgithubUrl\"C\n" +
+	"github_url\x18\x03 \x01(\tR\tgithubUrl\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12\x1f\n" +
+	"\vtwitter_url\x18\x05 \x01(\tR\n" +
+	"twitterUrl\x12!\n" +
+	"\flinkedin_url\x18\x06 \x01(\tR\vlinkedinUrl\x12\x16\n" +
+	"\x06skills\x18\a \x01(\tR\x06skills\x12\x1c\n" +
+	"\tlanguages\x18\b \x01(\tR\tlanguages\x12!\n" +
+	"\fwantedly_url\x18\t \x01(\tR\vwantedlyUrl\"C\n" +
 	"\x15UpdateProfileResponse\x12*\n" +
-	"\aprofile\x18\x01 \x01(\v2\x10.profile.ProfileR\aprofile\"~\n" +
+	"\aprofile\x18\x01 \x01(\v2\x10.profile.ProfileR\aprofile\"\xb9\x01\n" +
 	"\x1aCreatePortfolioItemRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x10\n" +
 	"\x03url\x18\x03 \x01(\tR\x03url\x12\x16\n" +
-	"\x06status\x18\x04 \x01(\tR\x06status\"I\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x1a\n" +
+	"\bcategory\x18\x05 \x01(\tR\bcategory\x12\x1d\n" +
+	"\n" +
+	"tech_stack\x18\x06 \x01(\tR\ttechStack\"I\n" +
 	"\x1bCreatePortfolioItemResponse\x12*\n" +
 	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\"\x1b\n" +
 	"\x19ListPortfolioItemsRequest\"J\n" +
 	"\x1aListPortfolioItemsResponse\x12,\n" +
-	"\x05items\x18\x01 \x03(\v2\x16.profile.PortfolioItemR\x05items\"\xcf\x01\n" +
+	"\x05items\x18\x01 \x03(\v2\x16.profile.PortfolioItemR\x05items\"\xb0\x02\n" +
 	"\x1aUpdatePortfolioItemRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12%\n" +
 	"\vdescription\x18\x03 \x01(\tH\x01R\vdescription\x88\x01\x01\x12\x15\n" +
 	"\x03url\x18\x04 \x01(\tH\x02R\x03url\x88\x01\x01\x12\x1b\n" +
-	"\x06status\x18\x05 \x01(\tH\x03R\x06status\x88\x01\x01B\b\n" +
+	"\x06status\x18\x05 \x01(\tH\x03R\x06status\x88\x01\x01\x12\x1f\n" +
+	"\bcategory\x18\x06 \x01(\tH\x04R\bcategory\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"tech_stack\x18\a \x01(\tH\x05R\ttechStack\x88\x01\x01B\b\n" +
 	"\x06_titleB\x0e\n" +
 	"\f_descriptionB\x06\n" +
 	"\x04_urlB\t\n" +
-	"\a_status\"I\n" +
+	"\a_statusB\v\n" +
+	"\t_categoryB\r\n" +
+	"\v_tech_stack\"I\n" +
 	"\x1bUpdatePortfolioItemResponse\x12*\n" +
 	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\",\n" +
 	"\x1aDeletePortfolioItemRequest\x12\x0e\n" +
@@ -986,12 +1206,20 @@ const file_proto_profile_profile_proto_rawDesc = "" +
 	"\x17GetPortfolioItemRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"F\n" +
 	"\x18GetPortfolioItemResponse\x12*\n" +
-	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\"]\n" +
+	"\x04item\x18\x01 \x01(\v2\x16.profile.PortfolioItemR\x04item\"\x99\x02\n" +
 	"\x14CreateProfileRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x10\n" +
 	"\x03bio\x18\x02 \x01(\tR\x03bio\x12\x1d\n" +
 	"\n" +
-	"github_url\x18\x03 \x01(\tR\tgithubUrl\"C\n" +
+	"github_url\x18\x03 \x01(\tR\tgithubUrl\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12\x1f\n" +
+	"\vtwitter_url\x18\x05 \x01(\tR\n" +
+	"twitterUrl\x12!\n" +
+	"\flinkedin_url\x18\x06 \x01(\tR\vlinkedinUrl\x12\x16\n" +
+	"\x06skills\x18\a \x01(\tR\x06skills\x12\x1c\n" +
+	"\tlanguages\x18\b \x01(\tR\tlanguages\x12!\n" +
+	"\fwantedly_url\x18\t \x01(\tR\vwantedlyUrl\"C\n" +
 	"\x15CreateProfileResponse\x12*\n" +
 	"\aprofile\x18\x01 \x01(\v2\x10.profile.ProfileR\aprofile2\xc7\x05\n" +
 	"\x0eProfileService\x12E\n" +
