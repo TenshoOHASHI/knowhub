@@ -59,7 +59,7 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
             transition={{ duration: 0.5 }}
           >
             <span className='bg-gradient-to-r from-stone-600 to-stone-300 bg-clip-text text-transparent'>
-              Knowledge
+              Knowledge Base
             </span>
           </motion.span>
         </span>

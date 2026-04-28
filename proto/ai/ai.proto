@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package ai;
+
+option go_package = "github.com/TenshoOHASHI/knowhub/proto/ai";
+
+service AIService {
+  rpc SearchArticles(SearchRequest) returns (SearchResponse);
+  rpc SummarizeArticle(SummarizeRequest) returns (SummarizeResponse);
+  rpc AskQuestion(QuestionRequest) returns (QuestionResponse);
+}
+
+message SearchRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message SearchResult {
+  string article_id = 1;
+  string title = 2;
+  string content = 3;
+  double relevance_score = 4;
+}
+
+message SearchResponse {
+  repeated SearchResult results = 1;
+}
+
+message SummarizeRequest {
+  string article_id = 1;
+}
+
+message SummarizeResponse {
+  string summary = 1;
+}
+
+message QuestionRequest {
+  string question = 1;
+}
+
+message QuestionResponse {
+  string answer = 1;
+  repeated string sources = 2;
+}
