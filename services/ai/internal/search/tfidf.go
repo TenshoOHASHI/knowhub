@@ -8,9 +8,26 @@ import (
 	"unicode"
 )
 
+func charType(r rune) int {
+	switch {
+	case unicode.Is(unicode.Han, r): // 漢字
+		return 0
+	case unicode.Is(unicode.Hiragana, r): // ひらがな
+		return 1
+	case unicode.Is(unicode.Katakana, r): // カタカナ
+		return 2
+	case unicode.Is(unicode.Latin, r): // アルファベット
+		return 3
+	case unicode.IsDigit(r): // 数字
+		return 4
+	default:
+		return -1 // 区切り文字（スペース、句読点等）
+	}
+}
+
 // 入力: "Go言語でgRPCを実装する"
 // 出力: ["go", "言語", "で", "grpc", "を", "実装", "する"]
-func tokenize(text string) []string {
+func tokenizeOld(text string) []string {
 	// 小文字に分割
 	text = strings.ToLower(text)
 	// 区切り文字で分割(指定した関数がtrueを返す文字で分割)
@@ -22,16 +39,55 @@ func tokenize(text string) []string {
 	return tokens
 }
 
-// 単語の出現頻度
-//　各単語の出現頻度 / 全体の総単語数　の単語が占める全体の割合
+func tokenize(text string) []string {
+	text = strings.ToLower(text)
+	var tokens []string
+	var current []rune
+	var prevType int = -2 // 初期値（未設定）
 
+	for _, r := range text {
+		ct := charType(r)
+
+		// 区切り文字 → ここでトークンを確定
+		if ct == -1 {
+			if len(current) > 0 {
+				tokens = append(tokens, string(current))
+				current = nil
+			}
+			prevType = -2
+			continue
+		}
+
+		// 文字種が変わった → トークンを確定して新しいトークン開始
+		if ct != prevType && len(current) > 0 {
+			// 一時保存しているテキストを保存
+			tokens = append(tokens, string(current))
+			// 初期化
+			current = nil
+		}
+
+		// 現在のテキストを一時保存
+		current = append(current, r)
+		// 現在のトークンのタイプを更新
+		prevType = ct
+	}
+
+	// 最後のトークン
+	if len(current) > 0 {
+		tokens = append(tokens, string(current))
+	}
+
+	return tokens
+}
+
+// 単語の出現頻度
+// 　各単語の出現頻度 / 全体の総単語数　の単語が占める全体の割合
 func computeTF(tokens []string) map[string]float64 {
 	tf := make(map[string]float64)
 
 	// count
 	for _, token := range tokens {
 		tf[token]++
-
 	}
 
 	total := float64(len(tokens))
@@ -91,6 +147,7 @@ func buildVocabulary(tokenizedDoc [][]string) map[string]int {
 			}
 		}
 	}
+
 	return vocab
 }
 
@@ -155,7 +212,7 @@ func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
 	// 1. 元データを保存
 	e.documents = docs
 
-	// 2. 各文書をトークン化
+	// 2. 各文書をトークン化([["ai", "python", "go"], ["python", "react", "go"],])
 	e.tokenized = make([][]string, len(docs))
 	for i, doc := range docs {
 		// タイトル + 内容 を両方検索対象にする
@@ -163,7 +220,7 @@ func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
 		e.tokenized[i] = tokenize(text)
 	}
 
-	// 3. 語彙を構築
+	// 3. 語彙を構築（["ai":0, "python": 1, "go": 2]）
 	e.vocabulary = buildVocabulary(e.tokenized)
 
 	// 4. IDF を計算
@@ -172,8 +229,9 @@ func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
 	// 5. 各文書の TF-IDF ベクトルを構築
 	e.tfidfVecs = make([][]float64, len(docs))
 	for i, tokens := range e.tokenized {
+		// 単語の頻度
 		tf := computeTF(tokens)
-		// i番目の文章のトークンをi盤面の場所に入れる
+		// i番目の文章のトークンをi番目の場所に入れる
 		e.tfidfVecs[i] = buildTFIDFVector(tf, e.idf, e.vocabulary)
 	}
 
