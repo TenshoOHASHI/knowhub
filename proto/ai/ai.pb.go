@@ -7,12 +7,11 @@
 package ai
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -21,6 +20,58 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type Source struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Source) Reset() {
+	*x = Source{}
+	mi := &file_proto_ai_ai_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Source) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Source) ProtoMessage() {}
+
+func (x *Source) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_ai_ai_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Source.ProtoReflect.Descriptor instead.
+func (*Source) Descriptor() ([]byte, []int) {
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Source) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *Source) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
 
 type SearchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -32,7 +83,7 @@ type SearchRequest struct {
 
 func (x *SearchRequest) Reset() {
 	*x = SearchRequest{}
-	mi := &file_proto_ai_ai_proto_msgTypes[0]
+	mi := &file_proto_ai_ai_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +95,7 @@ func (x *SearchRequest) String() string {
 func (*SearchRequest) ProtoMessage() {}
 
 func (x *SearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[0]
+	mi := &file_proto_ai_ai_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +108,7 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{0}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SearchRequest) GetQuery() string {
@@ -86,7 +137,7 @@ type SearchResult struct {
 
 func (x *SearchResult) Reset() {
 	*x = SearchResult{}
-	mi := &file_proto_ai_ai_proto_msgTypes[1]
+	mi := &file_proto_ai_ai_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -98,7 +149,7 @@ func (x *SearchResult) String() string {
 func (*SearchResult) ProtoMessage() {}
 
 func (x *SearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[1]
+	mi := &file_proto_ai_ai_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -111,7 +162,7 @@ func (x *SearchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResult.ProtoReflect.Descriptor instead.
 func (*SearchResult) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{1}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SearchResult) GetArticleId() string {
@@ -151,7 +202,7 @@ type SearchResponse struct {
 
 func (x *SearchResponse) Reset() {
 	*x = SearchResponse{}
-	mi := &file_proto_ai_ai_proto_msgTypes[2]
+	mi := &file_proto_ai_ai_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -163,7 +214,7 @@ func (x *SearchResponse) String() string {
 func (*SearchResponse) ProtoMessage() {}
 
 func (x *SearchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[2]
+	mi := &file_proto_ai_ai_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -176,7 +227,7 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{2}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SearchResponse) GetResults() []*SearchResult {
@@ -195,7 +246,7 @@ type SummarizeRequest struct {
 
 func (x *SummarizeRequest) Reset() {
 	*x = SummarizeRequest{}
-	mi := &file_proto_ai_ai_proto_msgTypes[3]
+	mi := &file_proto_ai_ai_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -207,7 +258,7 @@ func (x *SummarizeRequest) String() string {
 func (*SummarizeRequest) ProtoMessage() {}
 
 func (x *SummarizeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[3]
+	mi := &file_proto_ai_ai_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -220,7 +271,7 @@ func (x *SummarizeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeRequest.ProtoReflect.Descriptor instead.
 func (*SummarizeRequest) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{3}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SummarizeRequest) GetArticleId() string {
@@ -239,7 +290,7 @@ type SummarizeResponse struct {
 
 func (x *SummarizeResponse) Reset() {
 	*x = SummarizeResponse{}
-	mi := &file_proto_ai_ai_proto_msgTypes[4]
+	mi := &file_proto_ai_ai_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -251,7 +302,7 @@ func (x *SummarizeResponse) String() string {
 func (*SummarizeResponse) ProtoMessage() {}
 
 func (x *SummarizeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[4]
+	mi := &file_proto_ai_ai_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,7 +315,7 @@ func (x *SummarizeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeResponse.ProtoReflect.Descriptor instead.
 func (*SummarizeResponse) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{4}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SummarizeResponse) GetSummary() string {
@@ -283,7 +334,7 @@ type QuestionRequest struct {
 
 func (x *QuestionRequest) Reset() {
 	*x = QuestionRequest{}
-	mi := &file_proto_ai_ai_proto_msgTypes[5]
+	mi := &file_proto_ai_ai_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -295,7 +346,7 @@ func (x *QuestionRequest) String() string {
 func (*QuestionRequest) ProtoMessage() {}
 
 func (x *QuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[5]
+	mi := &file_proto_ai_ai_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -308,7 +359,7 @@ func (x *QuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionRequest.ProtoReflect.Descriptor instead.
 func (*QuestionRequest) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{5}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *QuestionRequest) GetQuestion() string {
@@ -321,14 +372,14 @@ func (x *QuestionRequest) GetQuestion() string {
 type QuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Answer        string                 `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
-	Sources       []string               `protobuf:"bytes,2,rep,name=sources,proto3" json:"sources,omitempty"`
+	Sources       []*Source              `protobuf:"bytes,2,rep,name=sources,proto3" json:"sources,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuestionResponse) Reset() {
 	*x = QuestionResponse{}
-	mi := &file_proto_ai_ai_proto_msgTypes[6]
+	mi := &file_proto_ai_ai_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +391,7 @@ func (x *QuestionResponse) String() string {
 func (*QuestionResponse) ProtoMessage() {}
 
 func (x *QuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[6]
+	mi := &file_proto_ai_ai_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +404,7 @@ func (x *QuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuestionResponse.ProtoReflect.Descriptor instead.
 func (*QuestionResponse) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{6}
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *QuestionResponse) GetAnswer() string {
@@ -363,7 +414,7 @@ func (x *QuestionResponse) GetAnswer() string {
 	return ""
 }
 
-func (x *QuestionResponse) GetSources() []string {
+func (x *QuestionResponse) GetSources() []*Source {
 	if x != nil {
 		return x.Sources
 	}
@@ -374,7 +425,11 @@ var File_proto_ai_ai_proto protoreflect.FileDescriptor
 
 const file_proto_ai_ai_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/ai/ai.proto\x12\x02ai\";\n" +
+	"\x11proto/ai/ai.proto\x12\x02ai\"=\n" +
+	"\x06Source\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\";\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"\x86\x01\n" +
@@ -392,10 +447,11 @@ const file_proto_ai_ai_proto_rawDesc = "" +
 	"\x11SummarizeResponse\x12\x18\n" +
 	"\asummary\x18\x01 \x01(\tR\asummary\"-\n" +
 	"\x0fQuestionRequest\x12\x1a\n" +
-	"\bquestion\x18\x01 \x01(\tR\bquestion\"D\n" +
+	"\bquestion\x18\x01 \x01(\tR\bquestion\"P\n" +
 	"\x10QuestionResponse\x12\x16\n" +
-	"\x06answer\x18\x01 \x01(\tR\x06answer\x12\x18\n" +
-	"\asources\x18\x02 \x03(\tR\asources2\xbf\x01\n" +
+	"\x06answer\x18\x01 \x01(\tR\x06answer\x12$\n" +
+	"\asources\x18\x02 \x03(\v2\n" +
+	".ai.SourceR\asources2\xbf\x01\n" +
 	"\tAIService\x127\n" +
 	"\x0eSearchArticles\x12\x11.ai.SearchRequest\x1a\x12.ai.SearchResponse\x12?\n" +
 	"\x10SummarizeArticle\x12\x14.ai.SummarizeRequest\x1a\x15.ai.SummarizeResponse\x128\n" +
@@ -413,29 +469,31 @@ func file_proto_ai_ai_proto_rawDescGZIP() []byte {
 	return file_proto_ai_ai_proto_rawDescData
 }
 
-var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_proto_ai_ai_proto_goTypes = []any{
-	(*SearchRequest)(nil),     // 0: ai.SearchRequest
-	(*SearchResult)(nil),      // 1: ai.SearchResult
-	(*SearchResponse)(nil),    // 2: ai.SearchResponse
-	(*SummarizeRequest)(nil),  // 3: ai.SummarizeRequest
-	(*SummarizeResponse)(nil), // 4: ai.SummarizeResponse
-	(*QuestionRequest)(nil),   // 5: ai.QuestionRequest
-	(*QuestionResponse)(nil),  // 6: ai.QuestionResponse
+	(*Source)(nil),            // 0: ai.Source
+	(*SearchRequest)(nil),     // 1: ai.SearchRequest
+	(*SearchResult)(nil),      // 2: ai.SearchResult
+	(*SearchResponse)(nil),    // 3: ai.SearchResponse
+	(*SummarizeRequest)(nil),  // 4: ai.SummarizeRequest
+	(*SummarizeResponse)(nil), // 5: ai.SummarizeResponse
+	(*QuestionRequest)(nil),   // 6: ai.QuestionRequest
+	(*QuestionResponse)(nil),  // 7: ai.QuestionResponse
 }
 var file_proto_ai_ai_proto_depIdxs = []int32{
-	1, // 0: ai.SearchResponse.results:type_name -> ai.SearchResult
-	0, // 1: ai.AIService.SearchArticles:input_type -> ai.SearchRequest
-	3, // 2: ai.AIService.SummarizeArticle:input_type -> ai.SummarizeRequest
-	5, // 3: ai.AIService.AskQuestion:input_type -> ai.QuestionRequest
-	2, // 4: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
-	4, // 5: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
-	6, // 6: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: ai.SearchResponse.results:type_name -> ai.SearchResult
+	0, // 1: ai.QuestionResponse.sources:type_name -> ai.Source
+	1, // 2: ai.AIService.SearchArticles:input_type -> ai.SearchRequest
+	4, // 3: ai.AIService.SummarizeArticle:input_type -> ai.SummarizeRequest
+	6, // 4: ai.AIService.AskQuestion:input_type -> ai.QuestionRequest
+	3, // 5: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
+	5, // 6: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
+	7, // 7: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_ai_ai_proto_init() }
@@ -449,7 +507,7 @@ func file_proto_ai_ai_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_ai_ai_proto_rawDesc), len(file_proto_ai_ai_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

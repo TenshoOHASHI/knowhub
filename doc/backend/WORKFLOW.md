@@ -305,6 +305,16 @@
 - [x] Q&A based on wiki content（RAG: 検索→コンテキスト→LLM回答、sources 返却確認）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
 - [ ] Chat interface（フロントエンド）
+  - [x] ChatInterface コンポーネント（メッセージ一覧 + 入力フォーム + スクロール制御）
+  - [x] api.ts askQuestion 追加
+  - [x] Chat ページルーティング（/chat）
+  - [x] ReactMarkdown で回答を Markdown 表示
+  - [x] アイコン付きメッセージ（FaRobot / FaUser）
+  - [ ] Gateway AI endpoints auth スキップ
+  - [ ] RAG sources に記事タイトル付きリンク（Proto 変更必要）
+- [ ] ユーザー LLM モデル選択 UI
+- [ ] ユーザー API Key 入力（セキュア）
+- [ ] Gateway AI timeout 設定
 
 ## Phase 10 Progress（MCP Server）
 

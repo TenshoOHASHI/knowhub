@@ -10,6 +10,11 @@ service AIService {
   rpc AskQuestion(QuestionRequest) returns (QuestionResponse);
 }
 
+
+message Source {
+  string article_id = 1;
+  string title = 2;
+}
 message SearchRequest {
   string query = 1;
   int32 limit = 2;
@@ -40,5 +45,5 @@ message QuestionRequest {
 
 message QuestionResponse {
   string answer = 1;
-  repeated string sources = 2;
+  repeated Source sources = 2;
 }

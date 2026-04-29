@@ -38,7 +38,7 @@ func main() {
 	// LLM Provider（環境変数で切り替え）
 	var provider llm.LLMProvider
 	switch cfg.LLMProvider {
-	case "glm5":
+	case "glm":
 		provider = llm.NewGLM5Provider(cfg.GLM5APIKey, cfg.GLM5Model)
 		slog.Info("LLM provider: GLM-5")
 	case "openai":

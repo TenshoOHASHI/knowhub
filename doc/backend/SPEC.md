@@ -229,6 +229,11 @@
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
 - [ ] Article search with vector embeddings（Ollama embedding モデル）
 - [ ] Chat interface（フロントエンド）
+- [ ] Gateway AI endpoints auth スキップ（認証なしでアクセス可能）
+- [ ] RAG sources に記事タイトル付きリンク表示（Proto 変更: Source message）
+- [ ] Chat で LLM モデル選択 UI（ユーザーがモデル切替）
+- [ ] ユーザー API Key 入力（セキュアな取り扱い: マスク入力・サーバー非保存）
+- [ ] Gateway AI timeout 設定（context canceled 対策）
 
 ### Phase 10: MCP Server
 - [ ] MCP Server implementation (Go)

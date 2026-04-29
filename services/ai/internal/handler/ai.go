@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
@@ -118,6 +119,9 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "question is required")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
 	// Step 1: 関連記事を検索
 	searchResp, err := h.SearchArticles(ctx, &pb.SearchRequest{
 		Query: req.Question,
@@ -130,13 +134,13 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	if len(searchResp.Results) == 0 {
 		return &pb.QuestionResponse{
 			Answer:  "関連する記事が見つかりませんでした。",
-			Sources: []string{},
+			Sources: []*pb.Source{},
 		}, nil
 	}
 
 	// Step 2: コンテキストを構築
 	var contextBuilder strings.Builder
-	sources := make([]string, 0, len(searchResp.Results))
+	sources := make([]*pb.Source, 0, len(searchResp.Results))
 
 	for _, r := range searchResp.Results {
 		// スニペット
@@ -148,7 +152,10 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			continue
 		}
 		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
-		sources = append(sources, r.ArticleId)
+		sources = append(sources, &pb.Source{
+			ArticleId: r.ArticleId,
+			Title:     articleResp.Article.Title,
+		})
 	}
 
 	// Step 3: RAG プロンプトで LLM に回答生成

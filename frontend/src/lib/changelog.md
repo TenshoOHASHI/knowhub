@@ -1,3 +1,13 @@
+## 2026-04-29 AI Chat Interface + LLM Provider 拡張
+- Backend: Gemini プロバイダー実装（gemini.go、OpenAI 互換フォーマット）
+- Backend: DeepSeek プロバイダー実装（deepseek.go、OpenAI 互換フォーマット）
+- Backend: AI Service config に Gemini / DeepSeek 設定追加
+- Backend: RAG Q&A のコンテキストを検索スニペット → 記事全文に改善
+- Frontend: ChatInterface コンポーネント実装（ReactMarkdown + sources リンク付き）
+- Frontend: api.ts に askQuestion 追加
+- Frontend: Chat ページルーティング（/chat）
+- Doc: Tailwind CSS パターン集追加（doc/frontend/tailwind-patterns.md）
+
 ## 2026-04-27 Wiki 記事の公開/限定公開（visibility）機能
 - DB: articles に visibility カラム追加（VARCHAR(20) DEFAULT 'public'）
 - Proto: Article / Create/UpdateRequest に visibility フィールド追加 + Go コード再生成

@@ -167,3 +167,22 @@ export async function uploadImage(file: File): Promise<string> {
   const data = await res.json();
   return data.url;
 }
+
+// ai chat
+export interface AskSource {
+  articleId: string;
+  title: string;
+}
+
+export async function askQuestion(question: string): Promise<{
+  answer: string;
+  sources: AskSource[];
+}> {
+  const res = await fetch(`${API_BASE}/ai/ask`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) throw new Error('Failed to ask question');
+  return res.json();
+}
