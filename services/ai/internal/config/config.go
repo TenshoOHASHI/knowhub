@@ -14,12 +14,16 @@ type Config struct {
 	WikiAddr string
 
 	// LLM
-	LLMProvider string // "ollama", "glm5", "openai"
-	OllamaURL   string
-	OllamaModel string // "qwen3:1.7b", "gemma3:1b"
-	GLM5APIKey  string
-	GLM5Model   string
-	OpenAIKey   string
+	LLMProvider   string // "ollama", "glm5", "openai"
+	OllamaURL     string
+	OllamaModel   string // "qwen3:1.7b", "gemma3:1b"
+	GLM5APIKey    string
+	GLM5Model     string
+	OpenAIKey     string
+	GeminiKey     string
+	GeminiModel   string
+	DeepSeekKey   string
+	DeepSeekModel string
 
 	// Logging
 	LogLevel string
@@ -30,16 +34,20 @@ type Config struct {
 func Load(path string) *Config {
 	godotenv.Load(path)
 	return &Config{
-		GRPCPort:    getEnv("GRPC_PORT_AI", "50054"),
-		WikiAddr:    getEnv("WIKI_ADDR", "localhost:50052"),
-		LLMProvider: getEnv("LLM_PROVIDER", "ollama"),
-		OllamaURL:   getEnv("OLLAMA_URL", "http://localhost:11434"),
-		OllamaModel: getEnv("OLLAMA_MODEL", "gemma3:1b"),
-		GLM5APIKey:  os.Getenv("GLM5_API_KEY"),
-		GLM5Model:   getEnv("GLM5_MODEL", "glm-5"),
-		OpenAIKey:   os.Getenv("OPENAI_API_KEY"),
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		SearchEngin: os.Getenv("SEARCH_ENGIN"),
+		GRPCPort:      getEnv("GRPC_PORT_AI", "50054"),
+		WikiAddr:      getEnv("WIKI_ADDR", "localhost:50052"),
+		LLMProvider:   getEnv("LLM_PROVIDER", "ollama"),
+		OllamaURL:     getEnv("OLLAMA_URL", "http://localhost:11434"),
+		OllamaModel:   getEnv("OLLAMA_MODEL", "gemma3:1b"),
+		GLM5APIKey:    os.Getenv("GLM5_API_KEY"),
+		GLM5Model:     getEnv("GLM5_MODEL", "glm-5"),
+		OpenAIKey:     os.Getenv("OPENAI_API_KEY"),
+		GeminiKey:     os.Getenv("GEMINI_API_KEY"),
+		GeminiModel:   getEnv("GEMINI_MODEL", "gemini-3-flash-preview"),
+		DeepSeekKey:   os.Getenv("DEEPSEEK_API_KEY"),
+		DeepSeekModel: getEnv("DEEPSEEK_MODEL", "deepseek-v4-flash"),
+		LogLevel:      getEnv("LOG_LEVEL", "info"),
+		SearchEngin:   os.Getenv("SEARCH_ENGIN"),
 	}
 }
 

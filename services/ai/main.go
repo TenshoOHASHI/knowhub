@@ -44,6 +44,12 @@ func main() {
 	case "openai":
 		provider = llm.NewOpenAIProvider(cfg.OpenAIKey)
 		slog.Info("LLM provider: OpenAI")
+	case "gemini":
+		provider = llm.NewGeminiProvider(cfg.GeminiKey, cfg.GeminiModel)
+		slog.Info("LLM provider: Gemini", "model", cfg.GeminiModel)
+	case "deepseek":
+		provider = llm.NewDeepSeekProvider(cfg.DeepSeekKey, cfg.DeepSeekModel)
+		slog.Info("LLM provider: DeepSeek", "model", cfg.DeepSeekModel)
 	default:
 		provider = llm.NewOllamaProvider(cfg.OllamaURL, cfg.OllamaModel)
 		slog.Info("LLM provider: Ollama", "url", cfg.OllamaURL)

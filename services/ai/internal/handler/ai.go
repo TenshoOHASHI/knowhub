@@ -139,7 +139,15 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	sources := make([]string, 0, len(searchResp.Results))
 
 	for _, r := range searchResp.Results {
-		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", r.Title, r.Content))
+		// スニペット
+		// contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", r.Title, r.Content))
+		// 全文を検索
+		articleResp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: r.ArticleId})
+		if err != nil {
+			slog.Error("failed to get article fro RAG", "error", err, "article_id", r.ArticleId)
+			continue
+		}
+		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
 		sources = append(sources, r.ArticleId)
 	}
 
@@ -148,8 +156,11 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		{
 			Role: "system",
 			Content: "あなたは技術ナレッジベースのアシスタントです。" +
-				"以下のコンテキストに基づいて、正確かつ簡潔に回答してください。" +
-				"コンテキストに含まれていない情報は推測で答えず、「わかりません」と答えてください。",
+				"以下のコンテキストを参考にして回答してください。" +
+				"コンテキストに情報がある場合はそれを優先し、" +
+				// "ない場合はあなたの知識で補足してください。" +
+				"もしその情報に追加した方がいい情報があれば、あなたの知識で補足してください。" +
+				"ただし、あなたの知識で補足する場合は「参考:」と明記してください。",
 		},
 		{
 			Role: "user",
