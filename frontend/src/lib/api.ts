@@ -170,18 +170,21 @@ export async function uploadImage(file: File): Promise<string> {
 
 // ai chat
 export interface AskSource {
-  articleId: string;
+  article_id: string;
   title: string;
 }
 
-export async function askQuestion(question: string): Promise<{
-  answer: string;
-  sources: AskSource[];
-}> {
+// model: バックエンドでプロバイダーを動的選択
+// apiKey: ボディで送信（HTTPSで暗号化されるため十分安全）
+export async function askQuestion(
+  question: string,
+  model: string,
+  apiKey: string,
+): Promise<{ answer: string; sources: AskSource[] }> {
   const res = await fetch(`${API_BASE}/ai/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, model, api_key: apiKey }),
   });
   if (!res.ok) throw new Error('Failed to ask question');
   return res.json();

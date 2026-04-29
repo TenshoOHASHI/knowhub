@@ -41,6 +41,12 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
+		// ai 関連パスは認証不要
+		if strings.HasPrefix(r.URL.Path, "/api/ai/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Token を Cookie または Authorization ヘッダーから取得
 		var tokenStr string
 		if cookie, err := r.Cookie("token"); err == nil {

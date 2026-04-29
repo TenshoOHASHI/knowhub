@@ -304,17 +304,22 @@
 - [x] Article summarization 動作確認（Ollama + qwen3:1.7b で要約確認）
 - [x] Q&A based on wiki content（RAG: 検索→コンテキスト→LLM回答、sources 返却確認）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
-- [ ] Chat interface（フロントエンド）
-  - [x] ChatInterface コンポーネント（メッセージ一覧 + 入力フォーム + スクロール制御）
-  - [x] api.ts askQuestion 追加
+- [x] RAG sources に記事タイトル付きリンク（Proto: Source message 追加 + handler 更新）
+- [x] Chat interface（フロントエンド）
+  - [x] ChatInterface コンポーネント（ReactMarkdown + アイコン + スクロール制御）
+  - [x] api.ts askQuestion 追加（model / apiKey パラメータ + AskSource 型定義）
   - [x] Chat ページルーティング（/chat）
-  - [x] ReactMarkdown で回答を Markdown 表示
-  - [x] アイコン付きメッセージ（FaRobot / FaUser）
-  - [ ] Gateway AI endpoints auth スキップ
-  - [ ] RAG sources に記事タイトル付きリンク（Proto 変更必要）
-- [ ] ユーザー LLM モデル選択 UI
-- [ ] ユーザー API Key 入力（セキュア）
-- [ ] Gateway AI timeout 設定
+  - [x] ダークモード prose スタイル調整（コードブロック・リスト・区切り線）
+  - [x] チャット履歴永続化（localStorage + useSyncExternalStore + React 19 対応）
+  - [x] 履歴削除機能（FiTrash2 + ConfirmModal）
+  - [x] LLM モデル選択 UI（セレクトボックス + const.ts MODELS 定義）
+  - [x] API Key 入力（password + sessionStorage、タブ閉じで消去）
+- [x] Proto: QuestionRequest に model / api_key フィールド追加
+- [x] Backend: LLM 動的プロバイダー選択（NewProvider ファクトリ + model prefix 判定）
+- [x] Backend: AI handler でリクエストの model/api_key からプロバイダーを動的生成
+- [x] Gateway: AI endpoints 認証スキップ（/api/ai/ プレフィックスで認証バイパス）
+- [x] Gateway: AI ask endpoint に 60s timeout（context.WithTimeout）
+- [x] キーボードショートカットから Admin（a キー）を削除
 
 ## Phase 10 Progress（MCP Server）
 

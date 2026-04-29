@@ -328,6 +328,8 @@ func (x *SummarizeResponse) GetSummary() string {
 type QuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Question      string                 `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
+	Model         string                 `protobuf:"bytes,2,opt,name=model,proto3" json:"model,omitempty"`
+	ApiKey        string                 `protobuf:"bytes,3,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -365,6 +367,20 @@ func (*QuestionRequest) Descriptor() ([]byte, []int) {
 func (x *QuestionRequest) GetQuestion() string {
 	if x != nil {
 		return x.Question
+	}
+	return ""
+}
+
+func (x *QuestionRequest) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *QuestionRequest) GetApiKey() string {
+	if x != nil {
+		return x.ApiKey
 	}
 	return ""
 }
@@ -445,9 +461,11 @@ const file_proto_ai_ai_proto_rawDesc = "" +
 	"\n" +
 	"article_id\x18\x01 \x01(\tR\tarticleId\"-\n" +
 	"\x11SummarizeResponse\x12\x18\n" +
-	"\asummary\x18\x01 \x01(\tR\asummary\"-\n" +
+	"\asummary\x18\x01 \x01(\tR\asummary\"\\\n" +
 	"\x0fQuestionRequest\x12\x1a\n" +
-	"\bquestion\x18\x01 \x01(\tR\bquestion\"P\n" +
+	"\bquestion\x18\x01 \x01(\tR\bquestion\x12\x14\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12\x17\n" +
+	"\aapi_key\x18\x03 \x01(\tR\x06apiKey\"P\n" +
 	"\x10QuestionResponse\x12\x16\n" +
 	"\x06answer\x18\x01 \x01(\tR\x06answer\x12$\n" +
 	"\asources\x18\x02 \x03(\v2\n" +

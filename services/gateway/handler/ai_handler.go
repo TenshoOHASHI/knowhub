@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 
@@ -72,14 +74,22 @@ func (h *AIHandler) SummarizeArticle(w http.ResponseWriter, r *http.Request) {
 func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Question string `json:"question"`
+		Model    string `json:"model"`
+		ApiKey   string `json:"api_key"`
 	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	resp, err := h.client.AskQuestion(r.Context(), &pb.QuestionRequest{
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	resp, err := h.client.AskQuestion(ctx, &pb.QuestionRequest{
 		Question: req.Question,
+		Model:    req.Model,
+		ApiKey:   req.ApiKey,
 	})
 	if err != nil {
 		slog.Error("failed to ask question", "error", err)

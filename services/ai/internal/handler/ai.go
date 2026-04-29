@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
@@ -119,8 +118,10 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "question is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+	provider := h.llmProvider
+	if req.Model != "" {
+		provider = llm.NewProvider(req.Model, req.ApiKey)
+	}
 
 	// Step 1: 関連記事を検索
 	searchResp, err := h.SearchArticles(ctx, &pb.SearchRequest{
@@ -179,7 +180,7 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		},
 	}
 
-	answer, err := h.llmProvider.Chat(ctx, messages)
+	answer, err := provider.Chat(ctx, messages)
 	if err != nil {
 		slog.Error("LLM chat failed", "error", err)
 		return nil, status.Error(codes.Internal, "failed to generate answer")

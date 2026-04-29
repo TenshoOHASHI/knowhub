@@ -1,3 +1,18 @@
+## 2026-04-30 AI Chat 機能拡張（モデル選択・API Key・履歴永続化・認証スキップ）
+- Frontend: ChatInterface に LLM モデル選択セレクトボックス追加（const.ts MODELS 定義）
+- Frontend: API Key 入力欄追加（password + sessionStorage、タブ閉じで消去）
+- Frontend: チャット履歴の localStorage 永続化（useSyncExternalStore + React 19 対応）
+- Frontend: 履歴削除ボタン追加（FiTrash2 + ConfirmModal）
+- Frontend: Chat ページタイトルを "Chat Bot" に変更
+- Frontend: キーボードショートカットから Admin（a キー）を削除
+- Frontend: ConfirmModal の quote スタイル統一
+- Frontend: api.ts askQuestion に model / apiKey パラメータ追加、AskSource.articleId → article_id に変更
+- Proto: QuestionRequest に model / api_key フィールド追加
+- Backend: LLM 動的プロバイダー選択（NewProvider ファクトリ関数、model prefix で判定）
+- Backend: AI handler でリクエストの model/api_key からプロバイダーを動的生成
+- Gateway: AI endpoints の認証スキップ（/api/ai/ プレフィックス）
+- Gateway: AI ask endpoint に 60s timeout 設定（context.WithTimeout）
+
 ## 2026-04-29 AI Chat Interface + LLM Provider 拡張
 - Backend: Gemini プロバイダー実装（gemini.go、OpenAI 互換フォーマット）
 - Backend: DeepSeek プロバイダー実装（deepseek.go、OpenAI 互換フォーマット）
@@ -7,6 +22,18 @@
 - Frontend: api.ts に askQuestion 追加
 - Frontend: Chat ページルーティング（/chat）
 - Doc: Tailwind CSS パターン集追加（doc/frontend/tailwind-patterns.md）
+
+## 2026-04-28 AI Service（TF-IDF / BM25 検索 + RAG Q&A）
+- Backend: AI Service 雛形作成（Proto定義、Go module、gRPC handler）
+- Backend: LLM プロバイダー抽象化インターフェース（provider.go: Generate / Chat）
+- Backend: Ollama プロバイダー実装（ollama.go）
+- Backend: GLM-5 プロバイダー実装（glm5.go、OpenAI 互換フォーマット）
+- Backend: OpenAI プロバイダー実装（openai.go、オプション）
+- Backend: TF-IDF スクラッチ実装（トークン化 → TF → IDF → コサイン類似度）
+- Backend: BM25 スクラッチ実装（TF-IDF拡張、k1/b パラメータ）
+- Backend: テストコード（TF-IDF / BM25 / tokenize / 各計算関数）
+- Backend: Gateway REST endpoints（POST /api/ai/search, /api/ai/summarize, /api/ai/ask）
+- Backend: Article search / summarization / RAG Q&A 動作確認
 
 ## 2026-04-27 Wiki 記事の公開/限定公開（visibility）機能
 - DB: articles に visibility カラム追加（VARCHAR(20) DEFAULT 'public'）

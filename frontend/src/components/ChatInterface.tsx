@@ -1,9 +1,18 @@
 'use client';
 import { askQuestion, type AskSource } from '@/lib/api';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { FaRobot, FaUser } from 'react-icons/fa';
+import { FiTrash2 } from 'react-icons/fi';
+import { MODELS } from '@/lib/const';
+import ConfirmModal from './ConfirmModal';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -11,30 +20,126 @@ interface ChatMessage {
   sources?: AskSource[];
 }
 
+const STORAGE_KEY_MESSAGES = 'chat_history';
+const getKeyStorageKey = (modelId: string) => `ai_key_${modelId}`;
+
+// --- useSyncExternalStore: localStorage を React 19 対応で安全に読み書きする ---
+// localStorage 変更を通知するための購読機構
+const chatListeners = new Set<() => void>();
+function subscribeChat(listener: () => void) {
+  chatListeners.add(listener);
+  return () => {
+    chatListeners.delete(listener);
+  };
+}
+// キャッシュ: 同じデータなら同じ配列参照を返す（新配列を返すと無限ループ）
+const emptyMessages: ChatMessage[] = [];
+let chatCache: ChatMessage[] = emptyMessages;
+let chatCacheRaw: string | null = null;
+
+function getChatSnapshot(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_MESSAGES);
+    if (raw === chatCacheRaw) return chatCache;
+    chatCacheRaw = raw;
+    chatCache = raw ? JSON.parse(raw) : emptyMessages;
+    return chatCache;
+  } catch {
+    return emptyMessages;
+  }
+}
+
+function getChatServerSnapshot(): ChatMessage[] {
+  return emptyMessages;
+}
+
+function emitChatChange() {
+  localStorage.getItem(STORAGE_KEY_MESSAGES); // trigger re-read
+  chatListeners.forEach((l) => l());
+}
+
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // useSyncExternalStore: SSR では空配列、CSR では localStorage を読む
+  // setState in useEffect 不要 → React 19 警告なし + Hydrationエラーなし
+  const messages = useSyncExternalStore(
+    subscribeChat,
+    getChatSnapshot,
+    getChatServerSnapshot,
+  );
+  const updateMessages = useCallback(
+    (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+      const current = getChatSnapshot();
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      localStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(next));
+      emitChatChange(); // React に再読み込みを通知
+    },
+    [],
+  );
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const [model, setModel] = useState('ollama');
+  const [apiKey, setApiKey] = useState('');
+
+  const currentModel = MODELS.find((m) => m.id === model);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showClearModal, setShowClearModal] = useState(false);
+
+  // API Key の初期化は不要:
+  // 初期モデルは ollama（needsKey: false）なので入力欄が非表示
+  // モデル切替時に handleModelChange で sessionStorage から読み込む
+
+  const handleModelChange = (newModel: string) => {
+    setModel(newModel);
+    const savedKey = sessionStorage.getItem(getKeyStorageKey(newModel)) || '';
+    setApiKey(savedKey);
+  };
+
+  const handleKeyChange = (key: string) => {
+    setApiKey(key);
+    sessionStorage.setItem(getKeyStorageKey(model), key);
+  };
+
+  // 新しいメッセージが追加されたらスクロール
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleClearHistory = () => {
+    localStorage.removeItem(STORAGE_KEY_MESSAGES);
+    setShowClearModal(false);
+    emitChatChange();
+  };
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    const useMsg: ChatMessage = { role: 'user', content: input };
-    setMessages((prev) => [...prev, useMsg]);
+    if (currentModel?.needsKey && !apiKey.trim()) {
+      updateMessages((prev) => [
+        ...prev,
+        { role: 'user', content: input },
+        { role: 'assistant', content: 'API Key を入力してください。' },
+      ]);
+      setInput('');
+      return;
+    }
+
+    updateMessages((prev) => [...prev, { role: 'user', content: input }]);
     setInput('');
     setLoading(true);
 
     try {
-      const { answer, sources } = await askQuestion(input);
-      setMessages((prev) => [
+      const modelToSend = currentModel?.defaultModel || model;
+      const { answer, sources } = await askQuestion(input, modelToSend, apiKey);
+      updateMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: answer, sources }, // sources = [{id: "11", title:"gRPC"}]
+        { role: 'assistant', content: answer, sources },
       ]);
     } catch {
-      setMessages((prev) => [
+      updateMessages((prev) => [
         ...prev,
         { role: 'assistant', content: 'エラーが発生しました。' },
       ]);
@@ -43,12 +148,45 @@ export default function ChatInterface() {
     }
   };
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   return (
-    <div className='flex flex-col h-[calc(100vh-200px)] max-w-5xl mx-auto rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'>
+    <div className='flex flex-col h-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'>
+      {/* モデル選択 + API Key 入力 + 履歴削除 */}
+      <div className='flex items-center gap-3 p-3 border-b border-stone-300 dark:border-stone-600'>
+        <select
+          value={model}
+          onChange={(e) => handleModelChange(e.target.value)}
+          className='rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+        >
+          {MODELS.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+
+        {currentModel?.needsKey && (
+          <input
+            type='password'
+            value={apiKey}
+            onChange={(e) => handleKeyChange(e.target.value)}
+            placeholder='API Key（タブ閉じると消えます）'
+            className='flex-1 rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          />
+        )}
+
+        {/* 会話履歴削除ボタン */}
+        {messages.length > 0 && (
+          <button
+            type='button'
+            onClick={() => setShowClearModal(true)}
+            title='会話履歴を削除'
+            className='shrink-0 p-1.5 text-stone-400 hover:text-red-500 transition-colors'
+          >
+            <FiTrash2 size={18} />
+          </button>
+        )}
+      </div>
+
       {/* メッセージ一覧 */}
       <div className='flex-1 overflow-y-auto space-y-4 p-4'>
         {messages.length === 0 && (
@@ -78,7 +216,7 @@ export default function ChatInterface() {
               }`}
             >
               {msg.role === 'assistant' ? (
-                <div className='prose prose-sm dark:prose-invert max-w-none'>
+                <div className='prose prose-sm dark:prose-invert prose-li:marker:text-stone-600 dark:prose-li:marker:text-stone-300 prose-hr:border-stone-500 dark:prose-hr:border-stone-400 prose-pre:bg-stone-600 dark:prose-pre:bg-stone-900 prose-code:text-stone-800 dark:prose-code:text-stone-200 max-w-none'>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {msg.content}
                   </ReactMarkdown>
@@ -87,16 +225,15 @@ export default function ChatInterface() {
                 <p>{msg.content}</p>
               )}
               {msg.sources && msg.sources.length > 0 && (
-                <div className='text-xs text-stone-400 mt-2 pt-2 border-t border-stone-300 dark:border-stone-600'>
+                <div className='text-xs text-stone-500 dark:text-stone-400 mt-2 pt-2 border-t border-stone-300 dark:border-stone-500'>
                   参照:{' '}
-                  {msg.sources.map((s, idx) => (
+                  {msg.sources.map((s) => (
                     <a
-                      key={s.articleId + idx}
-                      href={`/wiki/${s.articleId}`}
-                      className='underline hover:text-stone-300 ml-1'
+                      key={s.article_id}
+                      href={`/wiki/${s.article_id}`}
+                      className='underline hover:text-blue-400 ml-1'
                     >
                       {s.title}
-                      {idx < msg.sources!.length - 1 && ','}
                     </a>
                   ))}
                 </div>
@@ -145,6 +282,16 @@ export default function ChatInterface() {
           送信
         </button>
       </form>
+
+      {/* 履歴削除確認モーダル・他のボタンでモーダル表示を発火させる */}
+
+      <ConfirmModal
+        isOpen={showClearModal}
+        title='会話履歴の削除'
+        message='すべての会話履歴を削除しますか？この操作は元に戻せません。'
+        onConfirm={handleClearHistory}
+        onCancel={() => setShowClearModal(false)}
+      />
     </div>
   );
 }

@@ -7,7 +7,6 @@ const SHORTCUTS = [
   { key: 'h', label: 'ホーム', path: '/' },
   { key: 'w', label: 'Wiki', path: '/wiki' },
   { key: 'p', label: 'Portfolio', path: '/portfolio' },
-  { key: 'a', label: 'Admin', path: '/admin' },
   { key: 'c', label: 'Chat', path: '/cht' },
 ] as const;
 
@@ -33,9 +32,6 @@ export default function KeyboardShortcuts() {
           break;
         case 'p':
           window.location.href = '/portfolio';
-          break;
-        case 'a':
-          window.location.href = '/admin';
           break;
         case 'c':
           window.location.href = '/chat';

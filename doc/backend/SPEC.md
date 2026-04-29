@@ -228,12 +228,19 @@
 - [x] Q&A based on wiki content（RAG: 検索結果をコンテキストに LLM 回答）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
 - [ ] Article search with vector embeddings（Ollama embedding モデル）
-- [ ] Chat interface（フロントエンド）
-- [ ] Gateway AI endpoints auth スキップ（認証なしでアクセス可能）
-- [ ] RAG sources に記事タイトル付きリンク表示（Proto 変更: Source message）
-- [ ] Chat で LLM モデル選択 UI（ユーザーがモデル切替）
-- [ ] ユーザー API Key 入力（セキュアな取り扱い: マスク入力・サーバー非保存）
-- [ ] Gateway AI timeout 設定（context canceled 対策）
+- [x] Chat interface（フロントエンド）
+  - [x] ChatInterface コンポーネント（ReactMarkdown + アイコン + スクロール制御）
+  - [x] api.ts askQuestion 追加（model / apiKey パラメータ対応）
+  - [x] Chat ページルーティング（/chat）
+  - [x] チャット履歴永続化（localStorage + useSyncExternalStore）
+  - [x] 履歴削除機能（ConfirmModal）
+  - [x] LLM モデル選択 UI（セレクトボックス + const.ts MODELS 定義）
+  - [x] API Key 入力（password + sessionStorage、タブ閉じで消去）
+- [x] RAG sources に記事タイトル付きリンク表示（Proto 変更: Source message）
+- [x] Proto: QuestionRequest に model / api_key フィールド追加
+- [x] Backend: LLM 動的プロバイダー選択（NewProvider ファクトリ + model prefix 判定）
+- [x] Gateway AI endpoints auth スキップ（認証なしでアクセス可能）
+- [x] Gateway AI timeout 設定（60s context timeout）
 
 ### Phase 10: MCP Server
 - [ ] MCP Server implementation (Go)

@@ -41,6 +41,8 @@ message SummarizeResponse {
 
 message QuestionRequest {
   string question = 1;
+  string model = 2;
+  string api_key = 3;
 }
 
 message QuestionResponse {
