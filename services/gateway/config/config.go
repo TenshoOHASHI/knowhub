@@ -17,6 +17,7 @@ type Config struct {
 	AuthAddr    string
 	WikiAddr    string
 	ProfileAddr string
+	AIAddr      string
 
 	// Server
 	Port     string
@@ -36,6 +37,7 @@ func Load(envPath string) *Config {
 		AuthAddr:          getEnv("AUTH_ADDR", "localhost:50051"),
 		WikiAddr:          getEnv("WIKI_ADDR", "localhost:50052"),
 		ProfileAddr:       getEnv("PROFILE_ADDR", "localhost:50053"),
+		AIAddr:            getEnv("AI_ADDR", "localhost:50054"),
 		Port:              getEnv("GATEWAY_PORT", "8080"),
 		LogLevel:          getEnv("LOG_LEVEL", "info"),
 		UploadDir:         getEnv("UPLOAD_DIR", "./uploads"),

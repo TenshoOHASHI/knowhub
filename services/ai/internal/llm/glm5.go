@@ -51,30 +51,39 @@ func (p *GLM5Provider) Generate(ctx context.Context, prompt string) (string, err
 }
 
 func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, error) {
+	// メッセージ用のバッファを用意
 	msgs := make([]chatMessageGLM5, 0, len(messages))
+	// 複数のメッセージを取り出し、GLM5用の構造体に変換してから、バッファに追加
 	for _, m := range messages {
 		msgs = append(msgs, chatMessageGLM5{Role: m.Role, Content: m.Content})
 	}
 
+	// 送信用のリクエスト構造体を初期化
 	body := chatCompletionRequest{
 		Model:    p.model,
 		Messages: msgs,
 		Stream:   false,
 	}
 
-	// エンコード：Go ->JSON -> utf-8
+	// エンコード：Goの構造体をJSON文字列（[]byte）に変換（バイト列にシリアライズ）
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
+	// コンテキスト付きのリクエスト通信を行う
+	// 送信先は、openAIと互換がある、url（相手側のサーバ）にデータ送信するための準備をする
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://open.bigmodel.cn/api/paas/v4/chat/completions", bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("create request: %w", err)
 	}
+
+	// リクエスト用のヘッダーを用意
+	// また、認証用のBearerを手動でヘッダーに設定（サーバ間の通信はCORSとは関係ない）
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 
+	// ここで、実際にデータを送信
 	resp, err := p.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("GLM-5 request failed: %w", err)
@@ -82,12 +91,15 @@ func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, er
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		// ディスク（メモリ？）からバイド列を全て読み込む
 		respBody, _ := io.ReadAll(resp.Body)
 		slog.Error("GLM-5 error", "status", resp.StatusCode, "body", string(respBody))
 		return "", fmt.Errorf("GLM-5 returned status %d", resp.StatusCode)
 	}
 
+	// 結果用の構造体を用意
 	var result chatCompletionResponse
+	// 受け取ったバイト列をデコードし、resultにデータを格納（バイト列を読み込む、json文字列に変換、それをgoの構造体に変換（マッピング））
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", fmt.Errorf("decode response: %w", err)
 	}

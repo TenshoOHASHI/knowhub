@@ -18,7 +18,8 @@ type AIHandler struct {
 	pb.UnimplementedAIServiceServer
 	searchEngine search.SearchEngine
 	llmProvider  llm.LLMProvider
-	wikiClient   wikiPb.WikiServicesClient
+	wikiClient   wikiPb.WikiServicesClient // Wiki Service の gRPCサーバーと通信するクライアント
+
 }
 
 func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, wikiClient wikiPb.WikiServicesClient) *AIHandler {
@@ -43,6 +44,7 @@ func (h *AIHandler) SearchArticles(ctx context.Context, req *pb.SearchRequest) (
 	// Wiki Service から全記事を取得してインデックスを構築
 	articles, err := h.wikiClient.List(ctx, &wikiPb.ListArticleRequest{})
 	if err != nil {
+		slog.Error("failed to fetch articles from wiki service", "error", err)
 		return nil, status.Error(codes.Internal, "failed to fetch articles from wiki service")
 	}
 
@@ -57,12 +59,14 @@ func (h *AIHandler) SearchArticles(ctx context.Context, req *pb.SearchRequest) (
 	}
 
 	if err := h.searchEngine.Index(ctx, docs); err != nil {
+		slog.Error("failed to build search index", "error", err)
 		return nil, status.Error(codes.Internal, "failed to build search index")
 	}
 
 	// 検索実行
 	results, err := h.searchEngine.Search(ctx, req.Query, limit)
 	if err != nil {
+		slog.Error("search failed", "error", err)
 		return nil, status.Error(codes.Internal, "search failed")
 	}
 
@@ -88,6 +92,7 @@ func (h *AIHandler) SummarizeArticle(ctx context.Context, req *pb.SummarizeReque
 	// Wiki Service から記事を取得
 	resp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: req.ArticleId})
 	if err != nil {
+		slog.Error("failed to get article from wiki service", "error", err, "article_id", req.ArticleId)
 		return nil, status.Error(codes.NotFound, "article not found")
 	}
 

@@ -33,7 +33,7 @@ func main() {
 	}
 	defer wikiConn.Close()
 	wikiClient := wikiPb.NewWikiServicesClient(wikiConn)
-	slog.Info("connected to wiki service", "addr", cfg.WikiAddr)
+	slog.Info("connected to wiki service", "addr", cfg.GRPCPort)
 
 	// LLM Provider（環境変数で切り替え）
 	var provider llm.LLMProvider
@@ -49,8 +49,16 @@ func main() {
 		slog.Info("LLM provider: Ollama", "url", cfg.OllamaURL)
 	}
 
-	// Search Engine（スクラッチ実装の TF-IDF）
-	searchEngine := search.NewTFIDFEngine()
+	var searchEngine search.SearchEngine
+
+	switch cfg.SearchEngin {
+	case "tfidf":
+		searchEngine = search.NewTFIDFEngine()
+		slog.Info("Search engine: TF-IDF")
+	default:
+		searchEngine = search.NewBM25Engine()
+		slog.Info("Search engine: BM25")
+	}
 
 	// Handler
 	aiHandler := handler.NewAIHandler(searchEngine, provider, wikiClient)

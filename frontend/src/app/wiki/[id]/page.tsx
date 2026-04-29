@@ -77,9 +77,9 @@ export default async function ArticleDetailPage({ params }: Props) {
             />
           </span>
         )}
-        <span className='min-w-0 break-all'>{article.title}</span>
+        <span className='min-w-0 break-all text-4xl'>{article.title}</span>
       </h1>
-      <p className='text-stone-400 mb-6'>
+      <p className='text-stone-400 mb-6 text-lg'>
         {new Date(article.created_at.seconds * 1000).toLocaleDateString(
           'ja-JP',
         )}

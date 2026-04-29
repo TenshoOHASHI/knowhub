@@ -14,6 +14,7 @@ import (
 	"github.com/TenshoOHASHI/knowhub/services/gateway/config"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/handler"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/middleware"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -38,17 +39,20 @@ func main() {
 	authConn := dialService("auth", cfg.AuthAddr)
 	wikiConn := dialService("wiki", cfg.WikiAddr)
 	profileConn := dialService("profile", cfg.ProfileAddr)
+	aiConn := dialService("ai", cfg.AIAddr)
 
 	// close connection
 	defer authConn.Close()
 	defer wikiConn.Close()
 	defer profileConn.Close()
+	defer aiConn.Close()
 
 	// Handlers
 	wikiHandler := handler.NewWikiHandler(wikiConn)
 	authHandler := handler.NewAuthHandler(authConn)
 	profileHandler := handler.NewProfileHandle(profileConn)
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
+	aiHandler := handler.NewAIHandler(aiConn)
 
 	// Routes
 	mux := http.NewServeMux()
@@ -81,6 +85,11 @@ func main() {
 	mux.HandleFunc("POST /api/portfolio", profileHandler.CreatePortfolioItem)
 	mux.HandleFunc("PUT /api/portfolio/{id}", profileHandler.UpdatePortfolioItem)
 	mux.HandleFunc("DELETE /api/portfolio/{id}", profileHandler.DeletePortfolioItem)
+
+	// ai
+	mux.HandleFunc("POST /api/ai/search", aiHandler.SearchArticles)
+	mux.HandleFunc("POST /api/ai/summarize", aiHandler.SummarizeArticle)
+	mux.HandleFunc("POST /api/ai/ask", aiHandler.AskQuestion)
 
 	// upload
 	mux.HandleFunc("POST /api/upload", uploadHandler.Upload)

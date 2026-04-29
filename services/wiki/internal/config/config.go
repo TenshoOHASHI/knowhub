@@ -13,9 +13,9 @@ type Config struct {
 	DBPort     string
 	DBName     string
 	GRPCPort   string
+	LogLevel   string
 	RedisHost  string
 	RedisPort  string
-	LogLevel   string
 }
 
 func Load(path string) *Config {

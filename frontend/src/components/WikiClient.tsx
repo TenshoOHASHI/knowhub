@@ -92,9 +92,9 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
                     />
                   </span>
                 )}
-                <span className='min-w-0 break-all'>{a.title}</span>
+                <span className='min-w-0 break-all text-2xl'>{a.title}</span>
               </h2>
-              <p className='text-gray-500 dark:text-stone-400 mt-2 line-clamp-2 text-sm leading-relaxed'>
+              <p className='text-gray-500 dark:text-stone-400 mt-2 line-clamp-2 text-md leading-relaxed'>
                 {a.visibility === 'locked'
                   ? 'この記事は限定公開です'
                   : stripMarkdown(a.content).slice(0, 150)}

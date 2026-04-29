@@ -10,7 +10,7 @@ type Config struct {
 	// gRPC
 	GRPCPort string
 
-	// Wiki Service (gRPC client)
+	// Wiki Service（gRPC client）
 	WikiAddr string
 
 	// LLM
@@ -22,6 +22,8 @@ type Config struct {
 
 	// Logging
 	LogLevel string
+
+	SearchEngin string
 }
 
 func Load(path string) *Config {
@@ -35,12 +37,13 @@ func Load(path string) *Config {
 		GLM5Model:   getEnv("GLM5_MODEL", "glm-5"),
 		OpenAIKey:   os.Getenv("OPENAI_API_KEY"),
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
+		SearchEngin: os.Getenv("SEARCH_ENGIN"),
 	}
 }
 
-func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+func getEnv(key, defaultValue string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
 	}
-	return fallback
+	return defaultValue
 }
