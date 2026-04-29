@@ -45,7 +45,7 @@ func main() {
 		provider = llm.NewOpenAIProvider(cfg.OpenAIKey)
 		slog.Info("LLM provider: OpenAI")
 	default:
-		provider = llm.NewOllamaProvider(cfg.OllamaURL)
+		provider = llm.NewOllamaProvider(cfg.OllamaURL, cfg.OllamaModel)
 		slog.Info("LLM provider: Ollama", "url", cfg.OllamaURL)
 	}
 

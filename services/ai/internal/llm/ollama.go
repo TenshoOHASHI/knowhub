@@ -17,10 +17,10 @@ type OllamaProvider struct {
 	client  *http.Client
 }
 
-func NewOllamaProvider(baseURL string) *OllamaProvider {
+func NewOllamaProvider(baseURL string, model string) *OllamaProvider {
 	return &OllamaProvider{
 		baseURL: baseURL,
-		model:   "gemma3:1b",
+		model:   model,
 		client:  &http.Client{},
 	}
 }
