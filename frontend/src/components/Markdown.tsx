@@ -1,4 +1,8 @@
 import MermaidDiagram from './MermaidDiagram';
+import Callout from './Callout';
+import type { CalloutType } from '@/lib/remark-callout';
+
+const CALLOUT_TYPE_RE = /callout callout-(note|info|tip|warning|caution|important|warm)/;
 
 // Markdownレンダリングの共通components設定
 export default function markdownComponents() {
@@ -20,6 +24,40 @@ export default function markdownComponents() {
         <code className={className} {...props}>
           {children}
         </code>
+      );
+    },
+    div({ className, children, ...props }: React.ComponentProps<'div'>) {
+      const classStr = className || '';
+      const match = classStr.match(CALLOUT_TYPE_RE);
+      if (match) {
+        return (
+          <Callout type={match[1] as CalloutType}>{children}</Callout>
+        );
+      }
+      return (
+        <div className={className} {...props}>
+          {children}
+        </div>
+      );
+    },
+    details({ children, ...props }: React.ComponentProps<'details'>) {
+      return (
+        <details
+          className='my-4 rounded-lg border border-gray-200 dark:border-gray-700'
+          {...props}
+        >
+          {children}
+        </details>
+      );
+    },
+    summary({ children, ...props }: React.ComponentProps<'summary'>) {
+      return (
+        <summary
+          className='cursor-pointer select-none px-4 py-2 font-semibold text-sm bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 hover:bg-gray-200 transition-colors'
+          {...props}
+        >
+          {children}
+        </summary>
       );
     },
   };

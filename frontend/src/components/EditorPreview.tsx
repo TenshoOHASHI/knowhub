@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeRaw from 'rehype-raw';
 import markdownComponents from './Markdown';
 import MarkdownHelp from './MarkdownHelp';
 import { FiHelpCircle, FiMaximize2, FiX } from 'react-icons/fi';
 import remarkGfm from 'remark-gfm';
+import { remarkCallout, preprocessCallouts } from '@/lib/remark-callout';
 
 // 親（Editor）から渡される props の型定義
 interface EditorPreviewProps {
@@ -22,6 +24,8 @@ export default function EditorPreview({
 }: EditorPreviewProps) {
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+
+  const processed = preprocessCallouts(content);
 
   return (
     <>
@@ -63,13 +67,13 @@ export default function EditorPreview({
               </div>
             </div>
             <div className='border border-black dark:border-stone-600 rounded-lg p-2 h-80 overflow-y-auto prose dark:prose-invert thin-scrollbar'>
-              {content ? (
+              {processed ? (
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
+                  remarkPlugins={[remarkGfm, remarkCallout]}
+                  rehypePlugins={[rehypeRaw, rehypeHighlight]}
                   components={markdownComponents()}
                 >
-                  {content}
+                  {processed}
                 </ReactMarkdown>
               ) : (
                 <p className='text-gray-400'>
@@ -112,11 +116,11 @@ export default function EditorPreview({
             </div>
             <div className='prose max-w-none dark:prose-invert'>
               <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeHighlight]}
+                remarkPlugins={[remarkGfm, remarkCallout]}
+                rehypePlugins={[rehypeRaw, rehypeHighlight]}
                 components={markdownComponents()}
               >
-                {content}
+                {processed}
               </ReactMarkdown>
             </div>
           </div>

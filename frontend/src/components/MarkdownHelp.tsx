@@ -72,6 +72,23 @@ const HELP_SECTIONS = [
     syntax:
       '## ProfileService RPC\n\n| RPC | Request | Response | Description |\n|-----|---------|----------|-------------|\n| GetProfile | - | Profile | 取得 |\n| CreateProfile | title, bio, github_url | Profile | 作成 |\n| UpdateProfile | title, bio, github_url | Profile | 更新 |\n| CreatePortfolioItem | title, desc, url, status | Item | 作成 |\n| ListPortfolioItems | - | Item[] | 一覧 |\n| UpdatePortfolioItem | id, title?, desc?, url?, status? | Item | 部分更新 |\n| DeletePortfolioItem | id | Empty | 削除 |',
   },
+  // ===== コールアウト =====
+  {
+    title: 'コールアウト（Zenn風）',
+    syntax:
+      ':::message\nメモ的内容\n:::\n\n:::message info\n情報\n:::\n\n:::message tip\nヒント\n:::\n\n:::message warning\n警告\n:::\n\n:::message alert\n注意\n:::\n\n:::message warm\n温かみのある色\n:::',
+  },
+  {
+    title: 'コールアウト（GitHub風）',
+    syntax:
+      '> [!NOTE]\n> メモ\n\n> [!TIP]\n> ヒント\n\n> [!WARNING]\n> 警告\n\n> [!CAUTION]\n> 注意\n\n> [!IMPORTANT]\n> 重要',
+  },
+  // ===== 折りたたみブロック =====
+  {
+    title: '折りたたみブロック',
+    syntax:
+      '<details>\n<summary>クリックして展開</summary>\n\n```go\nfmt.Println("hello")\n```\n\n</details>',
+  },
   // ===== コードブロック =====
   {
     title: 'Go / SQL コードブロック',

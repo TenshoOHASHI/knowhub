@@ -45,3 +45,13 @@ body {
     background: #555;
   }
 }
+
+/* Callout body paragraph spacing */
+.prose .callout-body p {
+  margin: 0;
+}
+
+.prose .callout-body p + p {
+  margin-top: 0.5em;
+}
+

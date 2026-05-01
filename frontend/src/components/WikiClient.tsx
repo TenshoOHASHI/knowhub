@@ -10,15 +10,21 @@ import { motion } from 'motion/react';
 function stripMarkdown(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, '') // コードブロック除去
+    .replace(/<details>[\s\S]*?<\/details>/gi, '') // 折りたたみブロック
+    .replace(/<[^>]+>/g, '') // HTMLタグ除去
+    .replace(/^:::message.*$\n?/gm, '') // Zennコールアウト開始
+    .replace(/^:::\s*$/gm, '') // Zennコールアウト終了
     .replace(/`([^`]+)`/g, '$1') // インラインコード
     .replace(/!\[.*?\]\(.*?\)/g, '') // 画像
     .replace(/\[([^\]]+)\]\(.*?\)/g, '$1') // リンク → テキストだけ
     .replace(/#{1,6}\s/g, '') // 見出し記号
     .replace(/(\*{1,3}|_{1,3})(.*?)\1/g, '$2') // 太字・斜体
-    .replace(/>\s.*/g, '') // 引用
+    .replace(/^>\s.*/gm, '') // 引用
     .replace(/^[-*+]\s/gm, '') // リスト記号
     .replace(/^\|.+\|$/gm, '') // テーブル行（| ... |）
     .replace(/^---+$/gm, '') // 水平線
+    .replace(/^===+$/gm, '') // setext見出し下線
+    .replace(/\[!(NOTE|INFO|TIP|WARNING|CAUTION|IMPORTANT)\]/g, '') // GitHub callout marker
     .replace(/\n{2,}/g, ' ') // 改行をスペースに
     .trim();
 }
