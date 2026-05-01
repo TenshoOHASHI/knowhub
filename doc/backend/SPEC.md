@@ -227,7 +227,30 @@
 - [x] Article summarization（LLM による要約）
 - [x] Q&A based on wiki content（RAG: 検索結果をコンテキストに LLM 回答）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
-- [ ] Article search with vector embeddings（Ollama embedding モデル）
+- [ ] Vector Embeddings 検索（Ollama embedding モデル）
+  - [ ] Ollama embedding API クライアント（/api/embed エンドポイント）
+  - [ ] 外部 API embedding フォールバック（DeepSeek / OpenAI / Gemini）
+  - [ ] VectorEngine 構造体（SearchEngine インターフェース実装）
+  - [ ] ドキュメント embedding 生成とインメモリキャッシュ（[][]float64）
+  - [ ] クエリ embedding とコサイン類似度による検索
+  - [ ] Hybrid Search（BM25 + Vector の重み付き統合: α * BM25 + (1-α) * Vector）
+  - [ ] Config に EmbeddingProvider / EmbeddingModel 追加
+  - [ ] main.go に "vector" / "hybrid" エンジン選択肢追加
+  - [ ] テストコード（embedding / cosine / hybrid）
+- [ ] Graph RAG（ナレッジグラフ拡張検索）
+  - [ ] エンティティ・リレーション抽出プロンプト設計（LLM で記事から抽出）
+  - [ ] インメモリ知識グラフ構造体（ノード: Entity / エッジ: Relation）
+  - [ ] 記事インデックス時にグラフを自動構築
+  - [ ] グラフトラバーサルによる関連記事検索（BFS / 2-hop）
+  - [ ] Graph + Vector ハイブリッド回答生成
+  - [ ] テストコード（グラフ構築 / トラバーサル / 検索）
+- [ ] フロントエンド: 検索エンジン選択 UI
+  - [ ] const.ts に SEARCH_ENGINES 定数追加（bm25 / vector / hybrid / graph + needsKey）
+  - [ ] ChatInterface に検索エンジンセレクトボックス追加
+  - [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示を切替
+  - [ ] api.ts askQuestion に search_engine パラメータ追加
+  - [ ] Proto: QuestionRequest に search_engine フィールド追加
+  - [ ] Backend: リクエストの search_engine から動的に SearchEngine を選択
 - [x] Chat interface（フロントエンド）
   - [x] ChatInterface コンポーネント（ReactMarkdown + アイコン + スクロール制御）
   - [x] api.ts askQuestion 追加（model / apiKey パラメータ対応）

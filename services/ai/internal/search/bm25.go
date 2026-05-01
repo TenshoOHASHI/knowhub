@@ -35,6 +35,7 @@ func computeTermFreq(tokens []string) map[string]int {
 	return freq
 }
 
+// 出現した単語が各文章に出現する度合い（情報量の重み付け）
 func computeBM25IDF(tokenizedDocs [][]string) map[string]float64 {
 	// 文章数
 	N := float64(len(tokenizedDocs))
@@ -54,6 +55,7 @@ func computeBM25IDF(tokenizedDocs [][]string) map[string]float64 {
 	}
 
 	idf := make(map[string]float64)
+	// n: その単語を含む文章の数
 	for word, n := range df {
 		idf[word] = math.Log((N-n+0.5)/(n+0.5) + 1)
 	}
@@ -77,7 +79,7 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 
 	// 3. 平均トークン数
 	if len(docs) > 0 {
-		// 全体の単語を、文書数で均等に割ったら1文書あたり何語か
+		// 全体の単語を、文書数で均等に割ったら1文書あたり何単語か
 		// docsは全文章の単語数の合計
 		e.avgDl = float64(totalTokens) / float64(len(docs))
 	}

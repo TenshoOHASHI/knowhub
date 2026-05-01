@@ -321,6 +321,60 @@
 - [x] Gateway: AI ask endpoint に 60s timeout（context.WithTimeout）
 - [x] キーボードショートカットから Admin（a キー）を削除
 
+## Phase 9.5 Progress（Advanced Search: Vector + Graph RAG）
+
+### Vector Embeddings
+- [ ] Ollama embedding API クライアント（/api/embed エンドポイント）
+  - [ ] EmbeddingProvider インターフェース定義（GetEmbedding / GetEmbeddings）
+  - [ ] OllamaEmbeddingProvider 実装（http.Post → []float64）
+  - [ ] 外部 API フォールバック（DeepSeek / OpenAI / Gemini embedding API）
+- [ ] VectorEngine 構造体（SearchEngine インターフェース実装）
+  - [ ] documents フィールド（元ドキュメント保持）
+  - [ ] embeddings フィールド（[][]float64、インデックス時に一括生成）
+  - [ ] Index: 全ドキュメント → embedding API → キャッシュ
+  - [ ] Search: クエリ → embedding → コサイン類似度 → スコア降順
+- [ ] cosineSimilarity（tfidf.go の流用 or 共通化）
+- [ ] Hybrid Search（BM25 + Vector の重み付き統合）
+  - [ ] HybridEngine 構造体（bm25 + vector エンジンを内包）
+  - [ ] α * BM25正規化スコア + (1-α) * Vector スコア
+  - [ ] min-max 正規化でスケールを統一
+- [ ] Config に EmbeddingProvider / EmbeddingModel 追加
+- [ ] main.go に "vector" / "hybrid" エンジン選択肢追加
+- [ ] テストコード（embedding / cosine / vector search / hybrid）
+
+### Graph RAG
+- [ ] ナレッジグラフのデータ構造設計
+  - [ ] Entity 構造体（ID / Name / Type / ArticleIDs）
+  - [ ] Relation 構造体（Source / Target / Label）
+  - [ ] KnowledgeGraph 構造体（entities map + relations slice + adjacency list）
+- [ ] LLM によるエンティティ・リレーション抽出
+  - [ ] プロンプト設計（記事 → JSON: {entities, relations}）
+  - [ ] ExtractEntities 関数（LLM 呼び出し → JSON パース）
+- [ ] GraphEngine 構造体（SearchEngine インターフェース実装）
+  - [ ] Index: 記事 → エンティティ抽出 → グラフ構築
+  - [ ] Search: クエリ → エンティティ特定 → BFS で関連ノード探索 → 関連記事収集
+- [ ] Graph + Vector ハイブリッド回答生成
+  - [ ] グラフ検索で関連記事を広く収集
+  - [ ] Vector でセマンティック検索
+  - [ ] 両方の結果をマージしてコンテキスト生成
+- [ ] テストコード（グラフ構築 / BFS トラバーサル / 検索）
+
+### フロントエンド: 検索エンジン選択 UI
+- [ ] const.ts に SEARCH_ENGINES 定数追加
+  - [ ] bm25: { id: 'bm25', name: 'BM25（キーワード検索）', needsKey: false }
+  - [ ] vector: { id: 'vector', name: 'Vector（セマンティック検索）', needsKey: true }
+  - [ ] hybrid: { id: 'hybrid', name: 'Hybrid（BM25 + Vector）', needsKey: true }
+  - [ ] graph: { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true }
+- [ ] ChatInterface に検索エンジンセレクトボックス追加（LLM モデル選択の下）
+- [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示切替
+- [ ] api.ts askQuestion に search_engine / embedding_api_key パラメータ追加
+- [ ] Proto: QuestionRequest に search_engine フィールド追加
+- [ ] Backend: AI handler で search_engine 値から動的に SearchEngine を選択
+  - [ ] "bm25" → BM25Engine（API Key 不要）
+  - [ ] "vector" → VectorEngine（embedding API Key 使用）
+  - [ ] "hybrid" → HybridEngine（BM25 + Vector）
+  - [ ] "graph" → GraphEngine（LLM API Key 使用）
+
 ## Phase 10 Progress（MCP Server）
 
 - [ ] MCP Server implementation (Go)
