@@ -131,6 +131,9 @@
 - [x] 削除確認ダイアログ（ConfirmModal — 汎用コンポーネント）
 - [x] 通知機能（Toast — 汎用コンポーネント、どこでも使える）
 - [x] Changelog / Updates ページ
+- [x] コールアウトブロック対応（Zenn記法 / GitHub記法、7タイプ: note/info/tip/warning/caution/important/warm）
+- [x] 折りたたみブロック対応（details/summary、Tailwindスタイリング）
+- [x] rehype-raw 追加（Markdown内HTMLレンダリング対応）
 
 ### Phase 7.7: カテゴリ階層（フル実装） ✅
 - [x] DB: categories table 追加（id, name, parent_id）
@@ -239,20 +242,25 @@
   - [x] Hybrid Search（BM25 + Vector の重み付き統合: α * BM25 + (1-α) * Vector）
   - [x] main.go に "hybrid" エンジン選択肢追加
   - [ ] テストコード（embedding / cosine / hybrid）
-- [ ] Graph RAG（ナレッジグラフ拡張検索）
-  - [ ] エンティティ・リレーション抽出プロンプト設計（LLM で記事から抽出）
-  - [ ] インメモリ知識グラフ構造体（ノード: Entity / エッジ: Relation）
-  - [ ] 記事インデックス時にグラフを自動構築
-  - [ ] グラフトラバーサルによる関連記事検索（BFS / 2-hop）
-  - [ ] Graph + Vector ハイブリッド回答生成
+- [x] Graph RAG（ナレッジグラフ拡張検索）
+  - [x] エンティティ・リレーション抽出プロンプト設計（LLM で記事から抽出）
+  - [x] インメモリ知識グラフ構造体（ノード: Entity / エッジ: Relation）
+  - [x] 記事インデックス時にグラフを自動構築
+  - [x] グラフトラバーサルによる関連記事検索（BFS / 2-hop）
   - [ ] テストコード（グラフ構築 / トラバーサル / 検索）
+- [x] Backend: 検索エンジン動的選択（リファクタリング）
+  - [x] Proto: QuestionRequest に search_engine フィールド追加
+  - [x] Gateway: ai_handler.go に search_engine パラメータ追加
+  - [x] embedding.NewProvider ファクトリ追加（apiKey から自動判定）
+  - [x] search.SelectEngine ファクトリ追加（engineName → SearchEngine 自動生成）
+  - [x] handler: AskQuestion でリクエストの search_engine から動的に選択
+  - [x] main.go シンプル化（デフォルト BM25 + Ollama、handler で動的切替）
+  - [x] config.go 削減（SearchEngin / EmbeddingProvider / LLM 個別フィールド削除）
 - [ ] フロントエンド: 検索エンジン選択 UI
   - [ ] const.ts に SEARCH_ENGINES 定数追加（bm25 / vector / hybrid / graph + needsKey）
   - [ ] ChatInterface に検索エンジンセレクトボックス追加
   - [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示を切替
   - [ ] api.ts askQuestion に search_engine パラメータ追加
-  - [ ] Proto: QuestionRequest に search_engine フィールド追加
-  - [ ] Backend: リクエストの search_engine から動的に SearchEngine を選択
 - [x] Chat interface（フロントエンド）
   - [x] ChatInterface コンポーネント（ReactMarkdown + アイコン + スクロール制御）
   - [x] api.ts askQuestion 追加（model / apiKey パラメータ対応）

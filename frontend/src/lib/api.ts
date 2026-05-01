@@ -180,12 +180,45 @@ export async function askQuestion(
   question: string,
   model: string,
   apiKey: string,
+  searchEngine: string = '',
 ): Promise<{ answer: string; sources: AskSource[] }> {
   const res = await fetch(`${API_BASE}/ai/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, model, api_key: apiKey }),
+    body: JSON.stringify({ question, model, api_key: apiKey, search_engine: searchEngine }),
   });
   if (!res.ok) throw new Error('Failed to ask question');
   return res.json();
 }
+
+// -- Knowledge Graph --
+export interface EntityNode {
+  id: string;
+  name: string;
+  type: string;
+  article_ids: string[];
+}
+
+export interface RelationEdge {
+  source: string;
+  target: string;
+  label: string;
+}
+
+export async function getKnowledgeGraph(): Promise<{
+  entities: EntityNode[];
+  relations: RelationEdge[];
+}> {
+  const res = await fetch(`${API_BASE}/ai/graph`);
+  if (!res.ok) {
+    if (res.status === 504 || res.status === 502)
+      throw new Error('サーバーがタイムアウトしました。AIサービスが起動しているか確認してください。');
+    if (res.status === 503)
+      throw new Error('AIサービスが利用できません。しばらくしてからお試しください。');
+    throw new Error(`グラフの取得に失敗しました (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  if (!data.entities?.length) throw new Error('グラフデータが空です。先に記事を投稿してください。');
+  return data;
+}
+

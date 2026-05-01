@@ -766,78 +766,6 @@ func (x *GetRelatedArticlesResponse) GetResults() []*SearchResult {
 	return nil
 }
 
-type InvalidateGraphCacheRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *InvalidateGraphCacheRequest) Reset() {
-	*x = InvalidateGraphCacheRequest{}
-	mi := &file_proto_ai_ai_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InvalidateGraphCacheRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InvalidateGraphCacheRequest) ProtoMessage() {}
-
-func (x *InvalidateGraphCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InvalidateGraphCacheRequest.ProtoReflect.Descriptor instead.
-func (*InvalidateGraphCacheRequest) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{14}
-}
-
-type InvalidateGraphCacheResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *InvalidateGraphCacheResponse) Reset() {
-	*x = InvalidateGraphCacheResponse{}
-	mi := &file_proto_ai_ai_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *InvalidateGraphCacheResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*InvalidateGraphCacheResponse) ProtoMessage() {}
-
-func (x *InvalidateGraphCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_ai_ai_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use InvalidateGraphCacheResponse.ProtoReflect.Descriptor instead.
-func (*InvalidateGraphCacheResponse) Descriptor() ([]byte, []int) {
-	return file_proto_ai_ai_proto_rawDescGZIP(), []int{15}
-}
-
 var File_proto_ai_ai_proto protoreflect.FileDescriptor
 
 const file_proto_ai_ai_proto_rawDesc = "" +
@@ -893,16 +821,13 @@ const file_proto_ai_ai_proto_rawDesc = "" +
 	"\bmax_hops\x18\x02 \x01(\x05R\amaxHops\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\"H\n" +
 	"\x1aGetRelatedArticlesResponse\x12*\n" +
-	"\aresults\x18\x01 \x03(\v2\x10.ai.SearchResultR\aresults\"\x1d\n" +
-	"\x1bInvalidateGraphCacheRequest\"\x1e\n" +
-	"\x1cInvalidateGraphCacheResponse2\xc1\x03\n" +
+	"\aresults\x18\x01 \x03(\v2\x10.ai.SearchResultR\aresults2\xe6\x02\n" +
 	"\tAIService\x127\n" +
 	"\x0eSearchArticles\x12\x11.ai.SearchRequest\x1a\x12.ai.SearchResponse\x12?\n" +
 	"\x10SummarizeArticle\x12\x14.ai.SummarizeRequest\x1a\x15.ai.SummarizeResponse\x128\n" +
 	"\vAskQuestion\x12\x13.ai.QuestionRequest\x1a\x14.ai.QuestionResponse\x12P\n" +
 	"\x11GetKnowledgeGraph\x12\x1c.ai.GetKnowledgeGraphRequest\x1a\x1d.ai.GetKnowledgeGraphResponse\x12S\n" +
-	"\x12GetRelatedArticles\x12\x1d.ai.GetRelatedArticlesRequest\x1a\x1e.ai.GetRelatedArticlesResponse\x12Y\n" +
-	"\x14InvalidateGraphCache\x12\x1f.ai.InvalidateGraphCacheRequest\x1a .ai.InvalidateGraphCacheResponseB*Z(github.com/TenshoOHASHI/knowhub/proto/aib\x06proto3"
+	"\x12GetRelatedArticles\x12\x1d.ai.GetRelatedArticlesRequest\x1a\x1e.ai.GetRelatedArticlesResponseB*Z(github.com/TenshoOHASHI/knowhub/proto/aib\x06proto3"
 
 var (
 	file_proto_ai_ai_proto_rawDescOnce sync.Once
@@ -916,24 +841,22 @@ func file_proto_ai_ai_proto_rawDescGZIP() []byte {
 	return file_proto_ai_ai_proto_rawDescData
 }
 
-var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_proto_ai_ai_proto_goTypes = []any{
-	(*Source)(nil),                       // 0: ai.Source
-	(*SearchRequest)(nil),                // 1: ai.SearchRequest
-	(*SearchResult)(nil),                 // 2: ai.SearchResult
-	(*SearchResponse)(nil),               // 3: ai.SearchResponse
-	(*SummarizeRequest)(nil),             // 4: ai.SummarizeRequest
-	(*SummarizeResponse)(nil),            // 5: ai.SummarizeResponse
-	(*QuestionRequest)(nil),              // 6: ai.QuestionRequest
-	(*QuestionResponse)(nil),             // 7: ai.QuestionResponse
-	(*EntityNode)(nil),                   // 8: ai.EntityNode
-	(*RelationEdge)(nil),                 // 9: ai.RelationEdge
-	(*GetKnowledgeGraphRequest)(nil),     // 10: ai.GetKnowledgeGraphRequest
-	(*GetKnowledgeGraphResponse)(nil),    // 11: ai.GetKnowledgeGraphResponse
-	(*GetRelatedArticlesRequest)(nil),    // 12: ai.GetRelatedArticlesRequest
-	(*GetRelatedArticlesResponse)(nil),   // 13: ai.GetRelatedArticlesResponse
-	(*InvalidateGraphCacheRequest)(nil),  // 14: ai.InvalidateGraphCacheRequest
-	(*InvalidateGraphCacheResponse)(nil), // 15: ai.InvalidateGraphCacheResponse
+	(*Source)(nil),                     // 0: ai.Source
+	(*SearchRequest)(nil),              // 1: ai.SearchRequest
+	(*SearchResult)(nil),               // 2: ai.SearchResult
+	(*SearchResponse)(nil),             // 3: ai.SearchResponse
+	(*SummarizeRequest)(nil),           // 4: ai.SummarizeRequest
+	(*SummarizeResponse)(nil),          // 5: ai.SummarizeResponse
+	(*QuestionRequest)(nil),            // 6: ai.QuestionRequest
+	(*QuestionResponse)(nil),           // 7: ai.QuestionResponse
+	(*EntityNode)(nil),                 // 8: ai.EntityNode
+	(*RelationEdge)(nil),               // 9: ai.RelationEdge
+	(*GetKnowledgeGraphRequest)(nil),   // 10: ai.GetKnowledgeGraphRequest
+	(*GetKnowledgeGraphResponse)(nil),  // 11: ai.GetKnowledgeGraphResponse
+	(*GetRelatedArticlesRequest)(nil),  // 12: ai.GetRelatedArticlesRequest
+	(*GetRelatedArticlesResponse)(nil), // 13: ai.GetRelatedArticlesResponse
 }
 var file_proto_ai_ai_proto_depIdxs = []int32{
 	2,  // 0: ai.SearchResponse.results:type_name -> ai.SearchResult
@@ -946,15 +869,13 @@ var file_proto_ai_ai_proto_depIdxs = []int32{
 	6,  // 7: ai.AIService.AskQuestion:input_type -> ai.QuestionRequest
 	10, // 8: ai.AIService.GetKnowledgeGraph:input_type -> ai.GetKnowledgeGraphRequest
 	12, // 9: ai.AIService.GetRelatedArticles:input_type -> ai.GetRelatedArticlesRequest
-	14, // 10: ai.AIService.InvalidateGraphCache:input_type -> ai.InvalidateGraphCacheRequest
-	3,  // 11: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
-	5,  // 12: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
-	7,  // 13: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
-	11, // 14: ai.AIService.GetKnowledgeGraph:output_type -> ai.GetKnowledgeGraphResponse
-	13, // 15: ai.AIService.GetRelatedArticles:output_type -> ai.GetRelatedArticlesResponse
-	15, // 16: ai.AIService.InvalidateGraphCache:output_type -> ai.InvalidateGraphCacheResponse
-	11, // [11:17] is the sub-list for method output_type
-	5,  // [5:11] is the sub-list for method input_type
+	3,  // 10: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
+	5,  // 11: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
+	7,  // 12: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
+	11, // 13: ai.AIService.GetKnowledgeGraph:output_type -> ai.GetKnowledgeGraphResponse
+	13, // 14: ai.AIService.GetRelatedArticles:output_type -> ai.GetRelatedArticlesResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -971,7 +892,7 @@ func file_proto_ai_ai_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_ai_ai_proto_rawDesc), len(file_proto_ai_ai_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

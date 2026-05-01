@@ -8,6 +8,9 @@ service AIService {
   rpc SearchArticles(SearchRequest) returns (SearchResponse);
   rpc SummarizeArticle(SummarizeRequest) returns (SummarizeResponse);
   rpc AskQuestion(QuestionRequest) returns (QuestionResponse);
+  rpc GetKnowledgeGraph(GetKnowledgeGraphRequest) returns (GetKnowledgeGraphResponse);
+  rpc GetRelatedArticles(GetRelatedArticlesRequest) returns (GetRelatedArticlesResponse);
+  rpc InvalidateGraphCache(InvalidateGraphCacheRequest) returns (InvalidateGraphCacheResponse);
 }
 
 
@@ -43,9 +46,45 @@ message QuestionRequest {
   string question = 1;
   string model = 2;
   string api_key = 3;
+  string search_engine = 4; // "bm25", "vector", "hybrid", "graph"
 }
 
 message QuestionResponse {
   string answer = 1;
   repeated Source sources = 2;
 }
+
+// ナレッジグラフ関連
+message EntityNode {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  repeated string article_ids = 4;
+}
+
+message RelationEdge {
+  string source = 1;
+  string target = 2;
+  string label = 3;
+}
+
+message GetKnowledgeGraphRequest {}
+
+message GetKnowledgeGraphResponse {
+  repeated EntityNode entities = 1;
+  repeated RelationEdge relations = 2;
+}
+
+message GetRelatedArticlesRequest {
+  string article_id = 1;
+  int32 max_hops = 2;
+  int32 limit = 3;
+}
+
+message GetRelatedArticlesResponse {
+  repeated SearchResult results = 1;
+}
+
+message InvalidateGraphCacheRequest {}
+
+message InvalidateGraphCacheResponse {}

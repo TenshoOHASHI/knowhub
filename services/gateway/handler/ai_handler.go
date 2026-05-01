@@ -73,9 +73,10 @@ func (h *AIHandler) SummarizeArticle(w http.ResponseWriter, r *http.Request) {
 // AskQuestion — POST /api/ai/ask
 func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Question string `json:"question"`
-		Model    string `json:"model"`
-		ApiKey   string `json:"api_key"`
+		Question     string `json:"question"`
+		Model        string `json:"model"`
+		ApiKey       string `json:"api_key"`
+		SearchEngine string `json:"search_engine"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -87,12 +88,29 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	resp, err := h.client.AskQuestion(ctx, &pb.QuestionRequest{
-		Question: req.Question,
-		Model:    req.Model,
-		ApiKey:   req.ApiKey,
+		Question:     req.Question,
+		Model:        req.Model,
+		ApiKey:       req.ApiKey,
+		SearchEngine: req.SearchEngine,
 	})
 	if err != nil {
 		slog.Error("failed to ask question", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// GetKnowledgeGraph — GET /api/ai/graph
+func (h *AIHandler) GetKnowledgeGraph(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+	defer cancel()
+
+	resp, err := h.client.GetKnowledgeGraph(ctx, &pb.GetKnowledgeGraphRequest{})
+	if err != nil {
+		slog.Error("failed to get knowledge graph", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

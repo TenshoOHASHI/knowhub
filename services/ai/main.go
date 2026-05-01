@@ -10,7 +10,6 @@ import (
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/config"
-	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/handler"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/search"
@@ -36,66 +35,14 @@ func main() {
 	wikiClient := wikiPb.NewWikiServicesClient(wikiConn)
 	slog.Info("connected to wiki service", "addr", cfg.GRPCPort)
 
-	// LLM Provider（環境変数で切り替え）
-	var provider llm.LLMProvider
-	switch cfg.LLMProvider {
-	case "glm":
-		provider = llm.NewGLM5Provider(cfg.GLM5APIKey, cfg.GLM5Model)
-		slog.Info("LLM provider: GLM-5")
-	case "openai":
-		provider = llm.NewOpenAIProvider(cfg.OpenAIKey)
-		slog.Info("LLM provider: OpenAI")
-	case "gemini":
-		provider = llm.NewGeminiProvider(cfg.GeminiKey, cfg.GeminiModel)
-		slog.Info("LLM provider: Gemini", "model", cfg.GeminiModel)
-	case "deepseek":
-		provider = llm.NewDeepSeekProvider(cfg.DeepSeekKey, cfg.DeepSeekModel)
-		slog.Info("LLM provider: DeepSeek", "model", cfg.DeepSeekModel)
-	default:
-		provider = llm.NewOllamaProvider(cfg.OllamaURL, cfg.OllamaModel)
-		slog.Info("LLM provider: Ollama", "url", cfg.OllamaURL)
-	}
+	// LLM Provider（デフォルト: Ollama、リクエスト毎に handler で動的切替）
+	provider := llm.NewOllamaProvider(cfg.OllamaURL, cfg.OllamaModel)
 
-	// Embedding Provider（検索エンジンが vector/hybrid の場合に使用）
-	var embedder embedding.EmbeddingProvider
-	switch cfg.EmbeddingProvider {
-	case "openai":
-		embedder = embedding.NewOpenAIProvider(cfg.OpenAIKey)
-		slog.Info("Embedding provider: OpenAI")
-	case "deepseek":
-		embedder = embedding.NewDeepSeekProvider(cfg.DeepSeekKey)
-		slog.Info("Embedding provider: DeepSeek")
-	case "gemini":
-		embedder = embedding.NewGeminiProvider(cfg.GeminiKey)
-		slog.Info("Embedding provider: Gemini")
-	case "glm":
-		embedder = embedding.NewGLM5Provider(cfg.GLM5APIKey)
-		slog.Info("Embedding provider: GLM-5")
-	default:
-		embedder = embedding.NewOllamaProvider(cfg.OllamaURL, cfg.EmbeddingModel)
-		slog.Info("Embedding provider: Ollama", "model", cfg.EmbeddingModel)
-	}
-
-	// Search Engine（環境変数で切り替え）
-	var searchEngine search.SearchEngine
-
-	switch cfg.SearchEngin {
-	case "tfidf":
-		searchEngine = search.NewTFIDFEngine()
-		slog.Info("Search engine: TF-IDF")
-	case "vector":
-		searchEngine = search.NewVectorEngine(embedder)
-		slog.Info("Search engine: Vector")
-	case "hybrid":
-		searchEngine = search.NewHybridEngine(embedder, 0.5)
-		slog.Info("Search engine: Hybrid", "alpha", 0.5)
-	default:
-		searchEngine = search.NewBM25Engine()
-		slog.Info("Search engine: BM25")
-	}
+	// Search Engine（デフォルト: BM25、リクエスト毎に handler で動的切替）
+	searchEngine := search.NewBM25Engine()
 
 	// Handler
-	aiHandler := handler.NewAIHandler(searchEngine, provider, wikiClient)
+	aiHandler := handler.NewAIHandler(searchEngine, provider, cfg.OllamaURL, cfg.EmbeddingModel, wikiClient)
 
 	// gRPC Server
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)

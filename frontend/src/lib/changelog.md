@@ -1,3 +1,25 @@
+## 2026-05-02 Markdown拡張: コールアウト + 折りたたみブロック
+- Frontend: remark-callout プラグイン実装（Zenn記法 / GitHub記法 → コールアウトdiv変換）
+- Frontend: Callout コンポーネント実装（7タイプ: note/info/tip/warning/caution/important/warm + SVGアイコン）
+- Frontend: rehype-raw 追加（Markdown内HTMLタグレンダリング対応）
+- Frontend: details/summary カスタムレンダラー（Tailwind スタイリング + ダークモード対応）
+- Frontend: stripMarkdown 拡張（HTMLタグ/Zenn記法/コールアウトマーカー/setext下線除去）
+- Frontend: MarkdownHelp にコールアウト・折りたたみブロック記法例追加
+- Frontend: 共通 Markdown コンポーネント（Markdown.tsx）に Callout/div/details/summary 追加
+- Frontend: EditorPreview に remarkCallout + preprocessCallouts + rehype-raw 統合
+
+## 2026-05-02 Graph RAG 実装 + 検索エンジン動的選択リファクタリング
+- Backend: graph.go 実装（Entity / Relation / KnowledgeGraph / GraphEngine / BFS 2-hop トラバーサル）
+- Backend: LLM によるエンティティ・リレーション抽出（extractEntities / extractJSON / プロンプト設計）
+- Backend: searchByTokens フォールバック（LLM 失敗時のトークン部分一致検索）
+- Backend: embedding.NewProvider ファクトリ追加（apiKey から自動判定: 空→Ollama, sk-→OpenAI, AIza→Gemini, その他→GLM-5）
+- Backend: search.SelectEngine ファクトリ追加（engineName → SearchEngine 自動生成）
+- Proto: QuestionRequest に search_engine フィールド追加（field 4）
+- Gateway: ai_handler.go AskQuestion に search_engine パラメータ追加
+- Backend: main.go シンプル化（LLM/Embedding/Search Engine の switch 全削除、デフォルト Ollama + BM25 のみ）
+- Backend: config.go 削減（SearchEngin / EmbeddingProvider / LLM 個別 API Key フィールド削除）
+- Test: grpcurl で Graph RAG 動作確認（Ollama + graph で関連記事3件 + BM25 にない記事を発見）
+
 ## 2026-05-01 Hybrid Search 実装（BM25 + Vector 統合）
 - Backend: HybridEngine 実装（SearchEngine インターフェース、BM25 + Vector を内包）
 - Backend: normalizeScores（min-max 正規化でスコアを 0〜1 に統一）

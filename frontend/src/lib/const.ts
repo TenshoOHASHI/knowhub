@@ -27,10 +27,10 @@ export const SEARCH_ENGINES = [
 
   // embedding 生成に API が必要。
   // Ollama ローカルなら不要だが、4GB VPS では外部APIを使う前提。
-  { id: 'vector', name: 'Vector（セマンティック検索）', needsKey: true },
+  { id: 'vector', name: 'Vector（意味検索）', needsKey: true },
 
   // Vector を内包するので同じく API が必要。
-  { id: 'hybrid', name: 'Hybrid（BM25 + Vector）', needsKey: true },
+  { id: 'hybrid', name: 'Hybrid（複合検索）', needsKey: true },
 
   // エンティティ抽出に LLM API が必要。
   { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true },

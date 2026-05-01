@@ -8,7 +8,6 @@ package ai
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,12 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AIService_SearchArticles_FullMethodName       = "/ai.AIService/SearchArticles"
-	AIService_SummarizeArticle_FullMethodName     = "/ai.AIService/SummarizeArticle"
-	AIService_AskQuestion_FullMethodName          = "/ai.AIService/AskQuestion"
-	AIService_GetKnowledgeGraph_FullMethodName    = "/ai.AIService/GetKnowledgeGraph"
-	AIService_GetRelatedArticles_FullMethodName   = "/ai.AIService/GetRelatedArticles"
-	AIService_InvalidateGraphCache_FullMethodName = "/ai.AIService/InvalidateGraphCache"
+	AIService_SearchArticles_FullMethodName     = "/ai.AIService/SearchArticles"
+	AIService_SummarizeArticle_FullMethodName   = "/ai.AIService/SummarizeArticle"
+	AIService_AskQuestion_FullMethodName        = "/ai.AIService/AskQuestion"
+	AIService_GetKnowledgeGraph_FullMethodName  = "/ai.AIService/GetKnowledgeGraph"
+	AIService_GetRelatedArticles_FullMethodName = "/ai.AIService/GetRelatedArticles"
 )
 
 // AIServiceClient is the client API for AIService service.
@@ -37,7 +35,6 @@ type AIServiceClient interface {
 	AskQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
 	GetKnowledgeGraph(ctx context.Context, in *GetKnowledgeGraphRequest, opts ...grpc.CallOption) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(ctx context.Context, in *GetRelatedArticlesRequest, opts ...grpc.CallOption) (*GetRelatedArticlesResponse, error)
-	InvalidateGraphCache(ctx context.Context, in *InvalidateGraphCacheRequest, opts ...grpc.CallOption) (*InvalidateGraphCacheResponse, error)
 }
 
 type aIServiceClient struct {
@@ -98,16 +95,6 @@ func (c *aIServiceClient) GetRelatedArticles(ctx context.Context, in *GetRelated
 	return out, nil
 }
 
-func (c *aIServiceClient) InvalidateGraphCache(ctx context.Context, in *InvalidateGraphCacheRequest, opts ...grpc.CallOption) (*InvalidateGraphCacheResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(InvalidateGraphCacheResponse)
-	err := c.cc.Invoke(ctx, AIService_InvalidateGraphCache_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // AIServiceServer is the server API for AIService service.
 // All implementations must embed UnimplementedAIServiceServer
 // for forward compatibility.
@@ -117,7 +104,6 @@ type AIServiceServer interface {
 	AskQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
 	GetKnowledgeGraph(context.Context, *GetKnowledgeGraphRequest) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(context.Context, *GetRelatedArticlesRequest) (*GetRelatedArticlesResponse, error)
-	InvalidateGraphCache(context.Context, *InvalidateGraphCacheRequest) (*InvalidateGraphCacheResponse, error)
 	mustEmbedUnimplementedAIServiceServer()
 }
 
@@ -142,9 +128,6 @@ func (UnimplementedAIServiceServer) GetKnowledgeGraph(context.Context, *GetKnowl
 }
 func (UnimplementedAIServiceServer) GetRelatedArticles(context.Context, *GetRelatedArticlesRequest) (*GetRelatedArticlesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRelatedArticles not implemented")
-}
-func (UnimplementedAIServiceServer) InvalidateGraphCache(context.Context, *InvalidateGraphCacheRequest) (*InvalidateGraphCacheResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method InvalidateGraphCache not implemented")
 }
 func (UnimplementedAIServiceServer) mustEmbedUnimplementedAIServiceServer() {}
 func (UnimplementedAIServiceServer) testEmbeddedByValue()                   {}
@@ -257,24 +240,6 @@ func _AIService_GetRelatedArticles_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AIService_InvalidateGraphCache_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InvalidateGraphCacheRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AIServiceServer).InvalidateGraphCache(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AIService_InvalidateGraphCache_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AIServiceServer).InvalidateGraphCache(ctx, req.(*InvalidateGraphCacheRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // AIService_ServiceDesc is the grpc.ServiceDesc for AIService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -301,10 +266,6 @@ var AIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRelatedArticles",
 			Handler:    _AIService_GetRelatedArticles_Handler,
-		},
-		{
-			MethodName: "InvalidateGraphCache",
-			Handler:    _AIService_InvalidateGraphCache_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

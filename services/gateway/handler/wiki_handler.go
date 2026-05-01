@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
+	aiPb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	pb "github.com/TenshoOHASHI/knowhub/proto/wiki"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/swagger"
 	"google.golang.org/grpc"
@@ -18,13 +21,34 @@ var (
 )
 
 type WikiHandler struct {
-	client pb.WikiServicesClient // gRPCクライアント
+	client   pb.WikiServicesClient // gRPCクライアント
+	aiClient aiPb.AIServiceClient  // グラフキャッシュ無効化用
 }
 
 func NewWikiHandler(conn *grpc.ClientConn) *WikiHandler {
 	return &WikiHandler{
 		client: pb.NewWikiServicesClient(conn),
 	}
+}
+
+// SetAIClient は AI Service クライアントを設定する（記事CRUD時のグラフキャッシュ無効化用）
+func (h *WikiHandler) SetAIClient(aiClient aiPb.AIServiceClient) {
+	h.aiClient = aiClient
+}
+
+// invalidateGraphCache は AI Service のグラフキャッシュを非同期で無効化する
+func (h *WikiHandler) invalidateGraphCache() {
+	if h.aiClient == nil {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// GetKnowledgeGraph を refresh=true 付きで呼び出すことでキャッシュを無効化
+		// → 次回アクセス時に自動再構築される
+		_, _ = h.aiClient.InvalidateGraphCache(ctx, &aiPb.InvalidateGraphCacheRequest{})
+		slog.Info("graph cache invalidation requested")
+	}()
 }
 
 // ListArticles 記事一覧取得
@@ -127,9 +151,11 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(resp)
+
+	// 記事が追加されたのでグラフキャッシュを無効化
+	h.invalidateGraphCache()
 }
 
-// UpdateArticle 記事更新
 // @Summary      記事更新
 // @Description  指定したIDの記事を更新する（部分更新対応）
 // @Tags         wiki
@@ -173,6 +199,9 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(resp)
+
+	// 記事が更新されたのでグラフキャッシュを無効化
+	h.invalidateGraphCache()
 }
 
 // DeleteArticle 記事削除
@@ -196,6 +225,8 @@ func (h *WikiHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent)
+
+	h.invalidateGraphCache()
 }
 
 // ===== Category =====

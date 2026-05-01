@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
+	"sync"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
+	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/search"
 	"google.golang.org/grpc/codes"
@@ -16,21 +19,120 @@ import (
 
 type AIHandler struct {
 	pb.UnimplementedAIServiceServer
-	searchEngine search.SearchEngine
-	llmProvider  llm.LLMProvider
-	wikiClient   wikiPb.WikiServicesClient // Wiki Service の gRPCサーバーと通信するクライアント
+	searchEngine search.SearchEngine // デフォルト（BM25）
+	llmProvider  llm.LLMProvider     // デフォルト LLM
+	ollamaURL    string              // Ollama embedding 用
+	ollamaModel  string              // Ollama embedding model
+	wikiClient   wikiPb.WikiServicesClient
 
+	// キャッシュ済みナレッジグラフ
+	graphMu    sync.RWMutex
+	graphCache *search.GraphEngine
+	graphErr   error
 }
 
-func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, wikiClient wikiPb.WikiServicesClient) *AIHandler {
+func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient) *AIHandler {
 	return &AIHandler{
 		searchEngine: se,
 		llmProvider:  llm,
+		ollamaURL:    ollamaURL,
+		ollamaModel:  ollamaModel,
 		wikiClient:   wikiClient,
 	}
 }
 
-// SearchArticles は TF-IDF / BM25 で関連記事を検索する
+// ensureGraph はキャッシュがあれば返し、なければ構築する
+func (h *AIHandler) ensureGraph(ctx context.Context) (*search.GraphEngine, error) {
+	h.graphMu.RLock()
+	if h.graphCache != nil {
+		cache := h.graphCache
+		h.graphMu.RUnlock()
+		return cache, nil
+	}
+	h.graphMu.RUnlock()
+
+	return h.buildGraph(ctx)
+}
+
+// buildGraph はグラフを強制的に再構築する（refresh=true 時に使用）
+func (h *AIHandler) buildGraph(ctx context.Context) (*search.GraphEngine, error) {
+	h.graphMu.Lock()
+	defer h.graphMu.Unlock()
+
+	// ダブルチェック: 他のリクエストが既に構築済みか確認
+	if h.graphCache != nil {
+		cache := h.graphCache
+		return cache, nil
+	}
+
+	slog.Info("building knowledge graph...")
+	docs, err := h.fetchDocs(ctx)
+	if err != nil {
+		h.graphErr = err
+		return nil, err
+	}
+
+	engine := search.NewGraphEngine(h.llmProvider)
+	if err := engine.Index(ctx, docs); err != nil {
+		h.graphErr = err
+		return nil, err
+	}
+
+	h.graphCache = engine
+	h.graphErr = nil
+	slog.Info("knowledge graph cached",
+		"entities", len(engine.GetGraph().GetEntities()),
+		"relations", len(engine.GetGraph().GetRelations()))
+
+	return engine, nil
+}
+
+// invalidateGraph はキャッシュを無効化する（次回リクエストで再構築される）
+func (h *AIHandler) invalidateGraph() {
+	h.graphMu.Lock()
+	defer h.graphMu.Unlock()
+	h.graphCache = nil
+	h.graphErr = nil
+	slog.Info("knowledge graph cache invalidated")
+}
+
+// fetchDocs は Wiki Service から全記事を取得して search.Document に変換する
+func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
+	articles, err := h.wikiClient.List(ctx, &wikiPb.ListArticleRequest{})
+	if err != nil {
+		return nil, err
+	}
+	docs := make([]search.Document, 0, len(articles.Article))
+	for _, a := range articles.Article {
+		docs = append(docs, search.Document{
+			ID:      a.Id,
+			Title:   a.Title,
+			Content: a.Content,
+		})
+	}
+	return docs, nil
+}
+
+// searchWithEngine は指定エンジンでインデックス構築 → 検索を実行する
+func (h *AIHandler) searchWithEngine(ctx context.Context, se search.SearchEngine, query string, limit int) ([]search.SearchResult, error) {
+	docs, err := h.fetchDocs(ctx)
+	if err != nil {
+		slog.Error("failed to fetch articles from wiki service", "error", err)
+		return nil, status.Error(codes.Internal, "failed to fetch articles from wiki service")
+	}
+	if err := se.Index(ctx, docs); err != nil {
+		slog.Error("failed to build search index", "error", err)
+		return nil, status.Error(codes.Internal, "failed to build search index")
+	}
+	results, err := se.Search(ctx, query, limit)
+	if err != nil {
+		slog.Error("search failed", "error", err)
+		return nil, status.Error(codes.Internal, "search failed")
+	}
+	return results, nil
+}
+
+// SearchArticles は検索エンジンで関連記事を検索する
 func (h *AIHandler) SearchArticles(ctx context.Context, req *pb.SearchRequest) (*pb.SearchResponse, error) {
 	if req.Query == "" {
 		return nil, status.Error(codes.InvalidArgument, "query is required")
@@ -41,33 +143,9 @@ func (h *AIHandler) SearchArticles(ctx context.Context, req *pb.SearchRequest) (
 		limit = 10
 	}
 
-	// Wiki Service から全記事を取得してインデックスを構築
-	articles, err := h.wikiClient.List(ctx, &wikiPb.ListArticleRequest{})
+	results, err := h.searchWithEngine(ctx, h.searchEngine, req.Query, limit)
 	if err != nil {
-		slog.Error("failed to fetch articles from wiki service", "error", err)
-		return nil, status.Error(codes.Internal, "failed to fetch articles from wiki service")
-	}
-
-	// 記事を SearchEngine のドキュメントに変換してインデックス構築
-	docs := make([]search.Document, 0, len(articles.Article))
-	for _, a := range articles.Article {
-		docs = append(docs, search.Document{
-			ID:      a.Id,
-			Title:   a.Title,
-			Content: a.Content,
-		})
-	}
-
-	if err := h.searchEngine.Index(ctx, docs); err != nil {
-		slog.Error("failed to build search index", "error", err)
-		return nil, status.Error(codes.Internal, "failed to build search index")
-	}
-
-	// 検索実行
-	results, err := h.searchEngine.Search(ctx, req.Query, limit)
-	if err != nil {
-		slog.Error("search failed", "error", err)
-		return nil, status.Error(codes.Internal, "search failed")
+		return nil, err
 	}
 
 	pbResults := make([]*pb.SearchResult, 0, len(results))
@@ -89,7 +167,6 @@ func (h *AIHandler) SummarizeArticle(ctx context.Context, req *pb.SummarizeReque
 		return nil, status.Error(codes.InvalidArgument, "article_id is required")
 	}
 
-	// Wiki Service から記事を取得
 	resp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: req.ArticleId})
 	if err != nil {
 		slog.Error("failed to get article from wiki service", "error", err, "article_id", req.ArticleId)
@@ -118,21 +195,25 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "question is required")
 	}
 
+	// LLM プロバイダー選択（リクエストで動的切替）
 	provider := h.llmProvider
 	if req.Model != "" {
 		provider = llm.NewProvider(req.Model, req.ApiKey)
 	}
 
+	// Embedding プロバイダー生成（apiKey から自動判定）
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey)
+
+	// 検索エンジン選択（search.SelectEngine ファクトリで動的切替）
+	engine := search.SelectEngine(req.SearchEngine, provider, embedder)
+
 	// Step 1: 関連記事を検索
-	searchResp, err := h.SearchArticles(ctx, &pb.SearchRequest{
-		Query: req.Question,
-		Limit: 5,
-	})
+	results, err := h.searchWithEngine(ctx, engine, req.Question, 5)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(searchResp.Results) == 0 {
+	if len(results) == 0 {
 		return &pb.QuestionResponse{
 			Answer:  "関連する記事が見つかりませんでした。",
 			Sources: []*pb.Source{},
@@ -141,20 +222,17 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 
 	// Step 2: コンテキストを構築
 	var contextBuilder strings.Builder
-	sources := make([]*pb.Source, 0, len(searchResp.Results))
+	sources := make([]*pb.Source, 0, len(results))
 
-	for _, r := range searchResp.Results {
-		// スニペット
-		// contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", r.Title, r.Content))
-		// 全文を検索
-		articleResp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: r.ArticleId})
+	for _, r := range results {
+		articleResp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: r.ArticleID})
 		if err != nil {
-			slog.Error("failed to get article fro RAG", "error", err, "article_id", r.ArticleId)
+			slog.Error("failed to get article for RAG", "error", err, "article_id", r.ArticleID)
 			continue
 		}
 		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
 		sources = append(sources, &pb.Source{
-			ArticleId: r.ArticleId,
+			ArticleId: r.ArticleID,
 			Title:     articleResp.Article.Title,
 		})
 	}
@@ -166,7 +244,6 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			Content: "あなたは技術ナレッジベースのアシスタントです。" +
 				"以下のコンテキストを参考にして回答してください。" +
 				"コンテキストに情報がある場合はそれを優先し、" +
-				// "ない場合はあなたの知識で補足してください。" +
 				"もしその情報に追加した方がいい情報があれば、あなたの知識で補足してください。" +
 				"ただし、あなたの知識で補足する場合は「参考:」と明記してください。",
 		},
@@ -190,4 +267,110 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		Answer:  answer,
 		Sources: sources,
 	}, nil
+}
+
+// GetKnowledgeGraph はナレッジグラフの全データ（エンティティ・リレーション）を返す
+func (h *AIHandler) GetKnowledgeGraph(ctx context.Context, req *pb.GetKnowledgeGraphRequest) (*pb.GetKnowledgeGraphResponse, error) {
+	graphEngine, err := h.ensureGraph(ctx)
+	if err != nil {
+		slog.Error("failed to build knowledge graph", "error", err)
+		return nil, status.Error(codes.Internal, "failed to build knowledge graph")
+	}
+
+	graph := graphEngine.GetGraph()
+
+	pbEntities := make([]*pb.EntityNode, 0, len(graph.GetEntities()))
+	for _, e := range graph.GetEntities() {
+		pbEntities = append(pbEntities, &pb.EntityNode{
+			Id:         e.ID,
+			Name:       e.Name,
+			Type:       e.Type,
+			ArticleIds: e.ArticleIDs,
+		})
+	}
+
+	pbRelations := make([]*pb.RelationEdge, 0, len(graph.GetRelations()))
+	for _, r := range graph.GetRelations() {
+		pbRelations = append(pbRelations, &pb.RelationEdge{
+			Source: r.Source,
+			Target: r.Target,
+			Label:  r.Label,
+		})
+	}
+
+	return &pb.GetKnowledgeGraphResponse{
+		Entities:  pbEntities,
+		Relations: pbRelations,
+	}, nil
+}
+
+// GetRelatedArticles は指定記事の関連記事を BFS で収集して返す
+func (h *AIHandler) GetRelatedArticles(ctx context.Context, req *pb.GetRelatedArticlesRequest) (*pb.GetRelatedArticlesResponse, error) {
+	if req.ArticleId == "" {
+		return nil, status.Error(codes.InvalidArgument, "article_id is required")
+	}
+
+	graphEngine, err := h.ensureGraph(ctx)
+	if err != nil {
+		slog.Error("failed to build knowledge graph", "error", err)
+		return nil, status.Error(codes.Internal, "failed to build knowledge graph")
+	}
+
+	graph := graphEngine.GetGraph()
+
+	maxHops := int(req.MaxHops)
+	if maxHops <= 0 {
+		maxHops = 2
+	}
+
+	relatedScores := graph.GetRelatedArticleIDs(req.ArticleId, maxHops)
+
+	// docID → Document の map
+	docMap := make(map[string]search.Document)
+	for _, doc := range graphEngine.GetDocs() {
+		docMap[doc.ID] = doc
+	}
+
+	limit := int(req.Limit)
+	if limit <= 0 {
+		limit = 5
+	}
+
+	results := make([]*pb.SearchResult, 0, len(relatedScores))
+	for aid, score := range relatedScores {
+		doc, ok := docMap[aid]
+		if !ok {
+			continue
+		}
+		snippet := doc.Content
+		if len(snippet) > 200 {
+			runes := []rune(snippet)
+			if len(runes) > 200 {
+				snippet = string(runes[:200]) + "..."
+			}
+		}
+		results = append(results, &pb.SearchResult{
+			ArticleId:      aid,
+			Title:          doc.Title,
+			Content:        snippet,
+			RelevanceScore: float64(score),
+		})
+	}
+
+	// スコア降順ソート
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].RelevanceScore > results[j].RelevanceScore
+	})
+
+	if limit < len(results) {
+		results = results[:limit]
+	}
+
+	return &pb.GetRelatedArticlesResponse{Results: results}, nil
+}
+
+// InvalidateGraphCache はキャッシュされたグラフを無効化する（次回アクセス時に再構築される）
+func (h *AIHandler) InvalidateGraphCache(ctx context.Context, req *pb.InvalidateGraphCacheRequest) (*pb.InvalidateGraphCacheResponse, error) {
+	h.invalidateGraph()
+	return &pb.InvalidateGraphCacheResponse{}, nil
 }

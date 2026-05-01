@@ -11,7 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { FaRobot, FaUser } from 'react-icons/fa';
 import { FiTrash2 } from 'react-icons/fi';
-import { MODELS } from '@/lib/const';
+import { MODELS, SEARCH_ENGINES } from '@/lib/const';
 import ConfirmModal from './ConfirmModal';
 
 interface ChatMessage {
@@ -81,8 +81,10 @@ export default function ChatInterface() {
 
   const [model, setModel] = useState('ollama');
   const [apiKey, setApiKey] = useState('');
+  const [searchEngine, setSearchEngine] = useState('bm25');
 
   const currentModel = MODELS.find((m) => m.id === model);
+  const currentEngine = SEARCH_ENGINES.find((e) => e.id === searchEngine);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -133,7 +135,12 @@ export default function ChatInterface() {
 
     try {
       const modelToSend = currentModel?.defaultModel || model;
-      const { answer, sources } = await askQuestion(input, modelToSend, apiKey);
+      const { answer, sources } = await askQuestion(
+        input,
+        modelToSend,
+        apiKey,
+        searchEngine,
+      );
       updateMessages((prev) => [
         ...prev,
         { role: 'assistant', content: answer, sources },
@@ -150,7 +157,7 @@ export default function ChatInterface() {
 
   return (
     <div className='flex flex-col h-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'>
-      {/* モデル選択 + API Key 入力 + 履歴削除 */}
+      {/* モデル選択 + 検索エンジン選択 + API Key 入力 + 履歴削除 */}
       <div className='flex items-center gap-3 p-3 border-b border-stone-300 dark:border-stone-600'>
         <select
           value={model}
@@ -164,7 +171,19 @@ export default function ChatInterface() {
           ))}
         </select>
 
-        {currentModel?.needsKey && (
+        <select
+          value={searchEngine}
+          onChange={(e) => setSearchEngine(e.target.value)}
+          className='rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+        >
+          {SEARCH_ENGINES.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name}
+            </option>
+          ))}
+        </select>
+
+        {currentModel?.needsKey && currentEngine?.needsKey && (
           <input
             type='password'
             value={apiKey}

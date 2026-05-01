@@ -10,6 +10,7 @@ import (
 	loggerpkg "github.com/TenshoOHASHI/knowhub/pkg/logger"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
+	aiPb "github.com/TenshoOHASHI/knowhub/proto/ai"
 
 	"github.com/TenshoOHASHI/knowhub/services/gateway/config"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/handler"
@@ -49,6 +50,7 @@ func main() {
 
 	// Handlers
 	wikiHandler := handler.NewWikiHandler(wikiConn)
+	wikiHandler.SetAIClient(aiPb.NewAIServiceClient(aiConn))
 	authHandler := handler.NewAuthHandler(authConn)
 	profileHandler := handler.NewProfileHandle(profileConn)
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
@@ -90,6 +92,7 @@ func main() {
 	mux.HandleFunc("POST /api/ai/search", aiHandler.SearchArticles)
 	mux.HandleFunc("POST /api/ai/summarize", aiHandler.SummarizeArticle)
 	mux.HandleFunc("POST /api/ai/ask", aiHandler.AskQuestion)
+	mux.HandleFunc("GET /api/ai/graph", aiHandler.GetKnowledgeGraph)
 
 	// upload
 	mux.HandleFunc("POST /api/upload", uploadHandler.Upload)

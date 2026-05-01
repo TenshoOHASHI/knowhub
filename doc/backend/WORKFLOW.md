@@ -114,6 +114,15 @@
 - [x] 削除確認ダイアログ（ConfirmModal — 汎用コンポーネント）
 - [x] 通知機能（Toast — 汎用コンポーネント、どこでも使える）
 - [x] Changelog / Updates ページ
+- [x] コールアウトブロック（remark-callout プラグイン + Callout コンポーネント）
+  - [x] Zenn記法対応（:::message / :::message alert / :::message info 等）
+  - [x] GitHub記法対応（> [!NOTE] / > [!TIP] / > [!WARNING] 等）
+  - [x] 7タイプ（note/info/tip/warning/caution/important/warm）+ SVGアイコン
+  - [x] ダークモード対応カラー（sky/emerald/amber/red/purple/orange）
+- [x] 折りたたみブロック（details/summary カスタムレンダラー + Tailwind スタイリング）
+- [x] rehype-raw 追加（Markdown内HTMLタグをレンダリング）
+- [x] 記事一覧プレビューの stripMarkdown 拡張（HTMLタグ/Zenn記法/コールアウトマーカー除去）
+- [x] MarkdownHelp にコールアウト・折りたたみブロックの記法例を追加
 
 ## Phase 7.7 Progress（カテゴリ階層）
 
@@ -350,21 +359,39 @@
 - [ ] テストコード（embedding / cosine / vector search / hybrid）
 
 ### Graph RAG
-- [ ] ナレッジグラフのデータ構造設計
-  - [ ] Entity 構造体（ID / Name / Type / ArticleIDs）
-  - [ ] Relation 構造体（Source / Target / Label）
-  - [ ] KnowledgeGraph 構造体（entities map + relations slice + adjacency list）
-- [ ] LLM によるエンティティ・リレーション抽出
-  - [ ] プロンプト設計（記事 → JSON: {entities, relations}）
-  - [ ] ExtractEntities 関数（LLM 呼び出し → JSON パース）
-- [ ] GraphEngine 構造体（SearchEngine インターフェース実装）
-  - [ ] Index: 記事 → エンティティ抽出 → グラフ構築
-  - [ ] Search: クエリ → エンティティ特定 → BFS で関連ノード探索 → 関連記事収集
-- [ ] Graph + Vector ハイブリッド回答生成
-  - [ ] グラフ検索で関連記事を広く収集
-  - [ ] Vector でセマンティック検索
-  - [ ] 両方の結果をマージしてコンテキスト生成
-- [ ] テストコード（グラフ構築 / BFS トラバーサル / 検索）
+- [x] ナレッジグラフのデータ構造設計
+  - [x] Entity 構造体（ID / Name / Type / ArticleIDs）
+  - [x] Relation 構造体（Source / Target / Label）
+  - [x] KnowledgeGraph 構造体（entities map + relations slice + adjacency list）
+  - [x] addEntity（既存なら ArticleIDs 追記、重複防止）
+  - [x] addRelation（隣接リスト両方向追加、無向グラフ化）
+  - [x] getRelatedArticles（BFS / maxHops / ホップ距離でスコア重み付け）
+  - [x] normalizeEntityID（小文字化 + TrimSpace）
+- [x] LLM によるエンティティ・リレーション抽出
+  - [x] プロンプト設計（記事 → JSON: {entities, relations}）
+  - [x] extractEntities 関数（LLM 呼び出し → JSON パース）
+  - [x] extractJSON（```json / ``` / { } パターン対応）
+  - [x] extractionResult 構造体（JSON アンマーシャル用）
+- [x] GraphEngine 構造体（SearchEngine インターフェース実装）
+  - [x] Index: 記事 → エンティティ抽出 → グラフ構築（抽出失敗は Warn + continue）
+  - [x] Search: クエリ → LLM エンティティ抽出 → BFS(2-hop) → スコア降順
+  - [x] searchByTokens フォールバック（LLM 失敗時、トークン部分一致）
+- [x] Graph 検索動作確認（grpcurl: Ollama + graph で関連記事3件確認）
+
+### 検索エンジン動的選択リファクタリング
+- [x] Proto: QuestionRequest に search_engine フィールド追加（field 4）
+- [x] Gateway: ai_handler.go AskQuestion に search_engine パラメータ追加
+- [x] embedding.NewProvider ファクトリ追加（apiKey から自動判定: 空→Ollama, sk-→OpenAI, AIza→Gemini, その他→GLM-5）
+- [x] search.SelectEngine ファクトリ追加（engineName → SearchEngine 自動生成）
+- [x] handler: AskQuestion で llm.NewProvider / embedding.NewProvider / search.SelectEngine を使用
+  - [x] "bm25" → BM25Engine
+  - [x] "vector" → VectorEngine（embedder 生成）
+  - [x] "hybrid" → HybridEngine（α=0.5）
+  - [x] "graph" → GraphEngine（provider 使用）
+- [x] main.go シンプル化（LLM Provider switch / Embedding Provider switch / Search Engine switch を全削除）
+  - [x] デフォルト: Ollama + BM25 のみ初期化
+- [x] config.go 削減（SearchEngin / EmbeddingProvider / LLM 個別 API Key フィールド削除）
+  - [x] 残存フィールド: GRPCPort / WikiAddr / OllamaURL / OllamaModel / EmbeddingModel / LogLevel
 
 ### フロントエンド: 検索エンジン選択 UI
 - [ ] const.ts に SEARCH_ENGINES 定数追加
@@ -374,13 +401,7 @@
   - [ ] graph: { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true }
 - [ ] ChatInterface に検索エンジンセレクトボックス追加（LLM モデル選択の下）
 - [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示切替
-- [ ] api.ts askQuestion に search_engine / embedding_api_key パラメータ追加
-- [ ] Proto: QuestionRequest に search_engine フィールド追加
-- [ ] Backend: AI handler で search_engine 値から動的に SearchEngine を選択
-  - [ ] "bm25" → BM25Engine（API Key 不要）
-  - [ ] "vector" → VectorEngine（embedding API Key 使用）
-  - [ ] "hybrid" → HybridEngine（BM25 + Vector）
-  - [ ] "graph" → GraphEngine（LLM API Key 使用）
+- [ ] api.ts askQuestion に search_engine パラメータ追加
 
 ## Phase 10 Progress（MCP Server）
 
