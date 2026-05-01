@@ -2,8 +2,11 @@ package search
 
 import (
 	"context"
+	"log/slog"
 	"math"
 	"sort"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 )
@@ -79,12 +82,24 @@ func (e *VectorEngine) Search(ctx context.Context, query string, limit int) ([]S
 		// ③ 類似度が 0 より大きければ結果に追加
 		if score > 0 {
 			snippet := doc.Content
+			if !utf8.ValidString(snippet) {
+				slog.Warn("invalid UTF-8 in article content, sanitizing", "id", doc.ID, "title", doc.Title)
+				snippet = strings.ToValidUTF8(snippet, "")
+			}
+			if !utf8.ValidString(doc.Title) {
+				slog.Warn("invalid UTF-8 in article title, sanitizing", "id", doc.ID)
+			}
 			if len(snippet) > 200 {
-				snippet = snippet[:200] + "..."
+				// バイト単位で切ると多バイト文字の途中で切れる可能性がある
+				// rune単位で安全に切り詰める
+				runes := []rune(snippet)
+				if len(runes) > 200 {
+					snippet = string(runes[:200]) + "..."
+				}
 			}
 			results = append(results, SearchResult{
 				ArticleID:      doc.ID,
-				Title:          doc.Title,
+				Title:          strings.ToValidUTF8(doc.Title, ""),
 				Context:        snippet,
 				RelevanceScore: score,
 			})
@@ -92,6 +107,10 @@ func (e *VectorEngine) Search(ctx context.Context, query string, limit int) ([]S
 	}
 
 	// ④ スコア降順ソート
+	// slog.Info("vector search results", "total", len(results), "query", query)
+	// for idx, r := range results {
+	// 	slog.Info("result", "rank", idx+1, "id", r.ArticleID, "title", r.Title, "score", r.RelevanceScore)
+	// }
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].RelevanceScore > results[j].RelevanceScore
 	})

@@ -14,7 +14,7 @@ type OllamaEmbeddingProvider struct {
 	model   string // "nomic-embed-text"
 }
 
-func NewOllamaEmbeddingProvider(baseURL, model string) *OllamaEmbeddingProvider {
+func NewOllamaProvider(baseURL, model string) *OllamaEmbeddingProvider {
 	return &OllamaEmbeddingProvider{
 		baseURL: baseURL,
 		model:   model,

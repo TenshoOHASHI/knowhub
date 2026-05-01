@@ -10,6 +10,7 @@ import (
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/config"
+	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/handler"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/search"
@@ -55,12 +56,36 @@ func main() {
 		slog.Info("LLM provider: Ollama", "url", cfg.OllamaURL)
 	}
 
+	// Embedding Provider（検索エンジンが vector/hybrid の場合に使用）
+	var embedder embedding.EmbeddingProvider
+	switch cfg.EmbeddingProvider {
+	case "openai":
+		embedder = embedding.NewOpenAIProvider(cfg.OpenAIKey)
+		slog.Info("Embedding provider: OpenAI")
+	case "deepseek":
+		embedder = embedding.NewDeepSeekProvider(cfg.DeepSeekKey)
+		slog.Info("Embedding provider: DeepSeek")
+	case "gemini":
+		embedder = embedding.NewGeminiProvider(cfg.GeminiKey)
+		slog.Info("Embedding provider: Gemini")
+	case "glm":
+		embedder = embedding.NewGLM5Provider(cfg.GLM5APIKey)
+		slog.Info("Embedding provider: GLM-5")
+	default:
+		embedder = embedding.NewOllamaProvider(cfg.OllamaURL, cfg.EmbeddingModel)
+		slog.Info("Embedding provider: Ollama", "model", cfg.EmbeddingModel)
+	}
+
+	// Search Engine（環境変数で切り替え）
 	var searchEngine search.SearchEngine
 
 	switch cfg.SearchEngin {
 	case "tfidf":
 		searchEngine = search.NewTFIDFEngine()
 		slog.Info("Search engine: TF-IDF")
+	case "vector":
+		searchEngine = search.NewVectorEngine(embedder)
+		slog.Info("Search engine: Vector")
 	default:
 		searchEngine = search.NewBM25Engine()
 		slog.Info("Search engine: BM25")

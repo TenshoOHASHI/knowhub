@@ -2,7 +2,6 @@ package llm
 
 import (
 	"context"
-	"log/slog"
 	"strings"
 )
 
@@ -18,7 +17,7 @@ type Message struct {
 }
 
 func NewProvider(model, apiKey string) LLMProvider {
-	slog.Info("req::", model, apiKey)
+
 	switch {
 	// 他のモデルに対応するために、prefixを使用。例：deepseek-chat や gemeini-2.0-flash
 	case strings.HasPrefix(model, "deepseek"):

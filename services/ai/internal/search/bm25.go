@@ -123,7 +123,10 @@ func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]Sea
 		if score > 0 {
 			snippet := doc.Content
 			if len(snippet) > 200 {
-				snippet = snippet[:200] + "..."
+				runes := []rune(snippet)
+				if len(runes) > 200 {
+					snippet = string(runes[:200]) + "..."
+				}
 			}
 			results = append(results, SearchResult{
 				ArticleID:      doc.ID,
