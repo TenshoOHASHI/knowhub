@@ -228,14 +228,16 @@
 - [x] Q&A based on wiki content（RAG: 検索結果をコンテキストに LLM 回答）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
 - [ ] Vector Embeddings 検索（Ollama embedding モデル）
-  - [ ] Ollama embedding API クライアント（/api/embed エンドポイント）
-  - [ ] 外部 API embedding フォールバック（DeepSeek / OpenAI / Gemini）
-  - [ ] VectorEngine 構造体（SearchEngine インターフェース実装）
-  - [ ] ドキュメント embedding 生成とインメモリキャッシュ（[][]float64）
-  - [ ] クエリ embedding とコサイン類似度による検索
-  - [ ] Hybrid Search（BM25 + Vector の重み付き統合: α * BM25 + (1-α) * Vector）
-  - [ ] Config に EmbeddingProvider / EmbeddingModel 追加
-  - [ ] main.go に "vector" / "hybrid" エンジン選択肢追加
+  - [x] Ollama embedding API クライアント（/api/embed エンドポイント）
+  - [x] 外部 API embedding（OpenAI / DeepSeek / Gemini / GLM-5 共通実装）
+  - [x] VectorEngine 構造体（SearchEngine インターフェース実装）
+  - [x] ドキュメント embedding 生成とインメモリキャッシュ（[][]float64）
+  - [x] クエリ embedding とコサイン類似度による検索
+  - [x] UTF-8 安全な snippet 切り詰め（rune ベース）+ サニタイズ
+  - [x] Config に EmbeddingProvider / EmbeddingModel 追加
+  - [x] main.go に "vector" エンジン選択肢追加
+  - [x] Hybrid Search（BM25 + Vector の重み付き統合: α * BM25 + (1-α) * Vector）
+  - [x] main.go に "hybrid" エンジン選択肢追加
   - [ ] テストコード（embedding / cosine / hybrid）
 - [ ] Graph RAG（ナレッジグラフ拡張検索）
   - [ ] エンティティ・リレーション抽出プロンプト設計（LLM で記事から抽出）

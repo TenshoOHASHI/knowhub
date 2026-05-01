@@ -86,6 +86,9 @@ func main() {
 	case "vector":
 		searchEngine = search.NewVectorEngine(embedder)
 		slog.Info("Search engine: Vector")
+	case "hybrid":
+		searchEngine = search.NewHybridEngine(embedder, 0.5)
+		slog.Info("Search engine: Hybrid", "alpha", 0.5)
 	default:
 		searchEngine = search.NewBM25Engine()
 		slog.Info("Search engine: BM25")

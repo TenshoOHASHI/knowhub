@@ -324,22 +324,29 @@
 ## Phase 9.5 Progress（Advanced Search: Vector + Graph RAG）
 
 ### Vector Embeddings
-- [ ] Ollama embedding API クライアント（/api/embed エンドポイント）
-  - [ ] EmbeddingProvider インターフェース定義（GetEmbedding / GetEmbeddings）
-  - [ ] OllamaEmbeddingProvider 実装（http.Post → []float64）
-  - [ ] 外部 API フォールバック（DeepSeek / OpenAI / Gemini embedding API）
-- [ ] VectorEngine 構造体（SearchEngine インターフェース実装）
-  - [ ] documents フィールド（元ドキュメント保持）
-  - [ ] embeddings フィールド（[][]float64、インデックス時に一括生成）
-  - [ ] Index: 全ドキュメント → embedding API → キャッシュ
-  - [ ] Search: クエリ → embedding → コサイン類似度 → スコア降順
-- [ ] cosineSimilarity（tfidf.go の流用 or 共通化）
-- [ ] Hybrid Search（BM25 + Vector の重み付き統合）
-  - [ ] HybridEngine 構造体（bm25 + vector エンジンを内包）
-  - [ ] α * BM25正規化スコア + (1-α) * Vector スコア
-  - [ ] min-max 正規化でスケールを統一
-- [ ] Config に EmbeddingProvider / EmbeddingModel 追加
-- [ ] main.go に "vector" / "hybrid" エンジン選択肢追加
+- [x] Ollama embedding API クライアント（/api/embed エンドポイント）
+  - [x] EmbeddingProvider インターフェース定義（GetEmbedding / GetEmbeddings）
+  - [x] OllamaEmbeddingProvider 実装（http.Post → []float64）
+  - [x] 外部 API embedding（OpenAI / DeepSeek / Gemini / GLM-5 共通実装: openAIEmbeddingProvider）
+- [x] VectorEngine 構造体（SearchEngine インターフェース実装）
+  - [x] documents フィールド（元ドキュメント保持）
+  - [x] embeddings フィールド（[][]float64、インデックス時に一括生成）
+  - [x] Index: 全ドキュメント → embedding API → キャッシュ
+  - [x] Search: クエリ → embedding → コサイン類似度 → スコア降順
+- [x] cosineSimilarityVec（[]float64 版、vector.go に実装）
+- [x] UTF-8 安全な snippet 切り詰め（rune ベース + strings.ToValidUTF8 サニタイズ）
+- [x] BM25 も同様に rune ベース切り詰めに修正
+- [x] Config に EmbeddingProvider / EmbeddingModel 追加
+- [x] main.go に "vector" エンジン選択肢追加（embedder DI → VectorEngine）
+- [x] Vector 検索動作確認（grpcurl: "gRPC"/"ユーザー認証" でスコア確認）
+- [x] GLM embedding-3 で日本語セマンティック検索精度が向上することを確認
+- [x] Hybrid Search（BM25 + Vector の重み付き統合）
+  - [x] HybridEngine 構造体（bm25 + vector エンジンを内包）
+  - [x] normalizeScores（min-max 正規化で 0〜1 スケール統一）
+  - [x] α × BM25_norm + (1-α) × Vector_norm で統合スコア計算
+  - [x] map[string]*hybridScore で記事ID マージ（ポインタで既存エントリ更新）
+- [x] main.go に "hybrid" エンジン選択肢追加（α=0.5）
+- [x] Hybrid 検索動作確認（grpcurl: BM25+Vector 統合で正確な順位を確認）
 - [ ] テストコード（embedding / cosine / vector search / hybrid）
 
 ### Graph RAG

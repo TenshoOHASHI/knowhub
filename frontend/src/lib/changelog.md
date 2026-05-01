@@ -1,3 +1,22 @@
+## 2026-05-01 Hybrid Search 実装（BM25 + Vector 統合）
+- Backend: HybridEngine 実装（SearchEngine インターフェース、BM25 + Vector を内包）
+- Backend: normalizeScores（min-max 正規化でスコアを 0〜1 に統一）
+- Backend: map[string]*hybridScore で記事ID マージ + α 重み付き統合スコア計算
+- Backend: main.go に "hybrid" エンジン選択肢追加（α=0.5）
+- Test: Hybrid 検索動作確認（BM25 の単語一致 + Vector の意味検索が統合され正確な順位を確認）
+
+## 2026-05-01 Vector Search 実装（Embedding + VectorEngine + 多プロバイダー対応）
+- Backend: EmbeddingProvider インターフェース定義（embedding/provider.go: GetEmbedding / GetEmbeddings）
+- Backend: OllamaEmbeddingProvider 実装（/api/embed → []float64）
+- Backend: OpenAI 互換共通 EmbeddingProvider 実装（OpenAI / DeepSeek / Gemini / GLM-5 対応）
+- Backend: VectorEngine 実装（SearchEngine インターフェース、コサイン類似度検索）
+- Backend: Config に EMBEDDING_PROVIDER / EMBEDDING_MODEL 追加
+- Backend: main.go に "vector" エンジン選択肢追加（EmbeddingProvider → VectorEngine DI）
+- Backend: UTF-8 安全な snippet 切り詰め修正（rune ベース、BM25/Vector 両対応）
+- Backend: snippet の UTF-8 サニタイズ追加（strings.ToValidUTF8）
+- Test: grpcurl で Vector 検索動作確認（gRPC / ユーザー認証）
+- Test: GLM embedding-3 で日本語セマンティック検索精度が向上することを確認
+
 ## 2026-04-30 AI Chat 機能拡張（モデル選択・API Key・履歴永続化・認証スキップ）
 - Frontend: ChatInterface に LLM モデル選択セレクトボックス追加（const.ts MODELS 定義）
 - Frontend: API Key 入力欄追加（password + sessionStorage、タブ閉じで消去）
