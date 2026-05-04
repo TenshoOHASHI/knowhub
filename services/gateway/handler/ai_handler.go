@@ -84,7 +84,7 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	resp, err := h.client.AskQuestion(ctx, &pb.QuestionRequest{
@@ -111,6 +111,43 @@ func (h *AIHandler) GetKnowledgeGraph(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.client.GetKnowledgeGraph(ctx, &pb.GetKnowledgeGraphRequest{})
 	if err != nil {
 		slog.Error("failed to get knowledge graph", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// AskWithAgent — POST /api/ai/agent
+func (h *AIHandler) AskWithAgent(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Question        string `json:"question"`
+		Model           string `json:"model"`
+		ApiKey          string `json:"api_key"`
+		SearchEngine    string `json:"search_engine"`
+		EnableWebSearch bool   `json:"enable_web_search"`
+		History         string `json:"history"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	defer cancel()
+
+	resp, err := h.client.AskWithAgent(ctx, &pb.AgentQuestionRequest{
+		Question:        req.Question,
+		Model:           req.Model,
+		ApiKey:          req.ApiKey,
+		SearchEngine:    req.SearchEngine,
+		EnableWebSearch: req.EnableWebSearch,
+		History:         req.History,
+	})
+	if err != nil {
+		slog.Error("failed to ask with agent", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

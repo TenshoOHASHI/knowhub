@@ -8,7 +8,6 @@ package ai
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,6 +22,7 @@ const (
 	AIService_SearchArticles_FullMethodName       = "/ai.AIService/SearchArticles"
 	AIService_SummarizeArticle_FullMethodName     = "/ai.AIService/SummarizeArticle"
 	AIService_AskQuestion_FullMethodName          = "/ai.AIService/AskQuestion"
+	AIService_AskWithAgent_FullMethodName         = "/ai.AIService/AskWithAgent"
 	AIService_GetKnowledgeGraph_FullMethodName    = "/ai.AIService/GetKnowledgeGraph"
 	AIService_GetRelatedArticles_FullMethodName   = "/ai.AIService/GetRelatedArticles"
 	AIService_InvalidateGraphCache_FullMethodName = "/ai.AIService/InvalidateGraphCache"
@@ -35,6 +35,7 @@ type AIServiceClient interface {
 	SearchArticles(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
 	SummarizeArticle(ctx context.Context, in *SummarizeRequest, opts ...grpc.CallOption) (*SummarizeResponse, error)
 	AskQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
+	AskWithAgent(ctx context.Context, in *AgentQuestionRequest, opts ...grpc.CallOption) (*AgentQuestionResponse, error)
 	GetKnowledgeGraph(ctx context.Context, in *GetKnowledgeGraphRequest, opts ...grpc.CallOption) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(ctx context.Context, in *GetRelatedArticlesRequest, opts ...grpc.CallOption) (*GetRelatedArticlesResponse, error)
 	InvalidateGraphCache(ctx context.Context, in *InvalidateGraphCacheRequest, opts ...grpc.CallOption) (*InvalidateGraphCacheResponse, error)
@@ -78,6 +79,16 @@ func (c *aIServiceClient) AskQuestion(ctx context.Context, in *QuestionRequest, 
 	return out, nil
 }
 
+func (c *aIServiceClient) AskWithAgent(ctx context.Context, in *AgentQuestionRequest, opts ...grpc.CallOption) (*AgentQuestionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AgentQuestionResponse)
+	err := c.cc.Invoke(ctx, AIService_AskWithAgent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *aIServiceClient) GetKnowledgeGraph(ctx context.Context, in *GetKnowledgeGraphRequest, opts ...grpc.CallOption) (*GetKnowledgeGraphResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetKnowledgeGraphResponse)
@@ -115,6 +126,7 @@ type AIServiceServer interface {
 	SearchArticles(context.Context, *SearchRequest) (*SearchResponse, error)
 	SummarizeArticle(context.Context, *SummarizeRequest) (*SummarizeResponse, error)
 	AskQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
+	AskWithAgent(context.Context, *AgentQuestionRequest) (*AgentQuestionResponse, error)
 	GetKnowledgeGraph(context.Context, *GetKnowledgeGraphRequest) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(context.Context, *GetRelatedArticlesRequest) (*GetRelatedArticlesResponse, error)
 	InvalidateGraphCache(context.Context, *InvalidateGraphCacheRequest) (*InvalidateGraphCacheResponse, error)
@@ -136,6 +148,9 @@ func (UnimplementedAIServiceServer) SummarizeArticle(context.Context, *Summarize
 }
 func (UnimplementedAIServiceServer) AskQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AskQuestion not implemented")
+}
+func (UnimplementedAIServiceServer) AskWithAgent(context.Context, *AgentQuestionRequest) (*AgentQuestionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AskWithAgent not implemented")
 }
 func (UnimplementedAIServiceServer) GetKnowledgeGraph(context.Context, *GetKnowledgeGraphRequest) (*GetKnowledgeGraphResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetKnowledgeGraph not implemented")
@@ -221,6 +236,24 @@ func _AIService_AskQuestion_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AIService_AskWithAgent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AgentQuestionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).AskWithAgent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_AskWithAgent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).AskWithAgent(ctx, req.(*AgentQuestionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AIService_GetKnowledgeGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetKnowledgeGraphRequest)
 	if err := dec(in); err != nil {
@@ -293,6 +326,10 @@ var AIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AskQuestion",
 			Handler:    _AIService_AskQuestion_Handler,
+		},
+		{
+			MethodName: "AskWithAgent",
+			Handler:    _AIService_AskWithAgent_Handler,
 		},
 		{
 			MethodName: "GetKnowledgeGraph",

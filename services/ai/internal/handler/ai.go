@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -10,6 +11,7 @@ import (
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
+	"github.com/TenshoOHASHI/knowhub/services/ai/internal/agent"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/search"
@@ -24,6 +26,7 @@ type AIHandler struct {
 	ollamaURL    string              // Ollama embedding 用
 	ollamaModel  string              // Ollama embedding model
 	wikiClient   wikiPb.WikiServicesClient
+	searxngURL   string // SearXNG URL
 
 	// キャッシュ済みナレッジグラフ
 	graphMu    sync.RWMutex
@@ -31,13 +34,14 @@ type AIHandler struct {
 	graphErr   error
 }
 
-func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient) *AIHandler {
+func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient, searxngURL string) *AIHandler {
 	return &AIHandler{
 		searchEngine: se,
 		llmProvider:  llm,
 		ollamaURL:    ollamaURL,
 		ollamaModel:  ollamaModel,
 		wikiClient:   wikiClient,
+		searxngURL:   searxngURL,
 	}
 }
 
@@ -201,8 +205,8 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		provider = llm.NewProvider(req.Model, req.ApiKey)
 	}
 
-	// Embedding プロバイダー生成（apiKey から自動判定）
-	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey)
+	// Embedding プロバイダー生成（model + apiKey から自動判定）
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
 
 	// 検索エンジン選択（search.SelectEngine ファクトリで動的切替）
 	engine := search.SelectEngine(req.SearchEngine, provider, embedder)
@@ -373,4 +377,102 @@ func (h *AIHandler) GetRelatedArticles(ctx context.Context, req *pb.GetRelatedAr
 func (h *AIHandler) InvalidateGraphCache(ctx context.Context, req *pb.InvalidateGraphCacheRequest) (*pb.InvalidateGraphCacheResponse, error) {
 	h.invalidateGraph()
 	return &pb.InvalidateGraphCacheResponse{}, nil
+}
+
+// AskWithAgent は ReAct Agent で自律的にツールを選択・実行して回答する
+func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionRequest) (*pb.AgentQuestionResponse, error) {
+	if req.Question == "" {
+		return nil, status.Error(codes.InvalidArgument, "question is required")
+	}
+
+	// LLM プロバイダー選択
+	provider := h.llmProvider
+	if req.Model != "" {
+		provider = llm.NewProvider(req.Model, req.ApiKey)
+	}
+
+	// Embedding プロバイダー生成（model + apiKey から自動判定）
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
+
+	// ツール構築
+	var tools []agent.Tool
+	tools = append(tools,
+		agent.NewSearchWikiTool(h.wikiClient, provider, embedder, req.SearchEngine),
+		agent.NewReadArticleTool(h.wikiClient),
+		agent.NewListArticlesTool(h.wikiClient),
+	)
+
+	if req.EnableWebSearch {
+		tools = append(tools,
+			agent.NewWebSearchTool(h.searxngURL),
+			agent.NewReadURLTool(),
+		)
+	}
+
+	callbacks := agent.NewLoggingCallbacks()
+	ag := agent.NewAgent(provider, tools, 10, callbacks)
+
+	// 会話履歴をパース
+	var history []llm.Message
+	if req.History != "" {
+		var entries []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		}
+		if err := json.Unmarshal([]byte(req.History), &entries); err == nil {
+			for _, e := range entries {
+				history = append(history, llm.Message{Role: e.Role, Content: e.Content})
+			}
+		}
+	}
+
+	// 外部モデル（Gemini/DeepSeek/OpenAI等）→ 自律ReAct、Ollama → 固定パイプライン
+	var result *agent.AgentResult
+	var err error
+	if isExternalModel(req.Model) {
+		slog.Info("using autonomous ReAct mode", "model", req.Model)
+		result, err = ag.Run(ctx, req.Question)
+	} else {
+		slog.Info("using pipeline mode", "model", req.Model)
+		result, err = ag.RunPipeline(ctx, req.Question, history)
+	}
+	if err != nil {
+		slog.Error("agent run failed", "error", err, "model", req.Model)
+		return nil, status.Error(codes.Internal, "agent execution failed")
+	}
+
+	// proto レスポンスに変換
+	pbSteps := make([]*pb.AgentStep, 0, len(result.Steps))
+	for _, s := range result.Steps {
+		pbSteps = append(pbSteps, &pb.AgentStep{
+			Thought:     s.Thought,
+			Action:      s.Action,
+			ActionInput: s.ActionInput,
+			Observation: s.Observation,
+		})
+	}
+
+	pbSources := make([]*pb.AgentSource, 0, len(result.Sources))
+	for _, s := range result.Sources {
+		pbSources = append(pbSources, &pb.AgentSource{
+			ArticleId: s.ArticleID,
+			Title:     s.Title,
+			Url:       s.URL,
+		})
+	}
+
+	return &pb.AgentQuestionResponse{
+		Answer:  result.Answer,
+		Steps:   pbSteps,
+		Sources: pbSources,
+	}, nil
+}
+
+// isExternalModel は外部LLMプロバイダー（Gemini/DeepSeek/OpenAI/GLM-5）かどうかを判定する
+// llm.NewProvider のプレフィックス判定と同じロジック
+func isExternalModel(model string) bool {
+	return strings.HasPrefix(model, "deepseek") ||
+		strings.HasPrefix(model, "gemini") ||
+		strings.HasPrefix(model, "glm") ||
+		strings.HasPrefix(model, "gpt")
 }

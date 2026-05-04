@@ -127,14 +127,17 @@ export default function KnowledgeGraph() {
         d3
           .forceLink<SimNode, SimLink>(links)
           .id((d) => d.id)
-          .distance(200),
+          .distance(120),
       )
-      .force('charge', d3.forceManyBody().strength(-500))
+      .force('charge', d3.forceManyBody().strength(-400))
       .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('x', d3.forceX(width / 2).strength(0.05))
+      .force('y', d3.forceY(height / 2).strength(0.05))
       .force(
         'collision',
         d3.forceCollide<SimNode>().radius((d) => nodeRadius(d) + 8),
-      );
+      )
+      .alphaDecay(0.02);
 
     // Links
     const link = g
@@ -291,6 +294,26 @@ export default function KnowledgeGraph() {
         });
 
       node.attr('transform', (d) => `translate(${d.x},${d.y})`);
+    });
+
+    // シミュレーション終了後に全体が中央に収まるようにズーム
+    simulation.on('end', () => {
+      const padding = 60;
+      const bbox = (g.node() as SVGGElement).getBBox();
+      if (bbox.width === 0 || bbox.height === 0) return;
+
+      const scale = Math.min(
+        (width - padding * 2) / bbox.width,
+        (height - padding * 2) / bbox.height,
+        1.5,
+      );
+      const tx = width / 2 - (bbox.x + bbox.width / 2) * scale;
+      const ty = height / 2 - (bbox.y + bbox.height / 2) * scale;
+
+      svg.transition().duration(500).call(
+        zoom.transform,
+        d3.zoomIdentity.translate(tx, ty).scale(scale),
+      );
     });
   }, [graphData]);
 

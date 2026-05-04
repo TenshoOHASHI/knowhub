@@ -46,7 +46,8 @@
 | Auth Service | :50051 (gRPC) | Register, Login, JWT |
 | Wiki Service | :50052 (gRPC) | Article CRUD (CQRS) |
 | Profile Service | :50053 (gRPC) | Self-intro, portfolio items |
-| AI Service | :50054 (gRPC) | Article search, summarization (Phase 9) |
+| AI Service | :50054 (gRPC) | Article search, summarization, ReAct Agent (Phase 9/11) |
+| SearXNG | :8888 (HTTP) | Self-hosted web search engine (Phase 11) |
 | MCP Server | :5005 (stdio/SSE) | AI assistant integration (Phase 10) |
 
 ## Database Design
@@ -230,7 +231,7 @@
 - [x] Article summarization（LLM による要約）
 - [x] Q&A based on wiki content（RAG: 検索結果をコンテキストに LLM 回答）
 - [x] Ollama モデル設定の環境変数化（OLLAMA_MODEL）
-- [ ] Vector Embeddings 検索（Ollama embedding モデル）
+- [x] Vector Embeddings 検索（Ollama embedding モデル）
   - [x] Ollama embedding API クライアント（/api/embed エンドポイント）
   - [x] 外部 API embedding（OpenAI / DeepSeek / Gemini / GLM-5 共通実装）
   - [x] VectorEngine 構造体（SearchEngine インターフェース実装）
@@ -256,11 +257,11 @@
   - [x] handler: AskQuestion でリクエストの search_engine から動的に選択
   - [x] main.go シンプル化（デフォルト BM25 + Ollama、handler で動的切替）
   - [x] config.go 削減（SearchEngin / EmbeddingProvider / LLM 個別フィールド削除）
-- [ ] フロントエンド: 検索エンジン選択 UI
-  - [ ] const.ts に SEARCH_ENGINES 定数追加（bm25 / vector / hybrid / graph + needsKey）
-  - [ ] ChatInterface に検索エンジンセレクトボックス追加
-  - [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示を切替
-  - [ ] api.ts askQuestion に search_engine パラメータ追加
+- [x] フロントエンド: 検索エンジン選択 UI
+  - [x] const.ts に SEARCH_ENGINES 定数追加（bm25 / vector / hybrid / graph + needsKey）
+  - [x] ChatInterface に検索エンジンセレクトボックス追加
+  - [x] 選択したエンジンに応じて API Key 入力欄の表示/非表示を切替
+  - [x] api.ts askQuestion に search_engine パラメータ追加
 - [x] Chat interface（フロントエンド）
   - [x] ChatInterface コンポーネント（ReactMarkdown + アイコン + スクロール制御）
   - [x] api.ts askQuestion 追加（model / apiKey パラメータ対応）
@@ -280,3 +281,19 @@
 - [ ] Tools: create_article, search_articles, list_articles
 - [ ] Resources: article content access
 - [ ] Integration with Claude Desktop / other AI assistants
+
+### Phase 11: ReAct Agent + SearXNG 外部検索
+- [x] Proto: AskWithAgent RPC + AgentQuestionRequest / AgentStep / AgentSource / AgentQuestionResponse
+- [x] Docker: SearXNG コンテナ追加（docker-compose.yml）
+- [x] Config: SearXNGURL 環境変数追加
+- [x] Agent パッケージ（Tool interface + 5ツール + ReAct ループ + Callbacks）
+- [x] Handler: AskWithAgent メソッド（enable_web_search で web_search/read_url 追加）
+- [x] Gateway: POST /api/ai/agent エンドポイント（timeout 300s）
+- [x] Frontend: モード切替（RAG / Agent）+ Web検索チェックボックス + 思考プロセス表示
+- [x] Agent 実行モード自動切替（外部モデル → 自律ReAct、Ollama → 固定パイプライン）
+- [x] Embedding プロバイダー model ベースルーティング（DeepSeek APIキーの OpenAI 誤ルーティング修正）
+- [x] Gateway タイムアウト調整（RAG: 60s→120s、Agent: 180s→300s）
+- [x] フロントエンド: チャット画面コードブロック シンタックスハイライト + コピーボタン
+- [x] フロントエンド: ヘルプパネル（?ボタン + RAG/Agent モード別説明）
+- [x] フロントエンド: Wiki 記事コードブロック GitHub dark スタイル + コピーボタン
+- [ ] 動作確認

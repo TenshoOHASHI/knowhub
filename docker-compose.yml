@@ -33,3 +33,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  searxng:
+    container_name: searxng
+    image: searxng/searxng:latest
+    ports:
+      - '8888:8080'
+    volumes:
+      - ./data/searxng:/etc/searxng:rw

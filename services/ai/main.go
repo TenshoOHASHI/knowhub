@@ -42,7 +42,7 @@ func main() {
 	searchEngine := search.NewBM25Engine()
 
 	// Handler
-	aiHandler := handler.NewAIHandler(searchEngine, provider, cfg.OllamaURL, cfg.EmbeddingModel, wikiClient)
+	aiHandler := handler.NewAIHandler(searchEngine, provider, cfg.OllamaURL, cfg.EmbeddingModel, wikiClient, cfg.SearXNGURL)
 
 	// gRPC Server
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)

@@ -55,3 +55,22 @@ body {
   margin-top: 0.5em;
 }
 
+/* Code block - GitHub dark style */
+.prose pre {
+  background-color: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 0.5rem;
+  padding: 1rem !important;
+}
+
+.prose pre code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.prose pre code {
+  background: transparent !important;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+

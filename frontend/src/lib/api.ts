@@ -185,9 +185,57 @@ export async function askQuestion(
   const res = await fetch(`${API_BASE}/ai/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, model, api_key: apiKey, search_engine: searchEngine }),
+    body: JSON.stringify({
+      question,
+      model,
+      api_key: apiKey,
+      search_engine: searchEngine,
+    }),
   });
   if (!res.ok) throw new Error('Failed to ask question');
+  return res.json();
+}
+
+// agent chat
+export interface AgentStep {
+  thought: string;
+  action: string;
+  action_input: string;
+  observation: string;
+}
+
+export interface AgentSource {
+  article_id?: string;
+  title?: string;
+  url?: string;
+}
+
+export interface ChatHistoryEntry {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export async function askWithAgent(
+  question: string,
+  model: string,
+  apiKey: string,
+  searchEngine: string,
+  enableWebSearch: boolean,
+  history: ChatHistoryEntry[],
+): Promise<{ answer: string; steps: AgentStep[]; sources: AgentSource[] }> {
+  const res = await fetch(`${API_BASE}/ai/agent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question,
+      model,
+      api_key: apiKey,
+      search_engine: searchEngine,
+      enable_web_search: enableWebSearch,
+      history: JSON.stringify(history),
+    }),
+  });
+  if (!res.ok) throw new Error('Failed to ask with agent');
   return res.json();
 }
 
@@ -212,13 +260,17 @@ export async function getKnowledgeGraph(): Promise<{
   const res = await fetch(`${API_BASE}/ai/graph`);
   if (!res.ok) {
     if (res.status === 504 || res.status === 502)
-      throw new Error('サーバーがタイムアウトしました。AIサービスが起動しているか確認してください。');
+      throw new Error(
+        'サーバーがタイムアウトしました。AIサービスが起動しているか確認してください。',
+      );
     if (res.status === 503)
-      throw new Error('AIサービスが利用できません。しばらくしてからお試しください。');
+      throw new Error(
+        'AIサービスが利用できません。しばらくしてからお試しください。',
+      );
     throw new Error(`グラフの取得に失敗しました (HTTP ${res.status})`);
   }
   const data = await res.json();
-  if (!data.entities?.length) throw new Error('グラフデータが空です。先に記事を投稿してください。');
+  if (!data.entities?.length)
+    throw new Error('グラフデータが空です。先に記事を投稿してください。');
   return data;
 }
-

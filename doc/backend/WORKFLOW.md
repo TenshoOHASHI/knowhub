@@ -79,12 +79,12 @@
 - [x] Proto definition & code generation
 - [x] Profile model
 - [x] PortfolioItem model
-- [ ] PortfolioItem model の Status → PortfolioStatus カスタム型適用（TODO）
+- [x] PortfolioItem model の Status → PortfolioStatus カスタム型適用（TODO）
 - [x] Profile repository
 - [x] PortfolioItem repository
-- [ ] gRPC handler
-- [ ] main.go with service registration
-- [ ] Migration のテーブル名修正（`articles` → `portfolio_items`）済み
+- [x] gRPC handler
+- [x] main.go with service registration
+- [x] Migration のテーブル名修正（`articles` → `portfolio_items`）済み
 
 ## Phase 7 Progress（Frontend）
 
@@ -394,14 +394,14 @@
   - [x] 残存フィールド: GRPCPort / WikiAddr / OllamaURL / OllamaModel / EmbeddingModel / LogLevel
 
 ### フロントエンド: 検索エンジン選択 UI
-- [ ] const.ts に SEARCH_ENGINES 定数追加
-  - [ ] bm25: { id: 'bm25', name: 'BM25（キーワード検索）', needsKey: false }
-  - [ ] vector: { id: 'vector', name: 'Vector（セマンティック検索）', needsKey: true }
-  - [ ] hybrid: { id: 'hybrid', name: 'Hybrid（BM25 + Vector）', needsKey: true }
-  - [ ] graph: { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true }
-- [ ] ChatInterface に検索エンジンセレクトボックス追加（LLM モデル選択の下）
-- [ ] 選択したエンジンに応じて API Key 入力欄の表示/非表示切替
-- [ ] api.ts askQuestion に search_engine パラメータ追加
+- [x] const.ts に SEARCH_ENGINES 定数追加
+  - [x] bm25: { id: 'bm25', name: 'BM25（キーワード検索）', needsKey: false }
+  - [x] vector: { id: 'vector', name: 'Vector（セマンティック検索）', needsKey: true }
+  - [x] hybrid: { id: 'hybrid', name: 'Hybrid（BM25 + Vector）', needsKey: true }
+  - [x] graph: { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true }
+- [x] ChatInterface に検索エンジンセレクトボックス追加（LLM モデル選択の下）
+- [x] 選択したエンジンに応じて API Key 入力欄の表示/非表示切替
+- [x] api.ts askQuestion に search_engine パラメータ追加
 
 ## Phase 10 Progress（MCP Server）
 
@@ -409,3 +409,36 @@
 - [ ] Tools: create_article, search_articles, list_articles
 - [ ] Resources: article content access
 - [ ] Integration with Claude Desktop / other AI assistants
+
+## Phase 11 Progress（ReAct Agent + SearXNG 外部検索）
+
+- [x] Proto: ai.proto に AskWithAgent RPC + AgentQuestionRequest / AgentStep / AgentSource / AgentQuestionResponse 追加
+- [x] Proto: Go コード再生成（ai.pb.go / ai_grpc.pb.go）
+- [x] Docker: docker-compose.yml に SearXNG サービス追加（:8888）
+- [x] Config: config.go に SearXNGURL フィールド追加（env: SEARXNG_URL, default: http://localhost:8888）
+- [x] Agent パッケージ新規作成（services/ai/internal/agent/）
+  - [x] tool.go: Tool interface（Name / Description / Run）
+  - [x] tool_search_wiki.go: search_wiki ツール（wikiClient + SearchEngine factory）
+  - [x] tool_read_article.go: read_article ツール（wikiClient.Get）
+  - [x] tool_list_articles.go: list_articles ツール（wikiClient.List）
+  - [x] tool_web_search.go: web_search ツール（SearXNG JSON API）
+  - [x] tool_read_url.go: read_url ツール（go-readability）
+  - [x] agent.go: ReAct ループ（max 10 iter / Thought-Action-Observation パーサー / Final Answer 抽出 / ソース収集）
+  - [x] callbacks.go: OnToolStart/OnToolEnd/OnLLMStart/OnLLMEnd + NewLoggingCallbacks
+- [x] Handler: ai.go に AskWithAgent メソッド追加（searxngURL フィールド + ツールリスト構築 + agent.Run）
+- [x] Handler: Agent 実行モード自動切替（isExternalModel で外部モデル→自律ReAct、Ollama→固定パイプライン）
+- [x] main.go: NewAIHandler に cfg.SearXNGURL 渡し
+- [x] Gateway: ai_handler.go に AskWithAgent メソッド追加（POST /api/ai/agent, timeout 300s）
+- [x] Gateway: タイムアウト調整（RAG: 120s, Agent: 300s）
+- [x] Gateway: main.go にルート登録（POST /api/ai/agent）
+- [x] Embedding: NewProvider ファクトリを model ベースルーティングに変更（DeepSeek の OpenAI 誤ルーティング修正）
+- [x] Frontend: api.ts に askWithAgent + AgentStep / AgentSource 型追加
+- [x] Frontend: const.ts に CHAT_MODES 定数追加（RAG / Agent）
+- [x] Frontend: AgentSteps.tsx 新規コンポーネント（折りたたみ思考プロセス表示）
+- [x] Frontend: ChatInterface.tsx モード切替 + Web検索チェックボックス + agentSteps 表示
+- [x] Frontend: ChatInterface.tsx シンタックスハイライト（rehype-highlight）+ コピーボタン追加
+- [x] Frontend: ChatInterface.tsx ヘルプパネル（?ボタン + RAG/Agent モード別説明）
+- [x] Frontend: ArticleContent.tsx + Markdown.tsx コードブロック GitHub dark スタイル + コピーボタン
+- [x] Frontend: globals.css コードブロック背景 GitHub dark（#161b22）+ hljs 透過
+- [ ] 依存関係ダウンロード + go build 検証
+- [ ] 動作確認（SearXNG 起動 / Agent モード / Web検索 / 既存 RAG 非破壊）

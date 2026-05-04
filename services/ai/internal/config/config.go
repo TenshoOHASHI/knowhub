@@ -14,9 +14,12 @@ type Config struct {
 	WikiAddr string
 
 	// Ollama（デフォルト LLM + Embedding）
-	OllamaURL     string
-	OllamaModel   string // "gemma3:1b"
+	OllamaURL      string
+	OllamaModel    string // "gemma3:1b"
 	EmbeddingModel string // "nomic-embed-text"
+
+	// SearXNG（外部 Web 検索）
+	SearXNGURL string
 
 	// Logging
 	LogLevel string
@@ -30,6 +33,7 @@ func Load(path string) *Config {
 		OllamaURL:      getEnv("OLLAMA_URL", "http://localhost:11434"),
 		OllamaModel:    getEnv("OLLAMA_MODEL", "gemma3:1b"),
 		EmbeddingModel: getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
+		SearXNGURL:     getEnv("SEARXNG_URL", "http://localhost:8888"),
 		LogLevel:       getEnv("LOG_LEVEL", "info"),
 	}
 }

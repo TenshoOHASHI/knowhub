@@ -35,3 +35,8 @@ export const SEARCH_ENGINES = [
   // エンティティ抽出に LLM API が必要。
   { id: 'graph', name: 'Graph RAG（ナレッジグラフ）', needsKey: true },
 ];
+
+export const CHAT_MODES = [
+  { id: 'rag', name: 'RAG' },
+  { id: 'agent', name: 'Agent' },
+];

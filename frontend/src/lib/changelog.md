@@ -1,3 +1,29 @@
+## 2026-05-04 Agent モード改善 + UI ブラッシュアップ + Embedding 修正
+- Backend: Agent 実行モード自動切替（外部モデル → 自律ReAct、Ollama → 固定パイプライン）
+- Backend: isExternalModel ヘルパー追加（llm.NewProvider と同じプレフィックス判定ロジック）
+- Backend: Embedding NewProvider ファクトリを model ベースルーティングに変更（DeepSeek APIキーの OpenAI 誤送信修正）
+- Backend: Gateway タイムアウト調整（RAG: 60s→120s、Agent: 180s→300s）
+- Frontend: チャット画面にシンタックスハイライト追加（rehype-highlight + github-dark.css）
+- Frontend: チャット画面コードブロックにコピーボタン追加（CodeBlock コンポーネント）
+- Frontend: ヘルプパネル追加（?ボタン + RAG/Agent モード別説明 + モード切替で自動閉じる）
+- Frontend: Wiki 記事コードブロック背景を GitHub dark スタイルに変更（#161b22）
+- Frontend: Wiki 記事コードブロックにコピーボタン追加（ArticleContent + Markdown 共通）
+- Frontend: highlight.js/styles/github.css インポート削除（github-dark.css のみ使用）
+
+## 2026-05-03 ReAct Agent + SearXNG 外部検索
+- Proto: ai.proto に AskWithAgent RPC + AgentQuestionRequest / AgentStep / AgentSource / AgentQuestionResponse 追加
+- Docker: docker-compose.yml に SearXNG サービス追加（:8888）
+- Backend: config.go に SearXNGURL フィールド追加
+- Backend: agent パッケージ新規作成（Tool interface + 5ツール: search_wiki/read_article/list_articles/web_search/read_url）
+- Backend: ReAct ループ実装（max 10 iteration / Thought-Action-Observation パーサー / Final Answer 抽出）
+- Backend: callbacks.go（OnToolStart/OnToolEnd/OnLLMStart/OnLLMEnd + slog ロギング）
+- Backend: ai.go に AskWithAgent メソッド追加（searxngURL + ツールリスト構築 + agent.Run）
+- Gateway: POST /api/ai/agent エンドポイント追加（timeout 180s）
+- Frontend: api.ts に askWithAgent + AgentStep / AgentSource 型追加
+- Frontend: const.ts に CHAT_MODES 定数追加（RAG / Agent）
+- Frontend: AgentSteps.tsx 折りたたみ思考プロセス表示コンポーネント
+- Frontend: ChatInterface.tsx モード切替セレクトボックス + Web検索チェックボックス + agentSteps 表示
+
 ## 2026-05-02 Markdown拡張: コールアウト + 折りたたみブロック
 - Frontend: remark-callout プラグイン実装（Zenn記法 / GitHub記法 → コールアウトdiv変換）
 - Frontend: Callout コンポーネント実装（7タイプ: note/info/tip/warning/caution/important/warm + SVGアイコン）

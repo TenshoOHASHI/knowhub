@@ -92,6 +92,7 @@ func main() {
 	mux.HandleFunc("POST /api/ai/search", aiHandler.SearchArticles)
 	mux.HandleFunc("POST /api/ai/summarize", aiHandler.SummarizeArticle)
 	mux.HandleFunc("POST /api/ai/ask", aiHandler.AskQuestion)
+	mux.HandleFunc("POST /api/ai/agent", aiHandler.AskWithAgent)
 	mux.HandleFunc("GET /api/ai/graph", aiHandler.GetKnowledgeGraph)
 
 	// upload
