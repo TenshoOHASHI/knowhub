@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -47,6 +47,24 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
+		// analytics 関連パスは認証不要
+		if strings.HasPrefix(r.URL.Path, "/api/analytics/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// like / save は匿名フィンガープリント方式なので認証不要
+		if strings.HasPrefix(r.URL.Path, "/api/articles/") &&
+			(strings.HasSuffix(r.URL.Path, "/like") || strings.HasSuffix(r.URL.Path, "/save") || strings.HasSuffix(r.URL.Path, "/saved")) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// batch like counts
+		if r.URL.Path == "/api/articles/likes" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Token を Cookie または Authorization ヘッダーから取得
 		var tokenStr string
 		if cookie, err := r.Cookie("token"); err == nil {
@@ -81,7 +99,7 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			Token: tokenStr,
 		})
 		if err != nil {
-			log.Printf("token verified failed: %v", err)
+			slog.Error("token verification failed", "error", err)
 			http.Error(w, "unauthorized: invalid token", http.StatusUnauthorized)
 			return
 		}

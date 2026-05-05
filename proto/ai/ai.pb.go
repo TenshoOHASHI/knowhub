@@ -1111,6 +1111,263 @@ func (x *AgentQuestionResponse) GetSources() []*AgentSource {
 	return nil
 }
 
+// Streaming events for AskWithAgentStream
+type AgentStreamEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventType     string                 `protobuf:"bytes,1,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"` // "step", "final_answer", "error"
+	Step          *AgentStepEvent        `protobuf:"bytes,2,opt,name=step,proto3" json:"step,omitempty"`
+	Final         *AgentFinalEvent       `protobuf:"bytes,3,opt,name=final,proto3" json:"final,omitempty"`
+	Error         *AgentErrorEvent       `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentStreamEvent) Reset() {
+	*x = AgentStreamEvent{}
+	mi := &file_proto_ai_ai_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentStreamEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentStreamEvent) ProtoMessage() {}
+
+func (x *AgentStreamEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_ai_ai_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentStreamEvent.ProtoReflect.Descriptor instead.
+func (*AgentStreamEvent) Descriptor() ([]byte, []int) {
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *AgentStreamEvent) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *AgentStreamEvent) GetStep() *AgentStepEvent {
+	if x != nil {
+		return x.Step
+	}
+	return nil
+}
+
+func (x *AgentStreamEvent) GetFinal() *AgentFinalEvent {
+	if x != nil {
+		return x.Final
+	}
+	return nil
+}
+
+func (x *AgentStreamEvent) GetError() *AgentErrorEvent {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type AgentStepEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StepIndex     int32                  `protobuf:"varint,1,opt,name=step_index,json=stepIndex,proto3" json:"step_index,omitempty"`
+	Thought       string                 `protobuf:"bytes,2,opt,name=thought,proto3" json:"thought,omitempty"`
+	Action        string                 `protobuf:"bytes,3,opt,name=action,proto3" json:"action,omitempty"`
+	ActionInput   string                 `protobuf:"bytes,4,opt,name=action_input,json=actionInput,proto3" json:"action_input,omitempty"`
+	Observation   string                 `protobuf:"bytes,5,opt,name=observation,proto3" json:"observation,omitempty"`
+	Phase         string                 `protobuf:"bytes,6,opt,name=phase,proto3" json:"phase,omitempty"` // "llm_thinking", "tool_executing", "tool_complete"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentStepEvent) Reset() {
+	*x = AgentStepEvent{}
+	mi := &file_proto_ai_ai_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentStepEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentStepEvent) ProtoMessage() {}
+
+func (x *AgentStepEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_ai_ai_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentStepEvent.ProtoReflect.Descriptor instead.
+func (*AgentStepEvent) Descriptor() ([]byte, []int) {
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *AgentStepEvent) GetStepIndex() int32 {
+	if x != nil {
+		return x.StepIndex
+	}
+	return 0
+}
+
+func (x *AgentStepEvent) GetThought() string {
+	if x != nil {
+		return x.Thought
+	}
+	return ""
+}
+
+func (x *AgentStepEvent) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *AgentStepEvent) GetActionInput() string {
+	if x != nil {
+		return x.ActionInput
+	}
+	return ""
+}
+
+func (x *AgentStepEvent) GetObservation() string {
+	if x != nil {
+		return x.Observation
+	}
+	return ""
+}
+
+func (x *AgentStepEvent) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+type AgentFinalEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Answer        string                 `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
+	Steps         []*AgentStep           `protobuf:"bytes,2,rep,name=steps,proto3" json:"steps,omitempty"`
+	Sources       []*AgentSource         `protobuf:"bytes,3,rep,name=sources,proto3" json:"sources,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentFinalEvent) Reset() {
+	*x = AgentFinalEvent{}
+	mi := &file_proto_ai_ai_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentFinalEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentFinalEvent) ProtoMessage() {}
+
+func (x *AgentFinalEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_ai_ai_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentFinalEvent.ProtoReflect.Descriptor instead.
+func (*AgentFinalEvent) Descriptor() ([]byte, []int) {
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *AgentFinalEvent) GetAnswer() string {
+	if x != nil {
+		return x.Answer
+	}
+	return ""
+}
+
+func (x *AgentFinalEvent) GetSteps() []*AgentStep {
+	if x != nil {
+		return x.Steps
+	}
+	return nil
+}
+
+func (x *AgentFinalEvent) GetSources() []*AgentSource {
+	if x != nil {
+		return x.Sources
+	}
+	return nil
+}
+
+type AgentErrorEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AgentErrorEvent) Reset() {
+	*x = AgentErrorEvent{}
+	mi := &file_proto_ai_ai_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AgentErrorEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AgentErrorEvent) ProtoMessage() {}
+
+func (x *AgentErrorEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_ai_ai_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AgentErrorEvent.ProtoReflect.Descriptor instead.
+func (*AgentErrorEvent) Descriptor() ([]byte, []int) {
+	return file_proto_ai_ai_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *AgentErrorEvent) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_proto_ai_ai_proto protoreflect.FileDescriptor
 
 const file_proto_ai_ai_proto_rawDesc = "" +
@@ -1189,12 +1446,33 @@ const file_proto_ai_ai_proto_rawDesc = "" +
 	"\x15AgentQuestionResponse\x12\x16\n" +
 	"\x06answer\x18\x01 \x01(\tR\x06answer\x12#\n" +
 	"\x05steps\x18\x02 \x03(\v2\r.ai.AgentStepR\x05steps\x12)\n" +
-	"\asources\x18\x03 \x03(\v2\x0f.ai.AgentSourceR\asources2\x86\x04\n" +
+	"\asources\x18\x03 \x03(\v2\x0f.ai.AgentSourceR\asources\"\xaf\x01\n" +
+	"\x10AgentStreamEvent\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x01 \x01(\tR\teventType\x12&\n" +
+	"\x04step\x18\x02 \x01(\v2\x12.ai.AgentStepEventR\x04step\x12)\n" +
+	"\x05final\x18\x03 \x01(\v2\x13.ai.AgentFinalEventR\x05final\x12)\n" +
+	"\x05error\x18\x04 \x01(\v2\x13.ai.AgentErrorEventR\x05error\"\xbc\x01\n" +
+	"\x0eAgentStepEvent\x12\x1d\n" +
+	"\n" +
+	"step_index\x18\x01 \x01(\x05R\tstepIndex\x12\x18\n" +
+	"\athought\x18\x02 \x01(\tR\athought\x12\x16\n" +
+	"\x06action\x18\x03 \x01(\tR\x06action\x12!\n" +
+	"\faction_input\x18\x04 \x01(\tR\vactionInput\x12 \n" +
+	"\vobservation\x18\x05 \x01(\tR\vobservation\x12\x14\n" +
+	"\x05phase\x18\x06 \x01(\tR\x05phase\"y\n" +
+	"\x0fAgentFinalEvent\x12\x16\n" +
+	"\x06answer\x18\x01 \x01(\tR\x06answer\x12#\n" +
+	"\x05steps\x18\x02 \x03(\v2\r.ai.AgentStepR\x05steps\x12)\n" +
+	"\asources\x18\x03 \x03(\v2\x0f.ai.AgentSourceR\asources\"+\n" +
+	"\x0fAgentErrorEvent\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xce\x04\n" +
 	"\tAIService\x127\n" +
 	"\x0eSearchArticles\x12\x11.ai.SearchRequest\x1a\x12.ai.SearchResponse\x12?\n" +
 	"\x10SummarizeArticle\x12\x14.ai.SummarizeRequest\x1a\x15.ai.SummarizeResponse\x128\n" +
 	"\vAskQuestion\x12\x13.ai.QuestionRequest\x1a\x14.ai.QuestionResponse\x12C\n" +
-	"\fAskWithAgent\x12\x18.ai.AgentQuestionRequest\x1a\x19.ai.AgentQuestionResponse\x12P\n" +
+	"\fAskWithAgent\x12\x18.ai.AgentQuestionRequest\x1a\x19.ai.AgentQuestionResponse\x12F\n" +
+	"\x12AskWithAgentStream\x12\x18.ai.AgentQuestionRequest\x1a\x14.ai.AgentStreamEvent0\x01\x12P\n" +
 	"\x11GetKnowledgeGraph\x12\x1c.ai.GetKnowledgeGraphRequest\x1a\x1d.ai.GetKnowledgeGraphResponse\x12S\n" +
 	"\x12GetRelatedArticles\x12\x1d.ai.GetRelatedArticlesRequest\x1a\x1e.ai.GetRelatedArticlesResponse\x12Y\n" +
 	"\x14InvalidateGraphCache\x12\x1f.ai.InvalidateGraphCacheRequest\x1a .ai.InvalidateGraphCacheResponseB*Z(github.com/TenshoOHASHI/knowhub/proto/aib\x06proto3"
@@ -1211,7 +1489,7 @@ func file_proto_ai_ai_proto_rawDescGZIP() []byte {
 	return file_proto_ai_ai_proto_rawDescData
 }
 
-var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_proto_ai_ai_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_proto_ai_ai_proto_goTypes = []any{
 	(*Source)(nil),                       // 0: ai.Source
 	(*SearchRequest)(nil),                // 1: ai.SearchRequest
@@ -1233,6 +1511,10 @@ var file_proto_ai_ai_proto_goTypes = []any{
 	(*AgentStep)(nil),                    // 17: ai.AgentStep
 	(*AgentSource)(nil),                  // 18: ai.AgentSource
 	(*AgentQuestionResponse)(nil),        // 19: ai.AgentQuestionResponse
+	(*AgentStreamEvent)(nil),             // 20: ai.AgentStreamEvent
+	(*AgentStepEvent)(nil),               // 21: ai.AgentStepEvent
+	(*AgentFinalEvent)(nil),              // 22: ai.AgentFinalEvent
+	(*AgentErrorEvent)(nil),              // 23: ai.AgentErrorEvent
 }
 var file_proto_ai_ai_proto_depIdxs = []int32{
 	2,  // 0: ai.SearchResponse.results:type_name -> ai.SearchResult
@@ -1242,25 +1524,32 @@ var file_proto_ai_ai_proto_depIdxs = []int32{
 	2,  // 4: ai.GetRelatedArticlesResponse.results:type_name -> ai.SearchResult
 	17, // 5: ai.AgentQuestionResponse.steps:type_name -> ai.AgentStep
 	18, // 6: ai.AgentQuestionResponse.sources:type_name -> ai.AgentSource
-	1,  // 7: ai.AIService.SearchArticles:input_type -> ai.SearchRequest
-	4,  // 8: ai.AIService.SummarizeArticle:input_type -> ai.SummarizeRequest
-	6,  // 9: ai.AIService.AskQuestion:input_type -> ai.QuestionRequest
-	16, // 10: ai.AIService.AskWithAgent:input_type -> ai.AgentQuestionRequest
-	10, // 11: ai.AIService.GetKnowledgeGraph:input_type -> ai.GetKnowledgeGraphRequest
-	12, // 12: ai.AIService.GetRelatedArticles:input_type -> ai.GetRelatedArticlesRequest
-	14, // 13: ai.AIService.InvalidateGraphCache:input_type -> ai.InvalidateGraphCacheRequest
-	3,  // 14: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
-	5,  // 15: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
-	7,  // 16: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
-	19, // 17: ai.AIService.AskWithAgent:output_type -> ai.AgentQuestionResponse
-	11, // 18: ai.AIService.GetKnowledgeGraph:output_type -> ai.GetKnowledgeGraphResponse
-	13, // 19: ai.AIService.GetRelatedArticles:output_type -> ai.GetRelatedArticlesResponse
-	15, // 20: ai.AIService.InvalidateGraphCache:output_type -> ai.InvalidateGraphCacheResponse
-	14, // [14:21] is the sub-list for method output_type
-	7,  // [7:14] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	21, // 7: ai.AgentStreamEvent.step:type_name -> ai.AgentStepEvent
+	22, // 8: ai.AgentStreamEvent.final:type_name -> ai.AgentFinalEvent
+	23, // 9: ai.AgentStreamEvent.error:type_name -> ai.AgentErrorEvent
+	17, // 10: ai.AgentFinalEvent.steps:type_name -> ai.AgentStep
+	18, // 11: ai.AgentFinalEvent.sources:type_name -> ai.AgentSource
+	1,  // 12: ai.AIService.SearchArticles:input_type -> ai.SearchRequest
+	4,  // 13: ai.AIService.SummarizeArticle:input_type -> ai.SummarizeRequest
+	6,  // 14: ai.AIService.AskQuestion:input_type -> ai.QuestionRequest
+	16, // 15: ai.AIService.AskWithAgent:input_type -> ai.AgentQuestionRequest
+	16, // 16: ai.AIService.AskWithAgentStream:input_type -> ai.AgentQuestionRequest
+	10, // 17: ai.AIService.GetKnowledgeGraph:input_type -> ai.GetKnowledgeGraphRequest
+	12, // 18: ai.AIService.GetRelatedArticles:input_type -> ai.GetRelatedArticlesRequest
+	14, // 19: ai.AIService.InvalidateGraphCache:input_type -> ai.InvalidateGraphCacheRequest
+	3,  // 20: ai.AIService.SearchArticles:output_type -> ai.SearchResponse
+	5,  // 21: ai.AIService.SummarizeArticle:output_type -> ai.SummarizeResponse
+	7,  // 22: ai.AIService.AskQuestion:output_type -> ai.QuestionResponse
+	19, // 23: ai.AIService.AskWithAgent:output_type -> ai.AgentQuestionResponse
+	20, // 24: ai.AIService.AskWithAgentStream:output_type -> ai.AgentStreamEvent
+	11, // 25: ai.AIService.GetKnowledgeGraph:output_type -> ai.GetKnowledgeGraphResponse
+	13, // 26: ai.AIService.GetRelatedArticles:output_type -> ai.GetRelatedArticlesResponse
+	15, // 27: ai.AIService.InvalidateGraphCache:output_type -> ai.InvalidateGraphCacheResponse
+	20, // [20:28] is the sub-list for method output_type
+	12, // [12:20] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_ai_ai_proto_init() }
@@ -1274,7 +1563,7 @@ func file_proto_ai_ai_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_ai_ai_proto_rawDesc), len(file_proto_ai_ai_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

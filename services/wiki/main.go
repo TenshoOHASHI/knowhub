@@ -62,9 +62,12 @@ func main() {
 	commandRepo := repository.NewMysqlCommandRepository(rdb, loggedDB)
 	queryRepo := repository.NewMysqlQueryRepository(rdb, loggedDB)
 	categoryRepo := repository.NewMysqlCategoryRepository(loggedDB)
+	likeRepo := repository.NewMysqlLikeRepository(loggedDB)
+	savedArticleRepo := repository.NewMysqlSavedArticleRepository(loggedDB)
+	analyticsRepo := repository.NewMysqlAnalyticsRepository(loggedDB)
 
 	// handlerを生成
-	wikiCQRSHandler := handler.NewWikiCQRSHandler(commandRepo, queryRepo, categoryRepo)
+	wikiCQRSHandler := handler.NewWikiCQRSHandler(commandRepo, queryRepo, categoryRepo, likeRepo, savedArticleRepo, analyticsRepo)
 
 	// gRPC server
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)

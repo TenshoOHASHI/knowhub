@@ -49,6 +49,8 @@ func (p *DeepSeekProvider) Chat(ctx context.Context, messages []Message) (string
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
+	slog.Info("deepseek: sending request", "model", p.model, "messages_count", len(msgs), "body_len", len(jsonBody))
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.deepseek.com/chat/completions", bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("create request: %w", err)
@@ -59,9 +61,12 @@ func (p *DeepSeekProvider) Chat(ctx context.Context, messages []Message) (string
 
 	resp, err := p.client.Do(req)
 	if err != nil {
+		slog.Error("deepseek: request failed", "error", err)
 		return "", fmt.Errorf("DeepSeek request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	slog.Info("deepseek: response received", "status", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -71,12 +76,15 @@ func (p *DeepSeekProvider) Chat(ctx context.Context, messages []Message) (string
 
 	var result chatCompletionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		slog.Error("deepseek: decode failed", "error", err)
 		return "", fmt.Errorf("decode response: %w", err)
 	}
 
 	if len(result.Choices) == 0 {
+		slog.Error("deepseek: no choices returned")
 		return "", fmt.Errorf("DeepSeek returned no choices")
 	}
 
+	slog.Info("deepseek: response content", "content_len", len(result.Choices[0].Message.Content))
 	return result.Choices[0].Message.Content, nil
 }

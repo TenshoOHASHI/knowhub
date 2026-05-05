@@ -983,6 +983,1050 @@ func (x *DeleteCategoryRequest) GetId() string {
 	return ""
 }
 
+type ToggleLikeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Fingerprint   string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleLikeRequest) Reset() {
+	*x = ToggleLikeRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleLikeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleLikeRequest) ProtoMessage() {}
+
+func (x *ToggleLikeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleLikeRequest.ProtoReflect.Descriptor instead.
+func (*ToggleLikeRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ToggleLikeRequest) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *ToggleLikeRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type ToggleLikeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Liked         bool                   `protobuf:"varint,2,opt,name=liked,proto3" json:"liked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleLikeResponse) Reset() {
+	*x = ToggleLikeResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleLikeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleLikeResponse) ProtoMessage() {}
+
+func (x *ToggleLikeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleLikeResponse.ProtoReflect.Descriptor instead.
+func (*ToggleLikeResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ToggleLikeResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *ToggleLikeResponse) GetLiked() bool {
+	if x != nil {
+		return x.Liked
+	}
+	return false
+}
+
+type GetLikeCountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Fingerprint   string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikeCountRequest) Reset() {
+	*x = GetLikeCountRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikeCountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikeCountRequest) ProtoMessage() {}
+
+func (x *GetLikeCountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikeCountRequest.ProtoReflect.Descriptor instead.
+func (*GetLikeCountRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetLikeCountRequest) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *GetLikeCountRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type GetLikeCountResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	Liked         bool                   `protobuf:"varint,2,opt,name=liked,proto3" json:"liked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikeCountResponse) Reset() {
+	*x = GetLikeCountResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikeCountResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikeCountResponse) ProtoMessage() {}
+
+func (x *GetLikeCountResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikeCountResponse.ProtoReflect.Descriptor instead.
+func (*GetLikeCountResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetLikeCountResponse) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *GetLikeCountResponse) GetLiked() bool {
+	if x != nil {
+		return x.Liked
+	}
+	return false
+}
+
+type SaveArticleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Fingerprint   string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveArticleRequest) Reset() {
+	*x = SaveArticleRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveArticleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveArticleRequest) ProtoMessage() {}
+
+func (x *SaveArticleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveArticleRequest.ProtoReflect.Descriptor instead.
+func (*SaveArticleRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *SaveArticleRequest) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *SaveArticleRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type SaveArticleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Saved         bool                   `protobuf:"varint,1,opt,name=saved,proto3" json:"saved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SaveArticleResponse) Reset() {
+	*x = SaveArticleResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveArticleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveArticleResponse) ProtoMessage() {}
+
+func (x *SaveArticleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveArticleResponse.ProtoReflect.Descriptor instead.
+func (*SaveArticleResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SaveArticleResponse) GetSaved() bool {
+	if x != nil {
+		return x.Saved
+	}
+	return false
+}
+
+type UnsaveArticleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Fingerprint   string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnsaveArticleRequest) Reset() {
+	*x = UnsaveArticleRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnsaveArticleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnsaveArticleRequest) ProtoMessage() {}
+
+func (x *UnsaveArticleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnsaveArticleRequest.ProtoReflect.Descriptor instead.
+func (*UnsaveArticleRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *UnsaveArticleRequest) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *UnsaveArticleRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type UnsaveArticleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Unsaved       bool                   `protobuf:"varint,1,opt,name=unsaved,proto3" json:"unsaved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnsaveArticleResponse) Reset() {
+	*x = UnsaveArticleResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnsaveArticleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnsaveArticleResponse) ProtoMessage() {}
+
+func (x *UnsaveArticleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnsaveArticleResponse.ProtoReflect.Descriptor instead.
+func (*UnsaveArticleResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *UnsaveArticleResponse) GetUnsaved() bool {
+	if x != nil {
+		return x.Unsaved
+	}
+	return false
+}
+
+type ListSavedArticlesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fingerprint   string                 `protobuf:"bytes,1,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSavedArticlesRequest) Reset() {
+	*x = ListSavedArticlesRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSavedArticlesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSavedArticlesRequest) ProtoMessage() {}
+
+func (x *ListSavedArticlesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSavedArticlesRequest.ProtoReflect.Descriptor instead.
+func (*ListSavedArticlesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ListSavedArticlesRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type ListSavedArticlesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Articles      []*Article             `protobuf:"bytes,1,rep,name=articles,proto3" json:"articles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSavedArticlesResponse) Reset() {
+	*x = ListSavedArticlesResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSavedArticlesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSavedArticlesResponse) ProtoMessage() {}
+
+func (x *ListSavedArticlesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSavedArticlesResponse.ProtoReflect.Descriptor instead.
+func (*ListSavedArticlesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ListSavedArticlesResponse) GetArticles() []*Article {
+	if x != nil {
+		return x.Articles
+	}
+	return nil
+}
+
+type IsArticleSavedRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Fingerprint   string                 `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IsArticleSavedRequest) Reset() {
+	*x = IsArticleSavedRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IsArticleSavedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IsArticleSavedRequest) ProtoMessage() {}
+
+func (x *IsArticleSavedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IsArticleSavedRequest.ProtoReflect.Descriptor instead.
+func (*IsArticleSavedRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *IsArticleSavedRequest) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *IsArticleSavedRequest) GetFingerprint() string {
+	if x != nil {
+		return x.Fingerprint
+	}
+	return ""
+}
+
+type IsArticleSavedResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Saved         bool                   `protobuf:"varint,1,opt,name=saved,proto3" json:"saved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IsArticleSavedResponse) Reset() {
+	*x = IsArticleSavedResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IsArticleSavedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IsArticleSavedResponse) ProtoMessage() {}
+
+func (x *IsArticleSavedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IsArticleSavedResponse.ProtoReflect.Descriptor instead.
+func (*IsArticleSavedResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *IsArticleSavedResponse) GetSaved() bool {
+	if x != nil {
+		return x.Saved
+	}
+	return false
+}
+
+type GetLikeCountsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleIds    []string               `protobuf:"bytes,1,rep,name=article_ids,json=articleIds,proto3" json:"article_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikeCountsRequest) Reset() {
+	*x = GetLikeCountsRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikeCountsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikeCountsRequest) ProtoMessage() {}
+
+func (x *GetLikeCountsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikeCountsRequest.ProtoReflect.Descriptor instead.
+func (*GetLikeCountsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GetLikeCountsRequest) GetArticleIds() []string {
+	if x != nil {
+		return x.ArticleIds
+	}
+	return nil
+}
+
+type ArticleLikeCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ArticleLikeCount) Reset() {
+	*x = ArticleLikeCount{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ArticleLikeCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ArticleLikeCount) ProtoMessage() {}
+
+func (x *ArticleLikeCount) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ArticleLikeCount.ProtoReflect.Descriptor instead.
+func (*ArticleLikeCount) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ArticleLikeCount) GetArticleId() string {
+	if x != nil {
+		return x.ArticleId
+	}
+	return ""
+}
+
+func (x *ArticleLikeCount) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GetLikeCountsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Counts        []*ArticleLikeCount    `protobuf:"bytes,1,rep,name=counts,proto3" json:"counts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLikeCountsResponse) Reset() {
+	*x = GetLikeCountsResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLikeCountsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLikeCountsResponse) ProtoMessage() {}
+
+func (x *GetLikeCountsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLikeCountsResponse.ProtoReflect.Descriptor instead.
+func (*GetLikeCountsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetLikeCountsResponse) GetCounts() []*ArticleLikeCount {
+	if x != nil {
+		return x.Counts
+	}
+	return nil
+}
+
+type RecordPageViewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	IpHash        string                 `protobuf:"bytes,2,opt,name=ip_hash,json=ipHash,proto3" json:"ip_hash,omitempty"`
+	UserAgent     string                 `protobuf:"bytes,3,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty"`
+	Referrer      string                 `protobuf:"bytes,4,opt,name=referrer,proto3" json:"referrer,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPageViewRequest) Reset() {
+	*x = RecordPageViewRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPageViewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPageViewRequest) ProtoMessage() {}
+
+func (x *RecordPageViewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPageViewRequest.ProtoReflect.Descriptor instead.
+func (*RecordPageViewRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RecordPageViewRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *RecordPageViewRequest) GetIpHash() string {
+	if x != nil {
+		return x.IpHash
+	}
+	return ""
+}
+
+func (x *RecordPageViewRequest) GetUserAgent() string {
+	if x != nil {
+		return x.UserAgent
+	}
+	return ""
+}
+
+func (x *RecordPageViewRequest) GetReferrer() string {
+	if x != nil {
+		return x.Referrer
+	}
+	return ""
+}
+
+type RecordPageViewResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordPageViewResponse) Reset() {
+	*x = RecordPageViewResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordPageViewResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordPageViewResponse) ProtoMessage() {}
+
+func (x *RecordPageViewResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordPageViewResponse.ProtoReflect.Descriptor instead.
+func (*RecordPageViewResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{33}
+}
+
+type GetAnalyticsSummaryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Days          int32                  `protobuf:"varint,1,opt,name=days,proto3" json:"days,omitempty"` // 過去N日間
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAnalyticsSummaryRequest) Reset() {
+	*x = GetAnalyticsSummaryRequest{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAnalyticsSummaryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAnalyticsSummaryRequest) ProtoMessage() {}
+
+func (x *GetAnalyticsSummaryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAnalyticsSummaryRequest.ProtoReflect.Descriptor instead.
+func (*GetAnalyticsSummaryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *GetAnalyticsSummaryRequest) GetDays() int32 {
+	if x != nil {
+		return x.Days
+	}
+	return 0
+}
+
+type DailyCount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DailyCount) Reset() {
+	*x = DailyCount{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DailyCount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DailyCount) ProtoMessage() {}
+
+func (x *DailyCount) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DailyCount.ProtoReflect.Descriptor instead.
+func (*DailyCount) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *DailyCount) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *DailyCount) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GetAnalyticsSummaryResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TotalViews    int32                  `protobuf:"varint,1,opt,name=total_views,json=totalViews,proto3" json:"total_views,omitempty"`
+	TodayViews    int32                  `protobuf:"varint,2,opt,name=today_views,json=todayViews,proto3" json:"today_views,omitempty"`
+	DailyViews    []*DailyCount          `protobuf:"bytes,3,rep,name=daily_views,json=dailyViews,proto3" json:"daily_views,omitempty"`
+	PageRanking   []*PageRanking         `protobuf:"bytes,4,rep,name=page_ranking,json=pageRanking,proto3" json:"page_ranking,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAnalyticsSummaryResponse) Reset() {
+	*x = GetAnalyticsSummaryResponse{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAnalyticsSummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAnalyticsSummaryResponse) ProtoMessage() {}
+
+func (x *GetAnalyticsSummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAnalyticsSummaryResponse.ProtoReflect.Descriptor instead.
+func (*GetAnalyticsSummaryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetAnalyticsSummaryResponse) GetTotalViews() int32 {
+	if x != nil {
+		return x.TotalViews
+	}
+	return 0
+}
+
+func (x *GetAnalyticsSummaryResponse) GetTodayViews() int32 {
+	if x != nil {
+		return x.TodayViews
+	}
+	return 0
+}
+
+func (x *GetAnalyticsSummaryResponse) GetDailyViews() []*DailyCount {
+	if x != nil {
+		return x.DailyViews
+	}
+	return nil
+}
+
+func (x *GetAnalyticsSummaryResponse) GetPageRanking() []*PageRanking {
+	if x != nil {
+		return x.PageRanking
+	}
+	return nil
+}
+
+type PageRanking struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PageRanking) Reset() {
+	*x = PageRanking{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PageRanking) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PageRanking) ProtoMessage() {}
+
+func (x *PageRanking) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PageRanking.ProtoReflect.Descriptor instead.
+func (*PageRanking) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *PageRanking) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *PageRanking) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
 var File_proto_wiki_wiki_proto protoreflect.FileDescriptor
 
 const file_proto_wiki_wiki_proto_rawDesc = "" +
@@ -1049,7 +2093,76 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\x16CreateCategoryResponse\x12*\n" +
 	"\bcategory\x18\x01 \x01(\v2\x0e.wiki.CategoryR\bcategory\"'\n" +
 	"\x15DeleteCategoryRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id*\x84\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"T\n" +
+	"\x11ToggleLikeRequest\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\"@\n" +
+	"\x12ToggleLikeResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\x12\x14\n" +
+	"\x05liked\x18\x02 \x01(\bR\x05liked\"V\n" +
+	"\x13GetLikeCountRequest\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\"B\n" +
+	"\x14GetLikeCountResponse\x12\x14\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\x12\x14\n" +
+	"\x05liked\x18\x02 \x01(\bR\x05liked\"U\n" +
+	"\x12SaveArticleRequest\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\"+\n" +
+	"\x13SaveArticleResponse\x12\x14\n" +
+	"\x05saved\x18\x01 \x01(\bR\x05saved\"W\n" +
+	"\x14UnsaveArticleRequest\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\"1\n" +
+	"\x15UnsaveArticleResponse\x12\x18\n" +
+	"\aunsaved\x18\x01 \x01(\bR\aunsaved\"<\n" +
+	"\x18ListSavedArticlesRequest\x12 \n" +
+	"\vfingerprint\x18\x01 \x01(\tR\vfingerprint\"F\n" +
+	"\x19ListSavedArticlesResponse\x12)\n" +
+	"\barticles\x18\x01 \x03(\v2\r.wiki.ArticleR\barticles\"X\n" +
+	"\x15IsArticleSavedRequest\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12 \n" +
+	"\vfingerprint\x18\x02 \x01(\tR\vfingerprint\".\n" +
+	"\x16IsArticleSavedResponse\x12\x14\n" +
+	"\x05saved\x18\x01 \x01(\bR\x05saved\"7\n" +
+	"\x14GetLikeCountsRequest\x12\x1f\n" +
+	"\varticle_ids\x18\x01 \x03(\tR\n" +
+	"articleIds\"G\n" +
+	"\x10ArticleLikeCount\x12\x1d\n" +
+	"\n" +
+	"article_id\x18\x01 \x01(\tR\tarticleId\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\"G\n" +
+	"\x15GetLikeCountsResponse\x12.\n" +
+	"\x06counts\x18\x01 \x03(\v2\x16.wiki.ArticleLikeCountR\x06counts\"\x7f\n" +
+	"\x15RecordPageViewRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
+	"\aip_hash\x18\x02 \x01(\tR\x06ipHash\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\x03 \x01(\tR\tuserAgent\x12\x1a\n" +
+	"\breferrer\x18\x04 \x01(\tR\breferrer\"\x18\n" +
+	"\x16RecordPageViewResponse\"0\n" +
+	"\x1aGetAnalyticsSummaryRequest\x12\x12\n" +
+	"\x04days\x18\x01 \x01(\x05R\x04days\"6\n" +
+	"\n" +
+	"DailyCount\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\"\xc8\x01\n" +
+	"\x1bGetAnalyticsSummaryResponse\x12\x1f\n" +
+	"\vtotal_views\x18\x01 \x01(\x05R\n" +
+	"totalViews\x12\x1f\n" +
+	"\vtoday_views\x18\x02 \x01(\x05R\n" +
+	"todayViews\x121\n" +
+	"\vdaily_views\x18\x03 \x03(\v2\x10.wiki.DailyCountR\n" +
+	"dailyViews\x124\n" +
+	"\fpage_ranking\x18\x04 \x03(\v2\x11.wiki.PageRankingR\vpageRanking\"7\n" +
+	"\vPageRanking\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count*\x84\x01\n" +
 	"\rArticleStatus\x12\x1e\n" +
 	"\x1aARTICLE_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ARTICLE_STATUS_DRAFT\x10\x01\x12\x1c\n" +
@@ -1059,7 +2172,7 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"ROLE_ADMIN\x10\x01\x12\x0f\n" +
-	"\vROLE_VIEWER\x10\x022\xaa\x04\n" +
+	"\vROLE_VIEWER\x10\x022\xd6\t\n" +
 	"\fWikiServices\x12A\n" +
 	"\x06Create\x12\x1a.wiki.CreateArticleRequest\x1a\x1b.wiki.CreateArticleResponse\x128\n" +
 	"\x03Get\x12\x17.wiki.GetArticleRequest\x1a\x18.wiki.GetArticleResponse\x12;\n" +
@@ -1068,7 +2181,17 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\x06Delete\x12\x1a.wiki.DeleteArticleRequest\x1a\x16.google.protobuf.Empty\x12K\n" +
 	"\x0eListCategories\x12\x1b.wiki.ListCategoriesRequest\x1a\x1c.wiki.ListCategoriesResponse\x12K\n" +
 	"\x0eCreateCategory\x12\x1b.wiki.CreateCategoryRequest\x1a\x1c.wiki.CreateCategoryResponse\x12E\n" +
-	"\x0eDeleteCategory\x12\x1b.wiki.DeleteCategoryRequest\x1a\x16.google.protobuf.EmptyB,Z*github.com/TenshoOHASHI/knowhub/proto/wikib\x06proto3"
+	"\x0eDeleteCategory\x12\x1b.wiki.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\x12?\n" +
+	"\n" +
+	"ToggleLike\x12\x17.wiki.ToggleLikeRequest\x1a\x18.wiki.ToggleLikeResponse\x12E\n" +
+	"\fGetLikeCount\x12\x19.wiki.GetLikeCountRequest\x1a\x1a.wiki.GetLikeCountResponse\x12H\n" +
+	"\rGetLikeCounts\x12\x1a.wiki.GetLikeCountsRequest\x1a\x1b.wiki.GetLikeCountsResponse\x12B\n" +
+	"\vSaveArticle\x12\x18.wiki.SaveArticleRequest\x1a\x19.wiki.SaveArticleResponse\x12H\n" +
+	"\rUnsaveArticle\x12\x1a.wiki.UnsaveArticleRequest\x1a\x1b.wiki.UnsaveArticleResponse\x12T\n" +
+	"\x11ListSavedArticles\x12\x1e.wiki.ListSavedArticlesRequest\x1a\x1f.wiki.ListSavedArticlesResponse\x12K\n" +
+	"\x0eIsArticleSaved\x12\x1b.wiki.IsArticleSavedRequest\x1a\x1c.wiki.IsArticleSavedResponse\x12K\n" +
+	"\x0eRecordPageView\x12\x1b.wiki.RecordPageViewRequest\x1a\x1c.wiki.RecordPageViewResponse\x12Z\n" +
+	"\x13GetAnalyticsSummary\x12 .wiki.GetAnalyticsSummaryRequest\x1a!.wiki.GetAnalyticsSummaryResponseB,Z*github.com/TenshoOHASHI/knowhub/proto/wikib\x06proto3"
 
 var (
 	file_proto_wiki_wiki_proto_rawDescOnce sync.Once
@@ -1083,60 +2206,103 @@ func file_proto_wiki_wiki_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_wiki_wiki_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_proto_wiki_wiki_proto_goTypes = []any{
-	(ArticleStatus)(0),             // 0: wiki.ArticleStatus
-	(Role)(0),                      // 1: wiki.Role
-	(*Article)(nil),                // 2: wiki.Article
-	(*CreateArticleRequest)(nil),   // 3: wiki.CreateArticleRequest
-	(*CreateArticleResponse)(nil),  // 4: wiki.CreateArticleResponse
-	(*GetArticleRequest)(nil),      // 5: wiki.GetArticleRequest
-	(*GetArticleResponse)(nil),     // 6: wiki.GetArticleResponse
-	(*ListArticleRequest)(nil),     // 7: wiki.ListArticleRequest
-	(*ListArticleResponse)(nil),    // 8: wiki.ListArticleResponse
-	(*UpdateArticleRequest)(nil),   // 9: wiki.UpdateArticleRequest
-	(*UpdateArticleResponse)(nil),  // 10: wiki.UpdateArticleResponse
-	(*DeleteArticleRequest)(nil),   // 11: wiki.DeleteArticleRequest
-	(*DeleteArticleResponse)(nil),  // 12: wiki.DeleteArticleResponse
-	(*Category)(nil),               // 13: wiki.Category
-	(*ListCategoriesRequest)(nil),  // 14: wiki.ListCategoriesRequest
-	(*ListCategoriesResponse)(nil), // 15: wiki.ListCategoriesResponse
-	(*CreateCategoryRequest)(nil),  // 16: wiki.CreateCategoryRequest
-	(*CreateCategoryResponse)(nil), // 17: wiki.CreateCategoryResponse
-	(*DeleteCategoryRequest)(nil),  // 18: wiki.DeleteCategoryRequest
-	(*timestamppb.Timestamp)(nil),  // 19: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),          // 20: google.protobuf.Empty
+	(ArticleStatus)(0),                  // 0: wiki.ArticleStatus
+	(Role)(0),                           // 1: wiki.Role
+	(*Article)(nil),                     // 2: wiki.Article
+	(*CreateArticleRequest)(nil),        // 3: wiki.CreateArticleRequest
+	(*CreateArticleResponse)(nil),       // 4: wiki.CreateArticleResponse
+	(*GetArticleRequest)(nil),           // 5: wiki.GetArticleRequest
+	(*GetArticleResponse)(nil),          // 6: wiki.GetArticleResponse
+	(*ListArticleRequest)(nil),          // 7: wiki.ListArticleRequest
+	(*ListArticleResponse)(nil),         // 8: wiki.ListArticleResponse
+	(*UpdateArticleRequest)(nil),        // 9: wiki.UpdateArticleRequest
+	(*UpdateArticleResponse)(nil),       // 10: wiki.UpdateArticleResponse
+	(*DeleteArticleRequest)(nil),        // 11: wiki.DeleteArticleRequest
+	(*DeleteArticleResponse)(nil),       // 12: wiki.DeleteArticleResponse
+	(*Category)(nil),                    // 13: wiki.Category
+	(*ListCategoriesRequest)(nil),       // 14: wiki.ListCategoriesRequest
+	(*ListCategoriesResponse)(nil),      // 15: wiki.ListCategoriesResponse
+	(*CreateCategoryRequest)(nil),       // 16: wiki.CreateCategoryRequest
+	(*CreateCategoryResponse)(nil),      // 17: wiki.CreateCategoryResponse
+	(*DeleteCategoryRequest)(nil),       // 18: wiki.DeleteCategoryRequest
+	(*ToggleLikeRequest)(nil),           // 19: wiki.ToggleLikeRequest
+	(*ToggleLikeResponse)(nil),          // 20: wiki.ToggleLikeResponse
+	(*GetLikeCountRequest)(nil),         // 21: wiki.GetLikeCountRequest
+	(*GetLikeCountResponse)(nil),        // 22: wiki.GetLikeCountResponse
+	(*SaveArticleRequest)(nil),          // 23: wiki.SaveArticleRequest
+	(*SaveArticleResponse)(nil),         // 24: wiki.SaveArticleResponse
+	(*UnsaveArticleRequest)(nil),        // 25: wiki.UnsaveArticleRequest
+	(*UnsaveArticleResponse)(nil),       // 26: wiki.UnsaveArticleResponse
+	(*ListSavedArticlesRequest)(nil),    // 27: wiki.ListSavedArticlesRequest
+	(*ListSavedArticlesResponse)(nil),   // 28: wiki.ListSavedArticlesResponse
+	(*IsArticleSavedRequest)(nil),       // 29: wiki.IsArticleSavedRequest
+	(*IsArticleSavedResponse)(nil),      // 30: wiki.IsArticleSavedResponse
+	(*GetLikeCountsRequest)(nil),        // 31: wiki.GetLikeCountsRequest
+	(*ArticleLikeCount)(nil),            // 32: wiki.ArticleLikeCount
+	(*GetLikeCountsResponse)(nil),       // 33: wiki.GetLikeCountsResponse
+	(*RecordPageViewRequest)(nil),       // 34: wiki.RecordPageViewRequest
+	(*RecordPageViewResponse)(nil),      // 35: wiki.RecordPageViewResponse
+	(*GetAnalyticsSummaryRequest)(nil),  // 36: wiki.GetAnalyticsSummaryRequest
+	(*DailyCount)(nil),                  // 37: wiki.DailyCount
+	(*GetAnalyticsSummaryResponse)(nil), // 38: wiki.GetAnalyticsSummaryResponse
+	(*PageRanking)(nil),                 // 39: wiki.PageRanking
+	(*timestamppb.Timestamp)(nil),       // 40: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 41: google.protobuf.Empty
 }
 var file_proto_wiki_wiki_proto_depIdxs = []int32{
-	19, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
-	19, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
+	40, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
+	40, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 2: wiki.CreateArticleResponse.article:type_name -> wiki.Article
 	2,  // 3: wiki.GetArticleResponse.Article:type_name -> wiki.Article
 	2,  // 4: wiki.ListArticleResponse.article:type_name -> wiki.Article
 	2,  // 5: wiki.UpdateArticleResponse.article:type_name -> wiki.Article
 	13, // 6: wiki.ListCategoriesResponse.categories:type_name -> wiki.Category
 	13, // 7: wiki.CreateCategoryResponse.category:type_name -> wiki.Category
-	3,  // 8: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
-	5,  // 9: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
-	7,  // 10: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
-	9,  // 11: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
-	11, // 12: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
-	14, // 13: wiki.WikiServices.ListCategories:input_type -> wiki.ListCategoriesRequest
-	16, // 14: wiki.WikiServices.CreateCategory:input_type -> wiki.CreateCategoryRequest
-	18, // 15: wiki.WikiServices.DeleteCategory:input_type -> wiki.DeleteCategoryRequest
-	4,  // 16: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
-	6,  // 17: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
-	8,  // 18: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
-	10, // 19: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
-	20, // 20: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
-	15, // 21: wiki.WikiServices.ListCategories:output_type -> wiki.ListCategoriesResponse
-	17, // 22: wiki.WikiServices.CreateCategory:output_type -> wiki.CreateCategoryResponse
-	20, // 23: wiki.WikiServices.DeleteCategory:output_type -> google.protobuf.Empty
-	16, // [16:24] is the sub-list for method output_type
-	8,  // [8:16] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	2,  // 8: wiki.ListSavedArticlesResponse.articles:type_name -> wiki.Article
+	32, // 9: wiki.GetLikeCountsResponse.counts:type_name -> wiki.ArticleLikeCount
+	37, // 10: wiki.GetAnalyticsSummaryResponse.daily_views:type_name -> wiki.DailyCount
+	39, // 11: wiki.GetAnalyticsSummaryResponse.page_ranking:type_name -> wiki.PageRanking
+	3,  // 12: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
+	5,  // 13: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
+	7,  // 14: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
+	9,  // 15: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
+	11, // 16: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
+	14, // 17: wiki.WikiServices.ListCategories:input_type -> wiki.ListCategoriesRequest
+	16, // 18: wiki.WikiServices.CreateCategory:input_type -> wiki.CreateCategoryRequest
+	18, // 19: wiki.WikiServices.DeleteCategory:input_type -> wiki.DeleteCategoryRequest
+	19, // 20: wiki.WikiServices.ToggleLike:input_type -> wiki.ToggleLikeRequest
+	21, // 21: wiki.WikiServices.GetLikeCount:input_type -> wiki.GetLikeCountRequest
+	31, // 22: wiki.WikiServices.GetLikeCounts:input_type -> wiki.GetLikeCountsRequest
+	23, // 23: wiki.WikiServices.SaveArticle:input_type -> wiki.SaveArticleRequest
+	25, // 24: wiki.WikiServices.UnsaveArticle:input_type -> wiki.UnsaveArticleRequest
+	27, // 25: wiki.WikiServices.ListSavedArticles:input_type -> wiki.ListSavedArticlesRequest
+	29, // 26: wiki.WikiServices.IsArticleSaved:input_type -> wiki.IsArticleSavedRequest
+	34, // 27: wiki.WikiServices.RecordPageView:input_type -> wiki.RecordPageViewRequest
+	36, // 28: wiki.WikiServices.GetAnalyticsSummary:input_type -> wiki.GetAnalyticsSummaryRequest
+	4,  // 29: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
+	6,  // 30: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
+	8,  // 31: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
+	10, // 32: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
+	41, // 33: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
+	15, // 34: wiki.WikiServices.ListCategories:output_type -> wiki.ListCategoriesResponse
+	17, // 35: wiki.WikiServices.CreateCategory:output_type -> wiki.CreateCategoryResponse
+	41, // 36: wiki.WikiServices.DeleteCategory:output_type -> google.protobuf.Empty
+	20, // 37: wiki.WikiServices.ToggleLike:output_type -> wiki.ToggleLikeResponse
+	22, // 38: wiki.WikiServices.GetLikeCount:output_type -> wiki.GetLikeCountResponse
+	33, // 39: wiki.WikiServices.GetLikeCounts:output_type -> wiki.GetLikeCountsResponse
+	24, // 40: wiki.WikiServices.SaveArticle:output_type -> wiki.SaveArticleResponse
+	26, // 41: wiki.WikiServices.UnsaveArticle:output_type -> wiki.UnsaveArticleResponse
+	28, // 42: wiki.WikiServices.ListSavedArticles:output_type -> wiki.ListSavedArticlesResponse
+	30, // 43: wiki.WikiServices.IsArticleSaved:output_type -> wiki.IsArticleSavedResponse
+	35, // 44: wiki.WikiServices.RecordPageView:output_type -> wiki.RecordPageViewResponse
+	38, // 45: wiki.WikiServices.GetAnalyticsSummary:output_type -> wiki.GetAnalyticsSummaryResponse
+	29, // [29:46] is the sub-list for method output_type
+	12, // [12:29] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_proto_wiki_wiki_proto_init() }
@@ -1151,7 +2317,7 @@ func file_proto_wiki_wiki_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_wiki_wiki_proto_rawDesc), len(file_proto_wiki_wiki_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   17,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

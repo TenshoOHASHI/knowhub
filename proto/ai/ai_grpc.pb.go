@@ -23,6 +23,7 @@ const (
 	AIService_SummarizeArticle_FullMethodName     = "/ai.AIService/SummarizeArticle"
 	AIService_AskQuestion_FullMethodName          = "/ai.AIService/AskQuestion"
 	AIService_AskWithAgent_FullMethodName         = "/ai.AIService/AskWithAgent"
+	AIService_AskWithAgentStream_FullMethodName   = "/ai.AIService/AskWithAgentStream"
 	AIService_GetKnowledgeGraph_FullMethodName    = "/ai.AIService/GetKnowledgeGraph"
 	AIService_GetRelatedArticles_FullMethodName   = "/ai.AIService/GetRelatedArticles"
 	AIService_InvalidateGraphCache_FullMethodName = "/ai.AIService/InvalidateGraphCache"
@@ -36,6 +37,7 @@ type AIServiceClient interface {
 	SummarizeArticle(ctx context.Context, in *SummarizeRequest, opts ...grpc.CallOption) (*SummarizeResponse, error)
 	AskQuestion(ctx context.Context, in *QuestionRequest, opts ...grpc.CallOption) (*QuestionResponse, error)
 	AskWithAgent(ctx context.Context, in *AgentQuestionRequest, opts ...grpc.CallOption) (*AgentQuestionResponse, error)
+	AskWithAgentStream(ctx context.Context, in *AgentQuestionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AgentStreamEvent], error)
 	GetKnowledgeGraph(ctx context.Context, in *GetKnowledgeGraphRequest, opts ...grpc.CallOption) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(ctx context.Context, in *GetRelatedArticlesRequest, opts ...grpc.CallOption) (*GetRelatedArticlesResponse, error)
 	InvalidateGraphCache(ctx context.Context, in *InvalidateGraphCacheRequest, opts ...grpc.CallOption) (*InvalidateGraphCacheResponse, error)
@@ -89,6 +91,25 @@ func (c *aIServiceClient) AskWithAgent(ctx context.Context, in *AgentQuestionReq
 	return out, nil
 }
 
+func (c *aIServiceClient) AskWithAgentStream(ctx context.Context, in *AgentQuestionRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AgentStreamEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AIService_ServiceDesc.Streams[0], AIService_AskWithAgentStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[AgentQuestionRequest, AgentStreamEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AIService_AskWithAgentStreamClient = grpc.ServerStreamingClient[AgentStreamEvent]
+
 func (c *aIServiceClient) GetKnowledgeGraph(ctx context.Context, in *GetKnowledgeGraphRequest, opts ...grpc.CallOption) (*GetKnowledgeGraphResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetKnowledgeGraphResponse)
@@ -127,6 +148,7 @@ type AIServiceServer interface {
 	SummarizeArticle(context.Context, *SummarizeRequest) (*SummarizeResponse, error)
 	AskQuestion(context.Context, *QuestionRequest) (*QuestionResponse, error)
 	AskWithAgent(context.Context, *AgentQuestionRequest) (*AgentQuestionResponse, error)
+	AskWithAgentStream(*AgentQuestionRequest, grpc.ServerStreamingServer[AgentStreamEvent]) error
 	GetKnowledgeGraph(context.Context, *GetKnowledgeGraphRequest) (*GetKnowledgeGraphResponse, error)
 	GetRelatedArticles(context.Context, *GetRelatedArticlesRequest) (*GetRelatedArticlesResponse, error)
 	InvalidateGraphCache(context.Context, *InvalidateGraphCacheRequest) (*InvalidateGraphCacheResponse, error)
@@ -151,6 +173,9 @@ func (UnimplementedAIServiceServer) AskQuestion(context.Context, *QuestionReques
 }
 func (UnimplementedAIServiceServer) AskWithAgent(context.Context, *AgentQuestionRequest) (*AgentQuestionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AskWithAgent not implemented")
+}
+func (UnimplementedAIServiceServer) AskWithAgentStream(*AgentQuestionRequest, grpc.ServerStreamingServer[AgentStreamEvent]) error {
+	return status.Error(codes.Unimplemented, "method AskWithAgentStream not implemented")
 }
 func (UnimplementedAIServiceServer) GetKnowledgeGraph(context.Context, *GetKnowledgeGraphRequest) (*GetKnowledgeGraphResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetKnowledgeGraph not implemented")
@@ -254,6 +279,17 @@ func _AIService_AskWithAgent_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AIService_AskWithAgentStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AgentQuestionRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AIServiceServer).AskWithAgentStream(m, &grpc.GenericServerStream[AgentQuestionRequest, AgentStreamEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AIService_AskWithAgentStreamServer = grpc.ServerStreamingServer[AgentStreamEvent]
+
 func _AIService_GetKnowledgeGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetKnowledgeGraphRequest)
 	if err := dec(in); err != nil {
@@ -344,6 +380,12 @@ var AIService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AIService_InvalidateGraphCache_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "AskWithAgentStream",
+			Handler:       _AIService_AskWithAgentStream_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "proto/ai/ai.proto",
 }

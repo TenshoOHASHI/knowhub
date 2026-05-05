@@ -133,6 +133,108 @@ message DeleteCategoryRequest {
   string id = 1;
 }
 
+// ===== Like / Save =====
+
+message ToggleLikeRequest {
+  string article_id = 1;
+  string fingerprint = 2;
+}
+
+message ToggleLikeResponse {
+  int32 count = 1;
+  bool liked = 2;
+}
+
+message GetLikeCountRequest {
+  string article_id = 1;
+  string fingerprint = 2;
+}
+
+message GetLikeCountResponse {
+  int32 count = 1;
+  bool liked = 2;
+}
+
+message SaveArticleRequest {
+  string article_id = 1;
+  string fingerprint = 2;
+}
+
+message SaveArticleResponse {
+  bool saved = 1;
+}
+
+message UnsaveArticleRequest {
+  string article_id = 1;
+  string fingerprint = 2;
+}
+
+message UnsaveArticleResponse {
+  bool unsaved = 1;
+}
+
+message ListSavedArticlesRequest {
+  string fingerprint = 1;
+}
+
+message ListSavedArticlesResponse {
+  repeated Article articles = 1;
+}
+
+message IsArticleSavedRequest {
+  string article_id = 1;
+  string fingerprint = 2;
+}
+
+message IsArticleSavedResponse {
+  bool saved = 1;
+}
+
+message GetLikeCountsRequest {
+  repeated string article_ids = 1;
+}
+
+message ArticleLikeCount {
+  string article_id = 1;
+  int32 count = 2;
+}
+
+message GetLikeCountsResponse {
+  repeated ArticleLikeCount counts = 1;
+}
+
+// ===== Analytics =====
+
+message RecordPageViewRequest {
+  string path = 1;
+  string ip_hash = 2;
+  string user_agent = 3;
+  string referrer = 4;
+}
+
+message RecordPageViewResponse {}
+
+message GetAnalyticsSummaryRequest {
+  int32 days = 1; // 過去N日間
+}
+
+message DailyCount {
+  string date = 1;
+  int32 count = 2;
+}
+
+message GetAnalyticsSummaryResponse {
+  int32 total_views = 1;
+  int32 today_views = 2;
+  repeated DailyCount daily_views = 3;
+  repeated PageRanking page_ranking = 4;
+}
+
+message PageRanking {
+  string path = 1;
+  int32 count = 2;
+}
+
 service WikiServices {
   rpc Create(CreateArticleRequest) returns(CreateArticleResponse);
   rpc Get(GetArticleRequest) returns(GetArticleResponse);
@@ -144,4 +246,17 @@ service WikiServices {
   rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   rpc CreateCategory(CreateCategoryRequest) returns (CreateCategoryResponse);
   rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty);
+
+  // Like / Save
+  rpc ToggleLike(ToggleLikeRequest) returns(ToggleLikeResponse);
+  rpc GetLikeCount(GetLikeCountRequest) returns(GetLikeCountResponse);
+  rpc GetLikeCounts(GetLikeCountsRequest) returns(GetLikeCountsResponse);
+  rpc SaveArticle(SaveArticleRequest) returns(SaveArticleResponse);
+  rpc UnsaveArticle(UnsaveArticleRequest) returns(UnsaveArticleResponse);
+  rpc ListSavedArticles(ListSavedArticlesRequest) returns(ListSavedArticlesResponse);
+  rpc IsArticleSaved(IsArticleSavedRequest) returns(IsArticleSavedResponse);
+
+  // Analytics
+  rpc RecordPageView(RecordPageViewRequest) returns(RecordPageViewResponse);
+  rpc GetAnalyticsSummary(GetAnalyticsSummaryRequest) returns(GetAnalyticsSummaryResponse);
 }

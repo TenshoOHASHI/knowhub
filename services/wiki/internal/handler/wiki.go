@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/wiki" // 生成されたprotoコード
 	"github.com/TenshoOHASHI/knowhub/services/wiki/internal/model"
@@ -37,6 +38,7 @@ func (h *WikiHandler) Create(ctx context.Context, req *pb.CreateArticleRequest) 
 
 	err = h.repo.Create(ctx, article)
 	if err != nil {
+		slog.Error("failed to create article", "error", err, "title", req.Title)
 		return nil, status.Error(codes.Internal, "failed to create article")
 	}
 
@@ -54,6 +56,7 @@ func (h *WikiHandler) Get(ctx context.Context, req *pb.GetArticleRequest) (*pb.G
 			return nil, status.Error(codes.NotFound, "article not found")
 		}
 		// 500
+		slog.Error("failed to get article", "error", err, "id", req.Id)
 		return nil, status.Error(codes.Internal, "failed to get article")
 	}
 
@@ -65,6 +68,7 @@ func (h *WikiHandler) Get(ctx context.Context, req *pb.GetArticleRequest) (*pb.G
 func (h *WikiHandler) List(ctx context.Context, req *pb.ListArticleRequest) (*pb.ListArticleResponse, error) {
 	articles, err := h.repo.FindAll(ctx)
 	if err != nil {
+		slog.Error("failed to list articles", "error", err)
 		return nil, status.Error(codes.Internal, "failed to list article")
 	}
 
@@ -80,6 +84,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 		if err == sql.ErrNoRows {
 			return nil, status.Error(codes.NotFound, "article not found")
 		}
+		slog.Error("failed to find article for update", "error", err, "id", req.Id)
 		return nil, status.Error(codes.Internal, "failed to find article")
 	}
 
@@ -101,6 +106,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 	article.Update(title, content, visibility) // メソッドを呼び出し、既存の値を上書き
 	err = h.repo.Save(ctx, article)
 	if err != nil {
+		slog.Error("failed to save article", "error", err, "id", req.Id)
 		return nil, status.Error(codes.Internal, "failed to update article")
 	}
 
@@ -112,6 +118,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 func (h *WikiHandler) Delete(ctx context.Context, req *pb.DeleteArticleRequest) (*emptypb.Empty, error) {
 	err := h.repo.Delete(ctx, req.Id)
 	if err != nil {
+		slog.Error("failed to delete article", "error", err, "id", req.Id)
 		return nil, status.Error(codes.Internal, "failed to delete article")
 	}
 	return &emptypb.Empty{}, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
@@ -126,15 +127,19 @@ Final Answer: ユーザーへの回答文（日本語）
 	for i := 0; i < a.maxIter; i++ {
 		a.callbacks.OnLLMStart(ctx, i)
 
+		slog.Info("agent: calling LLM", "step", i+1, "conversation_len", len(conversation))
 		response, err := a.provider.Chat(ctx, conversation)
 		if err != nil {
+			slog.Error("agent: LLM call failed", "step", i+1, "error", err)
 			return nil, fmt.Errorf("LLM call failed at step %d: %w", i+1, err)
 		}
 
 		a.callbacks.OnLLMEnd(ctx, i, response)
+		slog.Info("agent: LLM raw response", "step", i+1, "response", response)
 
 		// Final Answer チェック
 		if finalAnswer := parseFinalAnswer(response); finalAnswer != "" {
+			slog.Info("agent: detected Final Answer", "step", i+1, "answer_len", len(finalAnswer))
 			// 必須ツールの実行チェック
 			var missing []string
 			if hasReadArticle && !usedTools["read_article"] {
@@ -165,13 +170,16 @@ Final Answer: ユーザーへの回答文（日本語）
 
 		// Thought / Action / Action Input をパース
 		step := parseStep(response)
+		slog.Info("agent: parsed step", "step", i+1, "thought", step.Thought, "action", step.Action, "action_input", step.ActionInput)
 
 		// Action Input が空の場合、Thought から推測して JSON を生成
 		if step.ActionInput == "" && step.Action != "" {
 			step.ActionInput = inferActionInput(step.Action, step.Thought, question)
+			slog.Info("agent: inferred action input", "step", i+1, "action_input", step.ActionInput)
 		}
 
 		if step.Action == "" {
+			slog.Warn("agent: no action detected, re-prompting", "step", i+1)
 			// ツール呼び出しがない → LLM に再プロンプト
 			conversation = append(conversation, llm.Message{Role: "assistant", Content: response})
 			conversation = append(conversation, llm.Message{
@@ -193,11 +201,14 @@ Final Answer: ユーザーへの回答文（日本語）
 
 		// ツール実行
 		a.callbacks.OnToolStart(ctx, step.Action, step.ActionInput)
+		slog.Info("agent: executing tool", "step", i+1, "tool", step.Action, "input", step.ActionInput)
 		obs, err := tool.Run(ctx, step.ActionInput)
 		if err != nil {
+			slog.Error("agent: tool execution failed", "step", i+1, "tool", step.Action, "error", err)
 			obs = fmt.Sprintf("エラー: %v", err)
 		}
 		a.callbacks.OnToolEnd(ctx, step.Action, obs)
+		slog.Info("agent: tool result", "step", i+1, "tool", step.Action, "obs_len", len(obs))
 
 		// 使用済みツールを記録
 		usedTools[step.Action] = true
@@ -226,6 +237,7 @@ Final Answer: ユーザーへの回答文（日本語）
 	}
 
 	// max iterations に到達 → 最終回答を強制
+	slog.Warn("agent: max iterations reached, forcing final answer", "max_iter", a.maxIter, "steps_completed", len(steps))
 	forcePrompt := "最大ステップ数に到達しました。これまでの情報を元に最終回答を出力してください。\nFinal Answer: ..."
 	conversation = append(conversation, llm.Message{Role: "user", Content: forcePrompt})
 

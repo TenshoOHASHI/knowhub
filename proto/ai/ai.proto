@@ -9,6 +9,7 @@ service AIService {
   rpc SummarizeArticle(SummarizeRequest) returns (SummarizeResponse);
   rpc AskQuestion(QuestionRequest) returns (QuestionResponse);
   rpc AskWithAgent(AgentQuestionRequest) returns (AgentQuestionResponse);
+  rpc AskWithAgentStream(AgentQuestionRequest) returns (stream AgentStreamEvent);
   rpc GetKnowledgeGraph(GetKnowledgeGraphRequest) returns (GetKnowledgeGraphResponse);
   rpc GetRelatedArticles(GetRelatedArticlesRequest) returns (GetRelatedArticlesResponse);
   rpc InvalidateGraphCache(InvalidateGraphCacheRequest) returns (InvalidateGraphCacheResponse);
@@ -118,4 +119,31 @@ message AgentQuestionResponse {
   string answer = 1;
   repeated AgentStep steps = 2;
   repeated AgentSource sources = 3;
+}
+
+// Streaming events for AskWithAgentStream
+message AgentStreamEvent {
+  string event_type = 1;  // "step", "final_answer", "error"
+  AgentStepEvent step = 2;
+  AgentFinalEvent final = 3;
+  AgentErrorEvent error = 4;
+}
+
+message AgentStepEvent {
+  int32 step_index = 1;
+  string thought = 2;
+  string action = 3;
+  string action_input = 4;
+  string observation = 5;
+  string phase = 6;  // "llm_thinking", "tool_executing", "tool_complete"
+}
+
+message AgentFinalEvent {
+  string answer = 1;
+  repeated AgentStep steps = 2;
+  repeated AgentSource sources = 3;
+}
+
+message AgentErrorEvent {
+  string message = 1;
 }

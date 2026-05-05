@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
@@ -15,6 +16,7 @@ import (
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/embedding"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/search"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -55,7 +57,10 @@ func (h *AIHandler) ensureGraph(ctx context.Context) (*search.GraphEngine, error
 	}
 	h.graphMu.RUnlock()
 
-	return h.buildGraph(ctx)
+	// グラフ構築は全記事 × LLM API 呼び出しが発生するため、リクエストの ctx とは独立したタイムアウトを設定
+	graphCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+	return h.buildGraph(graphCtx)
 }
 
 // buildGraph はグラフを強制的に再構築する（refresh=true 時に使用）
@@ -212,9 +217,25 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	engine := search.SelectEngine(req.SearchEngine, provider, embedder)
 
 	// Step 1: 関連記事を検索
-	results, err := h.searchWithEngine(ctx, engine, req.Question, 5)
-	if err != nil {
-		return nil, err
+	var results []search.SearchResult
+	if req.SearchEngine == "graph" {
+		// Graph RAG はキャッシュ済みグラフを使う（毎回 Index すると全記事 × LLM 呼び出しでタイムアウトする）
+		graphEngine, err := h.ensureGraph(ctx)
+		if err != nil {
+			slog.Error("failed to get cached graph", "error", err)
+			return nil, status.Error(codes.Internal, "failed to build knowledge graph")
+		}
+		results, err = graphEngine.Search(ctx, req.Question, 5)
+		if err != nil {
+			slog.Error("graph search failed", "error", err)
+			return nil, status.Error(codes.Internal, "graph search failed")
+		}
+	} else {
+		var err error
+		results, err = h.searchWithEngine(ctx, engine, req.Question, 5)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if len(results) == 0 {
@@ -397,7 +418,7 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	// ツール構築
 	var tools []agent.Tool
 	tools = append(tools,
-		agent.NewSearchWikiTool(h.wikiClient, provider, embedder, req.SearchEngine),
+		agent.NewSearchWikiTool(h.wikiClient, provider, embedder, req.SearchEngine, h.ensureGraph),
 		agent.NewReadArticleTool(h.wikiClient),
 		agent.NewListArticlesTool(h.wikiClient),
 	)
@@ -475,4 +496,108 @@ func isExternalModel(model string) bool {
 		strings.HasPrefix(model, "gemini") ||
 		strings.HasPrefix(model, "glm") ||
 		strings.HasPrefix(model, "gpt")
+}
+
+// AskWithAgentStream は ReAct Agent の実行過程を gRPC server-streaming でリアルタイム送信する
+func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc.ServerStreamingServer[pb.AgentStreamEvent]) error {
+	if req.Question == "" {
+		return status.Error(codes.InvalidArgument, "question is required")
+	}
+
+	// LLM プロバイダー選択
+	provider := h.llmProvider
+	if req.Model != "" {
+		provider = llm.NewProvider(req.Model, req.ApiKey)
+	}
+
+	// Embedding プロバイダー生成
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
+
+	// ツール構築
+	var tools []agent.Tool
+	tools = append(tools,
+		agent.NewSearchWikiTool(h.wikiClient, provider, embedder, req.SearchEngine, h.ensureGraph),
+		agent.NewReadArticleTool(h.wikiClient),
+		agent.NewListArticlesTool(h.wikiClient),
+	)
+
+	if req.EnableWebSearch {
+		tools = append(tools,
+			agent.NewWebSearchTool(h.searxngURL),
+			agent.NewReadURLTool(),
+		)
+	}
+
+	// ストリーミングコールバック: gRPC stream.Send() でイベントを送信
+	callbacks := agent.NewStreamingCallbacks(func(event *pb.AgentStreamEvent) error {
+		return stream.Send(event)
+	})
+	ag := agent.NewAgent(provider, tools, 10, callbacks)
+
+	// 会話履歴をパース
+	var history []llm.Message
+	if req.History != "" {
+		var entries []struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		}
+		if err := json.Unmarshal([]byte(req.History), &entries); err == nil {
+			for _, e := range entries {
+				history = append(history, llm.Message{Role: e.Role, Content: e.Content})
+			}
+		}
+	}
+
+	// Agent 実行
+	var result *agent.AgentResult
+	var err error
+	if isExternalModel(req.Model) {
+		slog.Info("using autonomous ReAct mode (streaming)", "model", req.Model)
+		result, err = ag.Run(stream.Context(), req.Question)
+	} else {
+		slog.Info("using pipeline mode (streaming)", "model", req.Model)
+		result, err = ag.RunPipeline(stream.Context(), req.Question, history)
+	}
+	if err != nil {
+		slog.Error("agent run failed (streaming)", "error", err, "model", req.Model)
+		_ = stream.Send(&pb.AgentStreamEvent{
+			EventType: "error",
+			Error:     &pb.AgentErrorEvent{Message: err.Error()},
+		})
+		return status.Error(codes.Internal, "agent execution failed")
+	}
+
+	// proto ステップに変換
+	pbSteps := make([]*pb.AgentStep, 0, len(result.Steps))
+	for _, s := range result.Steps {
+		pbSteps = append(pbSteps, &pb.AgentStep{
+			Thought:     s.Thought,
+			Action:      s.Action,
+			ActionInput: s.ActionInput,
+			Observation: s.Observation,
+		})
+	}
+
+	pbSources := make([]*pb.AgentSource, 0, len(result.Sources))
+	for _, s := range result.Sources {
+		pbSources = append(pbSources, &pb.AgentSource{
+			ArticleId: s.ArticleID,
+			Title:     s.Title,
+			Url:       s.URL,
+		})
+	}
+
+	// final_answer イベントを送信
+	if err := stream.Send(&pb.AgentStreamEvent{
+		EventType: "final_answer",
+		Final: &pb.AgentFinalEvent{
+			Answer:  result.Answer,
+			Steps:   pbSteps,
+			Sources: pbSources,
+		},
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

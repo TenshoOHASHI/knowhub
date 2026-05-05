@@ -71,6 +71,8 @@ func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, er
 		return "", fmt.Errorf("marshal request: %w", err)
 	}
 
+	slog.Info("glm5: sending request", "model", p.model, "messages_count", len(msgs), "body_len", len(jsonBody))
+
 	// コンテキスト付きのリクエスト通信を行う
 	// 送信先は、openAIと互換がある、url（相手側のサーバ）にデータ送信するための準備をする
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://open.bigmodel.cn/api/paas/v4/chat/completions", bytes.NewReader(jsonBody))
@@ -86,9 +88,12 @@ func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, er
 	// ここで、実際にデータを送信
 	resp, err := p.client.Do(req)
 	if err != nil {
+		slog.Error("glm5: request failed", "error", err)
 		return "", fmt.Errorf("GLM-5 request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
+	slog.Info("glm5: response received", "status", resp.StatusCode)
 
 	if resp.StatusCode != http.StatusOK {
 		// ディスク（メモリ？）からバイド列を全て読み込む
@@ -101,12 +106,15 @@ func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, er
 	var result chatCompletionResponse
 	// 受け取ったバイト列をデコードし、resultにデータを格納（バイト列を読み込む、json文字列に変換、それをgoの構造体に変換（マッピング））
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		slog.Error("glm5: decode failed", "error", err)
 		return "", fmt.Errorf("decode response: %w", err)
 	}
 
 	if len(result.Choices) == 0 {
+		slog.Error("glm5: no choices returned")
 		return "", fmt.Errorf("GLM-5 returned no choices")
 	}
 
+	slog.Info("glm5: response content", "content_len", len(result.Choices[0].Message.Content))
 	return result.Choices[0].Message.Content, nil
 }

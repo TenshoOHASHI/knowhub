@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/notifier"
 	aiPb "github.com/TenshoOHASHI/knowhub/proto/ai"
 	pb "github.com/TenshoOHASHI/knowhub/proto/wiki"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/swagger"
@@ -23,12 +25,23 @@ var (
 type WikiHandler struct {
 	client   pb.WikiServicesClient // gRPCクライアント
 	aiClient aiPb.AIServiceClient  // グラフキャッシュ無効化用
+	notifier *notifier.SlackNotifier
 }
 
 func NewWikiHandler(conn *grpc.ClientConn) *WikiHandler {
 	return &WikiHandler{
 		client: pb.NewWikiServicesClient(conn),
 	}
+}
+
+// Client returns the underlying gRPC client for use by other handlers
+func (h *WikiHandler) Client() pb.WikiServicesClient {
+	return h.client
+}
+
+// SetNotifier は Slack Notifier を設定する
+func (h *WikiHandler) SetNotifier(n *notifier.SlackNotifier) {
+	h.notifier = n
 }
 
 // SetAIClient は AI Service クライアントを設定する（記事CRUD時のグラフキャッシュ無効化用）
@@ -154,6 +167,13 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	// 記事が追加されたのでグラフキャッシュを無効化
 	h.invalidateGraphCache()
+
+	// Slack通知
+	if h.notifier != nil && resp.Article != nil {
+		h.notifier.NotifyAsync(func() error {
+			return h.notifier.NotifyArticleCreated(resp.Article.Title, resp.Article.Id)
+		})
+	}
 }
 
 // @Summary      記事更新
@@ -202,9 +222,15 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 
 	// 記事が更新されたのでグラフキャッシュを無効化
 	h.invalidateGraphCache()
+
+	// Slack通知
+	if h.notifier != nil && resp.Article != nil {
+		h.notifier.NotifyAsync(func() error {
+			return h.notifier.NotifyArticleUpdated(resp.Article.Title, resp.Article.Id)
+		})
+	}
 }
 
-// DeleteArticle 記事削除
 // @Summary      記事削除
 // @Description  指定したIDの記事を削除する
 // @Tags         wiki
@@ -214,6 +240,15 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 // @Router       /api/articles/{id} [delete]
 func (h *WikiHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
+
+	// Slack通知のために削除前にタイトルを取得
+	var articleTitle string
+	if h.notifier != nil {
+		getResp, err := h.client.Get(r.Context(), &pb.GetArticleRequest{Id: id})
+		if err == nil && getResp.Article != nil {
+			articleTitle = getResp.Article.Title
+		}
+	}
 
 	_, err := h.client.Delete(r.Context(), &pb.DeleteArticleRequest{
 		Id: id,
@@ -227,6 +262,13 @@ func (h *WikiHandler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 
 	h.invalidateGraphCache()
+
+	// Slack通知
+	if h.notifier != nil && articleTitle != "" {
+		h.notifier.NotifyAsync(func() error {
+			return h.notifier.NotifyArticleDeleted(articleTitle, id)
+		})
+	}
 }
 
 // ===== Category =====
@@ -307,4 +349,182 @@ func (h *WikiHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ===== Like / Save =====
+
+func validateFingerprint(fingerprint string) bool {
+	fingerprint = strings.TrimSpace(fingerprint)
+	if len(fingerprint) != 64 {
+		return false
+	}
+	for _, r := range fingerprint {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+// ToggleLike いいね追加/解除
+func (h *WikiHandler) ToggleLike(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		Fingerprint string `json:"fingerprint"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if !validateFingerprint(req.Fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.ToggleLike(r.Context(), &pb.ToggleLikeRequest{
+		ArticleId:   id,
+		Fingerprint: req.Fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to toggle like", "error", err, "id", id)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// GetLikeCount いいね数取得
+func (h *WikiHandler) GetLikeCount(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	fingerprint := r.URL.Query().Get("fingerprint")
+	if !validateFingerprint(fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.GetLikeCount(r.Context(), &pb.GetLikeCountRequest{
+		ArticleId:   id,
+		Fingerprint: fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to get like count", "error", err, "id", id)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// GetLikeCounts 複数記事のいいね数一括取得
+func (h *WikiHandler) GetLikeCounts(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ArticleIDs []string `json:"article_ids"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.GetLikeCounts(r.Context(), &pb.GetLikeCountsRequest{
+		ArticleIds: req.ArticleIDs,
+	})
+	if err != nil {
+		slog.Error("failed to get like counts", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// SaveArticle 記事保存
+func (h *WikiHandler) SaveArticle(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		Fingerprint string `json:"fingerprint"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if !validateFingerprint(req.Fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.SaveArticle(r.Context(), &pb.SaveArticleRequest{
+		ArticleId:   id,
+		Fingerprint: req.Fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to save article", "error", err, "id", id)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// UnsaveArticle 保存解除
+func (h *WikiHandler) UnsaveArticle(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var req struct {
+		Fingerprint string `json:"fingerprint"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if !validateFingerprint(req.Fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.UnsaveArticle(r.Context(), &pb.UnsaveArticleRequest{
+		ArticleId:   id,
+		Fingerprint: req.Fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to unsave article", "error", err, "id", id)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// ListSavedArticles 保存済み記事一覧
+func (h *WikiHandler) ListSavedArticles(w http.ResponseWriter, r *http.Request) {
+	fingerprint := r.URL.Query().Get("fingerprint")
+	if !validateFingerprint(fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.ListSavedArticles(r.Context(), &pb.ListSavedArticlesRequest{
+		Fingerprint: fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to list saved articles", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// IsArticleSaved 保存済みか確認
+func (h *WikiHandler) IsArticleSaved(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	fingerprint := r.URL.Query().Get("fingerprint")
+	if !validateFingerprint(fingerprint) {
+		http.Error(w, "invalid fingerprint", http.StatusBadRequest)
+		return
+	}
+	resp, err := h.client.IsArticleSaved(r.Context(), &pb.IsArticleSavedRequest{
+		ArticleId:   id,
+		Fingerprint: fingerprint,
+	})
+	if err != nil {
+		slog.Error("failed to check saved status", "error", err, "id", id)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }

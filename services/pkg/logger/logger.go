@@ -28,11 +28,12 @@ func New(serviceName string, logLevel string) *slog.Logger {
 
 	// ハンドラーのログを作成
 	handler := slog.NewJSONHandler(multiWriter, &slog.HandlerOptions{
-		Level: level,
+		Level:     level,
+		AddSource: true, // エラー時にソースファイル・行番号を記録
 	})
 
-	// インスタンスを作成
-	return slog.New(handler)
+	// インスタンスを作成（サービス名をデフォルト属性に追加）
+	return slog.New(handler).With("service", serviceName)
 }
 
 // レベルごとに数値を返却
@@ -42,6 +43,8 @@ func parseLevel(level string) slog.Level {
 		return slog.LevelDebug
 	case "warn":
 		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
 	default:
 		return slog.LevelInfo
 	}

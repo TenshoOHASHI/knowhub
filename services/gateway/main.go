@@ -9,9 +9,10 @@ import (
 
 	loggerpkg "github.com/TenshoOHASHI/knowhub/pkg/logger"
 
-	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
 	aiPb "github.com/TenshoOHASHI/knowhub/proto/ai"
+	pb "github.com/TenshoOHASHI/knowhub/proto/auth"
 
+	"github.com/TenshoOHASHI/knowhub/pkg/notifier"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/config"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/handler"
 	"github.com/TenshoOHASHI/knowhub/services/gateway/middleware"
@@ -51,10 +52,12 @@ func main() {
 	// Handlers
 	wikiHandler := handler.NewWikiHandler(wikiConn)
 	wikiHandler.SetAIClient(aiPb.NewAIServiceClient(aiConn))
+	wikiHandler.SetNotifier(notifier.NewSlackNotifier(cfg.SlackWebhookURL))
 	authHandler := handler.NewAuthHandler(authConn)
 	profileHandler := handler.NewProfileHandle(profileConn)
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
 	aiHandler := handler.NewAIHandler(aiConn)
+	analyticsHandler := handler.NewAnalyticsHandler(wikiHandler.Client())
 
 	// Routes
 	mux := http.NewServeMux()
@@ -70,6 +73,15 @@ func main() {
 	mux.HandleFunc("GET /api/categories", wikiHandler.ListCategories)
 	mux.HandleFunc("POST /api/categories", wikiHandler.CreateCategory)
 	mux.HandleFunc("DELETE /api/categories/{id}", wikiHandler.DeleteCategory)
+
+	// like / save
+	mux.HandleFunc("POST /api/articles/{id}/like", wikiHandler.ToggleLike)
+	mux.HandleFunc("GET /api/articles/{id}/like", wikiHandler.GetLikeCount)
+	mux.HandleFunc("POST /api/articles/likes", wikiHandler.GetLikeCounts)
+	mux.HandleFunc("POST /api/articles/{id}/save", wikiHandler.SaveArticle)
+	mux.HandleFunc("DELETE /api/articles/{id}/save", wikiHandler.UnsaveArticle)
+	mux.HandleFunc("GET /api/articles/saved", wikiHandler.ListSavedArticles)
+	mux.HandleFunc("GET /api/articles/{id}/saved", wikiHandler.IsArticleSaved)
 
 	// auth
 	mux.HandleFunc("POST /api/user/register", authHandler.Register)
@@ -93,10 +105,15 @@ func main() {
 	mux.HandleFunc("POST /api/ai/summarize", aiHandler.SummarizeArticle)
 	mux.HandleFunc("POST /api/ai/ask", aiHandler.AskQuestion)
 	mux.HandleFunc("POST /api/ai/agent", aiHandler.AskWithAgent)
+	mux.HandleFunc("POST /api/ai/agent/stream", aiHandler.AskWithAgentStream)
 	mux.HandleFunc("GET /api/ai/graph", aiHandler.GetKnowledgeGraph)
 
 	// upload
 	mux.HandleFunc("POST /api/upload", uploadHandler.Upload)
+
+	// analytics
+	mux.HandleFunc("POST /api/analytics/ping", analyticsHandler.RecordPageView)
+	mux.HandleFunc("GET /api/analytics/summary", analyticsHandler.GetAnalyticsSummary)
 
 	// static file serving for uploads (development)
 	// ルートディレクトの指定、静的ファイルサーバ、リクエストされたパスのファイルを読み込んでレスポンスとして返す、また、プレフィックスを削除
@@ -115,7 +132,11 @@ func main() {
 	}
 
 	authMW := middleware.NewAuthMiddleware(pb.NewAuthServiceClient(authConn))
-	handler := middleware.NewCoreMiddleware(cfg.AllowedOrigin, cfg.AllowedMethods, cfg.AllowedHeaders, cfg.AllowedCredential).CorsMiddleware(authMW.RequireAuth(mux))
+	handler := middleware.NewCoreMiddleware(cfg.AllowedOrigin, cfg.AllowedMethods, cfg.AllowedHeaders, cfg.AllowedCredential).CorsMiddleware(
+		middleware.RequestIDMiddleware(
+			authMW.RequireAuth(mux),
+		),
+	)
 
 	// goroutine でサーバー起動
 	go func() {
