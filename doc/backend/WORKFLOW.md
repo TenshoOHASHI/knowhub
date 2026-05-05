@@ -403,36 +403,12 @@
 - [x] 選択したエンジンに応じて API Key 入力欄の表示/非表示切替
 - [x] api.ts askQuestion に search_engine パラメータ追加
 
-## Phase 10 Progress（MCP Server + Slack Webhook）
+## Phase 10 Progress（MCP Server）
 
-- [x] Slack Notifier パッケージ作成（services/pkg/notifier/slack.go）
-  - [x] SlackNotifier 構造体（webhookURL / http.Client 5s timeout / enabled フラグ）
-  - [x] NewSlackNotifier（URL 空なら disabled）
-  - [x] Send / NotifyArticleCreated / NotifyArticleUpdated / NotifyArticleDeleted
-  - [x] NotifyAsync（goroutine 内で送信、エラーは slog のみ）
-- [x] Gateway に Slack Notifier 統合
-  - [x] config.go に SlackWebhookURL フィールド追加
-  - [x] wiki_handler.go に notifier フィールド追加 + SetNotifier メソッド
-  - [x] CreateArticle 成功後 → NotifyArticleCreated
-  - [x] UpdateArticle 成功後 → NotifyArticleUpdated
-  - [x] DeleteArticle 成功後 → 削除前にタイトル取得 → NotifyArticleDeleted
-  - [x] main.go で notifier 初期化 → handler に DI
-- [x] .env に SLACK_WEBHOOK_URL 追加（空 = 無効）
-- [x] MCP Server サービススケルトン（services/mcp/）
-  - [x] go.mod（mcp-go / proto/wiki / proto/ai 依存）
-  - [x] internal/config/config.go（WikiAddr / AIAddr）
-  - [x] main.go（stdio transport + graceful shutdown）
-- [x] MCP Tools（6個）
-  - [x] create_article → Wiki.Create（title / content / category_id / visibility）
-  - [x] search_articles → AI.SearchArticles（query / limit）
-  - [x] list_articles → Wiki.List
-  - [x] read_article → Wiki.Get（article_id）
-  - [x] update_article → Wiki.Update（id / title / content / visibility）
-  - [x] delete_article → Wiki.Delete（id）
-- [x] MCP Resources（2個）
-  - [x] wiki://articles/index → 全記事一覧（Markdown）
-  - [x] wiki://articles/{id} → 記事全文（テンプレートリソース）
-- [x] Claude Desktop / CLI 設定例（stdio transport）
+- [ ] MCP Server implementation (Go)
+- [ ] Tools: create_article, search_articles, list_articles
+- [ ] Resources: article content access
+- [ ] Integration with Claude Desktop / other AI assistants
 
 ## Phase 11 Progress（ReAct Agent + SearXNG 外部検索）
 
@@ -464,72 +440,5 @@
 - [x] Frontend: ChatInterface.tsx ヘルプパネル（?ボタン + RAG/Agent モード別説明）
 - [x] Frontend: ArticleContent.tsx + Markdown.tsx コードブロック GitHub dark スタイル + コピーボタン
 - [x] Frontend: globals.css コードブロック背景 GitHub dark（#161b22）+ hljs 透過
-- [x] Agent SSE ストリーミング実装
-  - [x] Proto: ai.proto に AskWithAgentStream server-streaming RPC + AgentStreamEvent / AgentStepEvent / AgentFinalEvent / AgentErrorEvent 追加
-  - [x] Proto: make proto で Go コード再生成
-  - [x] Backend: agent/callbacks.go に NewStreamingCallbacks 追加（ログ出力 + gRPC stream.Send クロージャ）
-  - [x] Backend: handler/ai.go に AskWithAgentStream メソッド追加
-  - [x] Gateway: ai_handler.go に AskWithAgentStream SSE ハンドラ + writeSSE + Flush
-  - [x] Gateway: main.go に POST /api/ai/agent/stream ルート追加
-  - [x] Frontend: api.ts に askWithAgentStream + SSE パーサー追加
-  - [x] Frontend: ChatInterface.tsx ストリーミング対応（liveSteps / currentPhase state）
-  - [x] Frontend: Route Handler /api/ai/agent/stream/route.ts 追加（Next.js rewrites SSE バッファリング回避）
 - [ ] 依存関係ダウンロード + go build 検証
 - [ ] 動作確認（SearXNG 起動 / Agent モード / Web検索 / 既存 RAG 非破壊）
-
-## Phase 12 Progress（リファクタリング + 本番向け改善）
-
-### slog エラー出力修正
-- [x] logger.go: `error` レベル追加 + `AddSource: true` + service 名自動付与
-- [x] wiki_cqrs.go: 全メソッドに slog.Error 追加（Create / Get / List / Update / Delete / Category CRUD）
-- [x] wiki.go: 全メソッドに slog.Error 追加
-- [x] auth middleware: log.Printf → slog.Error 移行
-- [x] Gateway: Request ID ミドルウェア追加（middleware/request_id.go）
-- [x] Gateway: main.go ミドルウェアチェーンに RequestIDMiddleware 組み込み
-
-### Markdown 表示デザイン改善
-- [x] h2: 左アクセントバー（blue→violet グラデーション）+ 下線スタイル
-- [x] h3: 薄めの下線スタイル
-- [x] 外部リンク: target="_blank" + 外部リンクアイコン表示 + hover 下線アニメーション
-- [x] 引用ブロック: 左アクセントバー + 背景色（ライト/ダーク対応）
-- [x] globals.css に .article-content 専用スタイル追加
-
-### 記事いいね + 保存機能
-- [x] DB: article_likes テーブル追加（article_id + fingerprint UNIQUE）
-- [x] DB: saved_articles テーブル追加（article_id + fingerprint UNIQUE）
-- [x] Proto: 8個の新RPC追加（ToggleLike / GetLikeCount / GetLikeCounts / SaveArticle / UnsaveArticle / ListSavedArticles / IsArticleSaved）
-- [x] Backend: LikeRepository（ToggleLike / GetLikeCount / GetLikeCounts）追加
-- [x] Backend: SavedArticleRepository（Save / Unsave / IsSaved / ListByFingerprint）追加
-- [x] Backend: wiki_cqrs.go に Like/Save handler メソッド追加
-- [x] Backend: wiki/main.go に likeRepo / savedArticleRepo DI 追加
-- [x] Gateway: wiki_handler.go に Like/Save REST エンドポイント追加
-- [x] Gateway: main.go にルート登録（7エンドポイント）
-- [x] Frontend: fingerprint.ts（localStorage salt + UA SHA256 ハッシュ）
-- [x] Frontend: api.ts に Like/Save API 関数追加
-- [x] Frontend: ArticleActions コンポーネント（いいね + 保存ボタン）
-- [x] Frontend: wiki/[id]/page.tsx に ArticleActions 組み込み
-- [x] Frontend: /saved ページ（保存済み記事一覧）
-- [x] routes.ts に Saved リンク追加
-- [x] Gateway: fingerprint を 64文字 lowercase SHA256 hex としてバリデーション
-- [x] Backend: IsSaved / GetLikeCount で sql.ErrNoRows とDB障害を区別
-- [x] Backend: ToggleLike の同時INSERT競合を duplicate key 検知で吸収
-- [x] Frontend: Like / Save ボタンの処理中 disabled で連打防止
-
-### 訪問者アナリティクス
-- [x] DB: page_views テーブル追加（path / ip_hash / user_agent / referrer / visited_at）
-- [x] Proto: RecordPageView / GetAnalyticsSummary RPC 追加
-- [x] Backend: AnalyticsRepository（RecordPageView / GetSummary）追加
-- [x] Backend: wiki_cqrs.go に Analytics handler メソッド追加
-- [x] Backend: wiki/main.go に analyticsRepo DI 追加
-- [x] Gateway: analytics_handler.go 新規追加（RecordPageView / GetAnalyticsSummary）
-- [x] Gateway: main.go に POST /api/analytics/ping + GET /api/analytics/summary ルート追加
-- [x] Gateway: auth middleware に /api/analytics/ 認証バイパス追加
-- [x] Frontend: analytics.ts（sendBeacon ヘルパー）
-- [x] Frontend: AnalyticsTracker コンポーネント（usePathname で自動トラッキング）
-- [x] Frontend: layout.tsx に AnalyticsTracker 組み込み
-- [x] Frontend: Route Handler /api/analytics/ping/route.ts 追加
-- [x] Frontend: Route Handler で User-Agent / Referer / X-Forwarded-For / X-Real-IP を Gateway に転送
-- [x] Gateway: X-Forwarded-For → X-Real-IP → RemoteAddr の優先順で client IP を決定
-- [x] Gateway: RemoteAddr の port を除去してIPのみをハッシュ化
-- [x] Frontend: AnalyticsDashboard コンポーネント（サマリーカード + 日別バーチャート + ページランキング）
-- [x] Admin ページにアナリティクスタブ追加

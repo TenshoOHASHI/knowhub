@@ -276,12 +276,11 @@
 - [x] Gateway AI endpoints auth スキップ（認証なしでアクセス可能）
 - [x] Gateway AI timeout 設定（60s context timeout）
 
-### Phase 10: MCP Server + Slack Webhook
-- [x] MCP Server implementation (Go)
-- [x] Tools: create_article, search_articles, list_articles, read_article, update_article, delete_article
-- [x] Resources: article index + article content access
-- [x] Integration with Claude Desktop / other AI assistants
-- [x] Slack Webhook 通知（記事 CRUD 時の自動通知）
+### Phase 10: MCP Server
+- [ ] MCP Server implementation (Go)
+- [ ] Tools: create_article, search_articles, list_articles
+- [ ] Resources: article content access
+- [ ] Integration with Claude Desktop / other AI assistants
 
 ### Phase 11: ReAct Agent + SearXNG 外部検索
 - [x] Proto: AskWithAgent RPC + AgentQuestionRequest / AgentStep / AgentSource / AgentQuestionResponse
@@ -297,45 +296,4 @@
 - [x] フロントエンド: チャット画面コードブロック シンタックスハイライト + コピーボタン
 - [x] フロントエンド: ヘルプパネル（?ボタン + RAG/Agent モード別説明）
 - [x] フロントエンド: Wiki 記事コードブロック GitHub dark スタイル + コピーボタン
-- [x] Agent SSE ストリーミング（リアルタイムステップ表示）
-  - [x] Proto: AskWithAgentStream server-streaming RPC + AgentStreamEvent / AgentStepEvent / AgentFinalEvent / AgentErrorEvent
-  - [x] Backend: NewStreamingCallbacks（ログ + gRPC stream.Send クロージャ）
-  - [x] Backend: AskWithAgentStream ハンドラ（StreamingCallbacks → final_answer / error イベント送信）
-  - [x] Gateway: SSE ハンドラ（gRPC stream → SSE 変換 + writeSSE + Flush）
-  - [x] Gateway: POST /api/ai/agent/stream ルート追加
-  - [x] Frontend: askWithAgentStream + ReadableStream SSE パーサー（TextDecoder + buffer + split）
-  - [x] Frontend: ChatInterface ストリーミング対応（liveSteps / currentPhase + フェーズ別ローディング）
-  - [x] Frontend: Route Handler (/api/ai/agent/stream/route.ts) 追加（Next.js rewrites SSE バッファリング回避）
 - [ ] 動作確認
-
-### Phase 12: リファクタリング + 本番向け改善
-- [x] slog エラー出力修正
-  - [x] logger.go に `error` レベル追加 + `AddSource: true` + service 名自動付与
-  - [x] wiki_cqrs.go / wiki.go の全メソッドに slog.Error 追加
-  - [x] auth middleware の log.Printf → slog.Error 移行
-  - [x] Gateway に Request ID ミドルウェア追加（X-Request-ID）
-- [x] Markdown 表示デザイン改善
-  - [x] h2: 左アクセントバー + 下線（border-bottom）スタイル
-  - [x] h3: 薄めの下線スタイル
-  - [x] 外部リンク: target="_blank" + 外部リンクアイコン表示
-  - [x] 引用ブロック: 左アクセントバー + 背景色
-- [x] 記事いいね（参考）+ 保存機能
-  - [x] DB: article_likes / saved_articles テーブル追加
-  - [x] Proto: ToggleLike / GetLikeCount / GetLikeCounts / SaveArticle / UnsaveArticle / ListSavedArticles / IsArticleSaved RPC 追加
-  - [x] Backend: LikeRepository / SavedArticleRepository + handler メソッド追加
-  - [x] Gateway: REST endpoints（POST/GET /api/articles/{id}/like, POST/DELETE /api/articles/{id}/save, GET /api/articles/saved）
-  - [x] Frontend: ArticleActions コンポーネント（いいね + 保存ボタン）
-  - [x] Frontend: フィンガープリント生成（localStorage salt + UA の SHA256 ハッシュ）
-  - [x] Frontend: /saved ページ（保存済み記事一覧）
-  - [x] Navbar に Saved リンク追加
-  - [x] 改善: fingerprint バリデーション、DBエラー処理、いいね同時押下対策、フロント連打防止
-- [x] 訪問者アナリティクス（Nginx ログ集計）
-  - [x] DB: page_views テーブル追加
-  - [x] Proto: RecordPageView / GetAnalyticsSummary RPC 追加
-  - [x] Backend: AnalyticsRepository + handler メソッド追加
-  - [x] Gateway: POST /api/analytics/ping + GET /api/analytics/summary エンドポイント
-  - [x] Frontend: ビーコン送信（sendBeacon + Route Handler）
-  - [x] Frontend/Gateway: User-Agent / Referer / X-Forwarded-For / X-Real-IP 転送・優先読み取り
-  - [x] Frontend: AnalyticsTracker コンポーネント（全ページ自動トラッキング）
-  - [x] Frontend: AnalyticsDashboard コンポーネント（総訪問数、日別グラフ、ページランキング）
-  - [x] Admin ページにアナリティクスタブ追加
