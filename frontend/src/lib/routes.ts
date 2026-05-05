@@ -1,4 +1,4 @@
-import { FiBook, FiUser, FiBriefcase, FiEdit } from 'react-icons/fi';
+import { FiBook, FiUser, FiBriefcase, FiEdit, FiBookmark } from 'react-icons/fi';
 import { IconType } from 'react-icons';
 import { VscVersions } from 'react-icons/vsc';
 import { FiLogOut } from 'react-icons/fi';
@@ -14,6 +14,7 @@ export interface Route {
 // 未ログイン用
 export const NAV_LINKS: Route[] = [
   { label: 'Wiki', href: '/wiki', icon: FiBook },
+  { label: 'Saved', href: '/saved', icon: FiBookmark },
   { label: 'Profile', href: '/profile', icon: FiUser },
   { label: 'Portfolio', href: '/portfolio', icon: FiBriefcase },
   { label: 'Chat', href: '/chat', icon: MdOutlineSupportAgent },
@@ -23,6 +24,7 @@ export const NAV_LINKS: Route[] = [
 // ログイン済み用（Admin 追加）
 export const NAV_LINKS_WITH_AUTH: Route[] = [
   { label: 'Wiki', href: '/wiki', icon: FiBook },
+  { label: 'Saved', href: '/saved', icon: FiBookmark },
   { label: 'Admin', href: '/admin', icon: FiEdit },
   { label: 'Profile', href: '/profile', icon: FiUser },
   { label: 'Portfolio', href: '/portfolio', icon: FiBriefcase },

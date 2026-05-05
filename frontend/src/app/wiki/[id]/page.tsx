@@ -2,6 +2,7 @@ import { getArticle } from '@/lib/api';
 import Link from 'next/link';
 import { FiArrowLeft, FiLock, FiUnlock } from 'react-icons/fi';
 import ArticleContent from '@/components/ArticleContent';
+import ArticleActions from '@/components/ArticleActions';
 import { extractToc } from '@/lib/toc';
 import { TableOfContents } from '@/components/TableOfContents';
 import { cookies } from 'next/headers';
@@ -68,17 +69,20 @@ export default async function ArticleDetailPage({ params }: Props) {
         </Link>
       </div>
 
-      <h1 className='text-3xl font-bold mb-2 flex items-center gap-2 overflow-hidden'>
-        {article.visibility === 'locked' && (
-          <span className='inline-flex items-center justify-center w-7 h-7 rounded-lg bg-stone-200 dark:bg-stone-700 shrink-0'>
-            <FiUnlock
-              size={14}
-              className='text-stone-500 dark:text-stone-400'
-            />
-          </span>
-        )}
-        <span className='min-w-0 break-all text-4xl'>{article.title}</span>
-      </h1>
+      <div className='flex items-start justify-between gap-4 mb-2'>
+        <h1 className='text-3xl font-bold flex items-center gap-2 overflow-hidden'>
+          {article.visibility === 'locked' && (
+            <span className='inline-flex items-center justify-center w-7 h-7 rounded-lg bg-stone-200 dark:bg-stone-700 shrink-0'>
+              <FiUnlock
+                size={14}
+                className='text-stone-500 dark:text-stone-400'
+              />
+            </span>
+          )}
+          <span className='min-w-0 break-all text-4xl'>{article.title}</span>
+        </h1>
+        <ArticleActions articleId={article.id} />
+      </div>
       <p className='text-stone-400 mb-6 text-lg'>
         {new Date(article.created_at.seconds * 1000).toLocaleDateString(
           'ja-JP',

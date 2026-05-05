@@ -6,12 +6,13 @@ import Editor from '@/components/Editor';
 import { CategoryManager } from '@/components/CategoryManager';
 import ProfileManager from '@/components/ProfileManager';
 import { PortfolioManager } from '@/components/PortfolioManager';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<
-    'article' | 'category' | 'profile' | 'portfolio'
+    'article' | 'category' | 'profile' | 'portfolio' | 'analytics'
   >('article');
   const { isLoggedIn } = useAuth();
   const router = useRouter();
@@ -55,6 +56,12 @@ export default function AdminPage() {
         >
           ポートフォリオ
         </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`px-3 py-1 rounded ${activeTab === 'analytics' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
+        >
+          アナリティクス
+        </button>
       </div>
 
       {activeTab === 'article' ? (
@@ -63,6 +70,8 @@ export default function AdminPage() {
         <CategoryManager />
       ) : activeTab === 'profile' ? (
         <ProfileManager />
+      ) : activeTab === 'analytics' ? (
+        <AnalyticsDashboard />
       ) : (
         <PortfolioManager />
       )}

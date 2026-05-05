@@ -1,11 +1,12 @@
 'use client';
 import {
   askQuestion,
-  askWithAgent,
+  askWithAgentStream,
   type AskSource,
   type AgentStep,
   type AgentSource,
   type ChatHistoryEntry,
+  type AgentStreamStepEvent,
 } from '@/lib/api';
 import {
   useCallback,
@@ -135,6 +136,8 @@ export default function ChatInterface() {
 
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [liveSteps, setLiveSteps] = useState<AgentStreamStepEvent[]>([]);
+  const [currentPhase, setCurrentPhase] = useState<string>('');
 
   const [model, setModel] = useState('ollama');
   const [apiKey, setApiKey] = useState('');
@@ -192,6 +195,8 @@ export default function ChatInterface() {
     updateMessages((prev) => [...prev, { role: 'user', content: input }]);
     setInput('');
     setLoading(true);
+    setLiveSteps([]);
+    setCurrentPhase('');
 
     try {
       const modelToSend = currentModel?.defaultModel || model;
@@ -205,23 +210,44 @@ export default function ChatInterface() {
             content: m.content,
           }));
 
-        const { answer, steps, sources } = await askWithAgent(
+        await askWithAgentStream(
           input,
           modelToSend,
           apiKey,
           searchEngine,
           enableWebSearch,
           recentHistory,
-        );
-        updateMessages((prev) => [
-          ...prev,
           {
-            role: 'assistant',
-            content: answer,
-            agentSteps: steps,
-            agentSources: sources,
+            onStep: (step) => {
+              setLiveSteps((prev) => [...prev, step]);
+              setCurrentPhase(step.phase);
+            },
+            onFinal: (final) => {
+              updateMessages((prev) => [
+                ...prev,
+                {
+                  role: 'assistant',
+                  content: final.answer,
+                  agentSteps: final.steps,
+                  agentSources: final.sources,
+                },
+              ]);
+              setLiveSteps([]);
+              setCurrentPhase('');
+            },
+            onError: (error) => {
+              updateMessages((prev) => [
+                ...prev,
+                {
+                  role: 'assistant',
+                  content: `エラーが発生しました: ${error}`,
+                },
+              ]);
+              setLiveSteps([]);
+              setCurrentPhase('');
+            },
           },
-        ]);
+        );
       } else {
         const { answer, sources } = await askQuestion(
           input,
@@ -541,7 +567,33 @@ export default function ChatInterface() {
               />
             </div>
             <div className='bg-stone-200 dark:bg-stone-700 rounded-lg px-4 py-2 text-sm text-stone-400'>
-              回答中...
+              {chatMode === 'agent' && currentPhase ? (
+                <span>
+                  {currentPhase === 'llm_thinking' && '思考中...'}
+                  {currentPhase === 'tool_executing' && 'ツール実行中...'}
+                  {currentPhase === 'tool_complete' && 'ツール完了'}
+                  {![
+                    'llm_thinking',
+                    'tool_executing',
+                    'tool_complete',
+                  ].includes(currentPhase) && '回答中...'}
+                </span>
+              ) : (
+                '回答中...'
+              )}
+              {liveSteps.length > 0 && (
+                <div className='mt-2'>
+                  <AgentSteps
+                    steps={liveSteps.map((s) => ({
+                      thought: s.thought || '',
+                      action: s.action || '',
+                      action_input: s.action_input || '',
+                      observation: s.observation || '',
+                    }))}
+                    sources={[]}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

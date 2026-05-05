@@ -1,24 +1,29 @@
 export const MODELS = [
   {
     id: 'ollama',
-    name: 'Ollama（ローカル）',
+    name: 'Ollama（gemma3:1b）',
     needsKey: false,
     defaultModel: 'gemma3:1b',
   },
   {
     id: 'deepseek',
-    name: 'DeepSeek',
+    name: 'DeepSeek(v4-pro)',
     needsKey: true,
-    defaultModel: 'deepseek-chat',
+    defaultModel: 'deepseek-v4-pro',
   },
   {
     id: 'gemini',
-    name: 'Gemini',
+    name: 'Gemini(2.0-flash)',
     needsKey: true,
     defaultModel: 'gemini-2.0-flash',
   },
-  { id: 'glm5', name: 'GLM-5', needsKey: true, defaultModel: 'glm-5' },
-  { id: 'openai', name: 'OpenAI', needsKey: true, defaultModel: 'gpt-4o-mini' },
+  { id: 'glm5', name: 'GLM-5.1', needsKey: true, defaultModel: 'glm-5.1' },
+  {
+    id: 'openai',
+    name: 'OpenAI(4o-mini)',
+    needsKey: true,
+    defaultModel: 'gpt-4o-mini',
+  },
 ];
 
 export const SEARCH_ENGINES = [
