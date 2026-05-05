@@ -6,3 +6,7 @@ WORKFLOW.md
 Makefile
 doc/
 uploads/
+plan.md
+.gocache/
+services/mcp/tenhub-mcp
+services/mcp/tenhub-mcp

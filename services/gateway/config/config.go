@@ -25,6 +25,9 @@ type Config struct {
 
 	// Upload
 	UploadDir string
+
+	// Slack
+	SlackWebhookURL string
 }
 
 func Load(envPath string) *Config {
@@ -41,6 +44,7 @@ func Load(envPath string) *Config {
 		Port:              getEnv("GATEWAY_PORT", "8080"),
 		LogLevel:          getEnv("LOG_LEVEL", "info"),
 		UploadDir:         getEnv("UPLOAD_DIR", "./uploads"),
+		SlackWebhookURL:   getEnv("SLACK_WEBHOOK_URL", ""),
 	}
 }
 
