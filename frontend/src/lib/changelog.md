@@ -1,3 +1,39 @@
+## 2026-05-05 リファクタリング + 本番向け改善
+- アナリティクスログ収集改善: Route Handler が User-Agent / Referer / X-Forwarded-For / X-Real-IP を Gateway に転送
+- Gateway: X-Forwarded-For / X-Real-IP を優先して client IP を判定し、IPのみをSHA256ハッシュ化
+- いいね/保存機能の堅牢化: fingerprint バリデーション追加、DB障害と未保存状態の判定を分離
+- いいね同時押下対策: duplicate key を検知して現在状態に収束、フロントは処理中 disabled で連打防止
+- slog エラー出力修正: wiki_cqrs.go / wiki.go 全メソッドに slog.Error 追加, auth middleware log.Printf → slog 移行
+- slog 改善: logger.go に error レベル / AddSource: true / service 名自動付与
+- Gateway: Request ID ミドルウェア追加（X-Request-ID 生成 + コンテキスト伝播）
+- Markdown 表示改善: h2/h3 見出し下線 + アクセントバー, 外部リンク target="_blank" + アイコン, 引用ブロック装飾
+- 記事いいね機能: article_likes テーブル + ToggleLike/GetLikeCount RPC + フィンガープリント匿名認証
+- 記事保存機能: saved_articles テーブル + SaveArticle/UnsaveArticle RPC + /saved ページ
+- Frontend: ArticleActions コンポーネント（ハート + ブックマークボタン）+ Navbar に Saved リンク追加
+- 訪問者アナリティクス: page_views テーブル + RecordPageView/GetAnalyticsSummary RPC
+- Frontend: sendBeacon ビーコン + AnalyticsTracker 自動トラッキング + AnalyticsDashboard グラフ表示
+- Admin ページにアナリティクスタブ追加（総訪問数 / 日別 / ページランキング）
+
+## 2026-05-05 Agent SSE ストリーミング実装
+- Proto: ai.proto に AskWithAgentStream server-streaming RPC + AgentStreamEvent / AgentStepEvent / AgentFinalEvent / AgentErrorEvent 追加
+- Proto: make proto で Go コード再生成（gRPC Server Streaming インターフェース自動生成）
+- Backend: agent/callbacks.go に NewStreamingCallbacks 追加（ログ出力 + gRPC stream.Send をクロージャで結合）
+- Backend: handler/ai.go に AskWithAgentStream メソッド追加（StreamingCallbacks → 各ステップをリアルタイム送信 → final_answer / error イベント）
+- Gateway: ai_handler.go に AskWithAgentStream SSE ハンドラ追加（gRPC stream → SSE 変換 + writeSSE + Flush）
+- Gateway: main.go に POST /api/ai/agent/stream ルート追加（既存 POST /api/ai/agent は後方互換で残す）
+- Frontend: api.ts に askWithAgentStream + AgentStreamCallbacks / AgentStreamStepEvent 型追加（fetch + ReadableStream SSE パーサー）
+- Frontend: ChatInterface.tsx をストリーミング対応（liveSteps / currentPhase state + フェーズ別ローディング表示）
+- Frontend: Route Handler (/api/ai/agent/stream/route.ts) 追加（Next.js rewrites の SSE バッファリング回避用プロキシ）
+
+## 2026-05-04 MCP Server + Slack Webhook 通知
+- Backend: Slack Notifier パッケージ作成（services/pkg/notifier/slack.go — Block Kit メッセージ + 非同期送信）
+- Backend: Gateway に Slack Notifier 統合（記事 CRUD 後に自動通知）
+- Backend: config.go に SlackWebhookURL 追加（.env で管理、空 = 無効）
+- Backend: MCP Server サービス新規作成（services/mcp/ — stdio transport）
+- Backend: MCP Tools 6個実装（create/search/list/read/update/delete article）
+- Backend: MCP Resources 2個実装（wiki://articles/index + wiki://articles/{id}）
+- Backend: Claude Desktop / Claude CLI からの TenHub ナレッジベースアクセス対応
+
 ## 2026-05-04 Agent モード改善 + UI ブラッシュアップ + Embedding 修正
 - Backend: Agent 実行モード自動切替（外部モデル → 自律ReAct、Ollama → 固定パイプライン）
 - Backend: isExternalModel ヘルパー追加（llm.NewProvider と同じプレフィックス判定ロジック）
