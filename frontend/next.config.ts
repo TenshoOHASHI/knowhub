@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next';
 
+const gatewayInternalUrl = process.env.GATEWAY_INTERNAL_URL || 'http://localhost:8080';
+
 const nextConfig: NextConfig = {
+  output: 'standalone',
   // /api/* を Gateway にプロキシ（リバースプロキシ）
   // ブラウザは同一オリジン (localhost:3000) にリクエスト → Cookie が自動送信される
   // Next.js がサーバー側で Gateway (localhost:8080) に転送
@@ -11,11 +14,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8080/api/:path*',
+        destination: `${gatewayInternalUrl}/api/:path*`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:8080/uploads/:path*',
+        destination: `${gatewayInternalUrl}/uploads/:path*`,
       },
     ];
   },

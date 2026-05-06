@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	loggerpkg "github.com/TenshoOHASHI/knowhub/pkg/logger"
 
@@ -65,7 +67,7 @@ func main() {
 
 	// Graceful Shutdown（DB なし）
 	quit := make(chan os.Signal, 1)
-	// signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
 	s.GracefulStop()
 	slog.Info("server stopped gracefully", "signal", sig)

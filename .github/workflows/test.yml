@@ -1,0 +1,84 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  go-test:
+    name: Go Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Go Test - Auth Service
+        working-directory: services/auth
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Go Test - Wiki Service
+        working-directory: services/wiki
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Go Test - Profile Service
+        working-directory: services/profile
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Go Test - AI Service
+        working-directory: services/ai
+        run: go test -v -race -coverprofile=coverage.out ./... -timeout 5m
+
+      - name: Go Test - Gateway
+        working-directory: services/gateway
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run TypeScript check
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npx eslint . --max-warnings 0
+
+      - name: Build Next.js
+        working-directory: frontend
+        run: npm run build
+
+  docker-compose-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate production compose
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file .env.production.example config > /dev/null
