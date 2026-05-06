@@ -1,4 +1,8 @@
 #!/bin/bash
+echo "This legacy all-in-one setup script is deprecated."
+echo "Use doc/lighthouse-setup.md and step-by-step commands instead."
+exit 1
+
 # VPS初期設定スクリプト
 # Tencent Cloud Lighthouse / Ubuntu向け
 # 使い方: curl -fsSL https://raw.githubusercontent.com/.../setup-vps.sh | bash
@@ -281,7 +285,7 @@ cat > /etc/cron.d/tenhub << EOF
 0 3 * * * root $DEPLOY_PATH/scripts/backup.sh
 
 # Docker clean（毎週日曜4:00）
-0 4 * * 0 root docker system prune -f --volumes
+0 4 * * 0 root docker system prune -f
 EOF
 
 log_info "Cronジョブ設定完了"

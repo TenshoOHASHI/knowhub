@@ -10,6 +10,8 @@ DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="$BACKUP_ROOT/$DATE"
 RETENTION_DAYS=30
 COMPRESSION_LEVEL=6
+COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-/opt/tenhub/docker-compose.prod.yml}"
+UPLOAD_VOLUME_NAME="${UPLOAD_VOLUME_NAME:-tenhub-prod_gateway-uploads}"
 
 # S3設定（オプション）
 S3_BUCKET=${S3_BUCKET:-}
@@ -60,8 +62,8 @@ log_info "バックアップを開始します..."
 mkdir -p "$BACKUP_DIR"
 
 # Dockerコンテナ名取得
-DB_CONTAINER=$(docker compose -f /opt/tenhub/docker-compose.prod.yml ps -q db 2>/dev/null | head -1)
-REDIS_CONTAINER=$(docker compose -f /opt/tenhub/docker-compose.prod.yml ps -q cache 2>/dev/null | head -1)
+DB_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q db 2>/dev/null | head -1)
+REDIS_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q cache 2>/dev/null | head -1)
 
 if [ -z "$DB_CONTAINER" ]; then
     log_error "データベースコンテナが見つかりません"
@@ -102,13 +104,14 @@ fi
 
 # 3. アップロードファイルバックアップ
 log_info "アップロードファイルバックアップ中..."
-UPLOAD_DIR="/opt/tenhub/uploads"
-if [ -d "$UPLOAD_DIR" ] || docker compose -f /opt/tenhub/docker-compose.prod.yml ps -q gateway > /dev/null 2>&1; then
+if docker volume inspect "$UPLOAD_VOLUME_NAME" >/dev/null 2>&1; then
     docker run --rm \
-        -v tenhub-gateway-uploads:/data \
+        -v "$UPLOAD_VOLUME_NAME:/data:ro" \
         -v "$BACKUP_DIR":/backup \
         alpine tar czf /backup/uploads.tar.gz -C /data .
     log_info "アップロードファイルバックアップ完了"
+else
+    log_info "アップロード用volumeが見つかりません、スキップ: $UPLOAD_VOLUME_NAME"
 fi
 
 # 4. JWT鍵バックアップ

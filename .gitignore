@@ -1,4 +1,7 @@
 .env
+.env.production
+deploy/ansible/host_vars/*.yml
+deploy/ansible/group_vars/vault.yml
 data/
 logs/
 services/auth/keys

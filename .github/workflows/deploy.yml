@@ -1,210 +1,205 @@
-name: Deploy
+name: Build Images
 
+# このworkflowは「Docker image作成」と「GHCRへのpush」だけを行います。
+# VPSへSSH接続して自動デプロイはしません。
+# VPS側では、必要なタイミングで手動で `docker compose pull` と `up -d` を実行します。
 on:
+  # mainへpushされたらDocker imageを作ってGHCRへpushします。
   push:
     branches: [main]
+  # GitHub Actions画面から手動でimage build/pushできます。
   workflow_dispatch:
 
 env:
+  # Docker imageの保存先です。
+  # ghcr.io = GitHub Container Registry。
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # image名のnamespaceです。
+  # docker-compose.prod.yml / .env.production の DOCKER_IMAGE_NAMESPACE と一致させます。
+  # GitHubアカウント表示名は TenshoOHASHI ですが、Docker image名は小文字が安全なため
+  # GHCRのimage pathでは tenshoohashi/knowhub を使います。
+  IMAGE_NAMESPACE: tenshoohashi/knowhub
 
 jobs:
   test:
     name: Run Tests
     uses: ./.github/workflows/test.yml
 
+  # build-and-push:
+  #   job IDです。
+  #   画面表示名ではなく、workflow内で使う識別子です。
   build-and-push:
+    # GitHub Actions画面に表示されるjob名です。
     name: Build and Push Images
+    # test jobが成功してからimageを作ります。
+    # testが失敗した場合、このjobは実行されません。
     needs: test
+    # このjobを実行するGitHub管理の仮想マシンです。
+    # ubuntu-latest はGitHubが用意する最新系Ubuntu runnerです。
     runs-on: ubuntu-latest
+    # GITHUB_TOKENに与える権限です。
+    # 最小限の権限だけを明示することで、workflowの安全性を上げます。
     permissions:
+      # repositoryのソースコードを読む権限です。
+      # actions/checkout でコードを取得するために使います。
       contents: read
+      # GHCRへDocker imageをpushするために必要です。
+      # GitHub Packages / Container Registry への書き込み権限です。
       packages: write
 
+    # steps:
+    #   このjobの中で順番に実行される処理です。
+    #   上から順に、checkout -> buildx準備 -> GHCR login -> image build/push を行います。
     steps:
       - name: Checkout code
+        # リポジトリのソースコードをGitHub Actions runnerへ取得します。
+        # これをしないとDockerfileやサービスのコードをbuildできません。
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
+        # Docker Buildxを有効化します。
+        # build-push-actionはBuildxを使ってimageをbuild/pushします。
+        # cacheや複数platform buildなど、本番向けbuild機能を扱いやすくします。
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Container Registry
+        # Docker registryへログインするActionです。
+        # 今回はGHCRへpushするため、build前にログインします。
         uses: docker/login-action@v3
         with:
+          # registry:
+          #   ログイン先のDocker registryです。
+          #   env.REGISTRY はこのworkflow上部の `REGISTRY: ghcr.io` を参照します。
           registry: ${{ env.REGISTRY }}
+          # username:
+          #   GHCRへログインするユーザー名です。
+          #   github.actor はこのworkflowを実行したGitHubユーザーです。
           username: ${{ github.actor }}
+          # GitHub Actionsが自動発行するtokenです。
+          # packages: write 権限によりGHCRへpushできます。
+          # secrets.GITHUB_TOKEN:
+          #   GitHubがworkflow実行ごとに自動発行する一時tokenです。
+          #   自分で作るPATではありません。
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Go services
-        id: meta-go
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            latest=true
-            suffix=-${{ service }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-        env:
-          service: auth
-
       - name: Build and push Auth service
+        # Docker imageをbuildしてregistryへpushするActionです。
         uses: docker/build-push-action@v5
         with:
+          # context:
+          #   Docker buildの基準ディレクトリです。
+          #   "." はリポジトリrootを意味します。
           context: .
+          # file:
+          #   使用するDockerfileです。
+          #   Goサービスは共通Dockerfileを使い、SERVICEで対象サービスを切り替えます。
           file: docker/go-service.Dockerfile
+          # build-args:
+          #   Dockerfileへ渡すビルド時変数です。
+          #   SERVICE=auth により、authサービス用のbinary/imageを作ります。
           build-args: SERVICE=auth
+          # push:
+          #   true にすると、buildしたimageをGHCRへpushします。
+          #   falseならrunner内でbuildするだけです。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/auth:${{ github.sha }}
+          # tags:
+          #   作成するDocker image名です。
+          #   latest は本番deployが参照する簡易タグです。
+          #   github.sha はcommit hashなので、どのcommitのimageか追跡できます。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/auth:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/auth:${{ github.sha }}
+          # cache-from:
+          #   前回のGitHub Actions cacheを使ってbuildを高速化します。
           cache-from: type=gha
+          # cache-to:
+          #   今回のbuild cacheをGitHub Actions cacheへ保存します。
+          #   mode=max はできるだけ多くのcache情報を残します。
           cache-to: type=gha,mode=max
 
       - name: Build and push Wiki service
         uses: docker/build-push-action@v5
         with:
+          # リポジトリrootをDocker build contextにします。
           context: .
+          # Goサービス共通Dockerfileを使います。
           file: docker/go-service.Dockerfile
+          # wikiサービス用にbuildします。
           build-args: SERVICE=wiki
+          # build後、GHCRへpushします。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wiki:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/wiki:${{ github.sha }}
+          # wikiのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/wiki:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/wiki:${{ github.sha }}
+          # 前回cacheを読み込みます。
           cache-from: type=gha
+          # 今回cacheを保存します。
           cache-to: type=gha,mode=max
 
       - name: Build and push Profile service
         uses: docker/build-push-action@v5
         with:
+          # リポジトリrootをDocker build contextにします。
           context: .
+          # Goサービス共通Dockerfileを使います。
           file: docker/go-service.Dockerfile
+          # profileサービス用にbuildします。
           build-args: SERVICE=profile
+          # build後、GHCRへpushします。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/profile:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/profile:${{ github.sha }}
+          # profileのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/profile:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/profile:${{ github.sha }}
+          # 前回cacheを読み込みます。
           cache-from: type=gha
+          # 今回cacheを保存します。
           cache-to: type=gha,mode=max
 
       - name: Build and push AI service
         uses: docker/build-push-action@v5
         with:
+          # リポジトリrootをDocker build contextにします。
           context: .
+          # Goサービス共通Dockerfileを使います。
           file: docker/go-service.Dockerfile
+          # aiサービス用にbuildします。
           build-args: SERVICE=ai
+          # build後、GHCRへpushします。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ai:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/ai:${{ github.sha }}
+          # aiのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai:${{ github.sha }}
+          # 前回cacheを読み込みます。
           cache-from: type=gha
+          # 今回cacheを保存します。
           cache-to: type=gha,mode=max
 
       - name: Build and push Gateway service
         uses: docker/build-push-action@v5
         with:
+          # リポジトリrootをDocker build contextにします。
           context: .
+          # Goサービス共通Dockerfileを使います。
           file: docker/go-service.Dockerfile
+          # gatewayサービス用にbuildします。
           build-args: SERVICE=gateway
+          # build後、GHCRへpushします。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gateway:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/gateway:${{ github.sha }}
+          # gatewayのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/gateway:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/gateway:${{ github.sha }}
+          # 前回cacheを読み込みます。
           cache-from: type=gha
+          # 今回cacheを保存します。
           cache-to: type=gha,mode=max
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
+          # frontend/Dockerfile はroot context前提でCOPYする可能性があるため、
+          # contextはfrontendではなくリポジトリrootにしています。
           context: .
+          # Next.js frontend用Dockerfileです。
           file: frontend/Dockerfile
+          # build後、GHCRへpushします。
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+          # frontendのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/frontend:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/frontend:${{ github.sha }}
+          # 前回cacheを読み込みます。
           cache-from: type=gha
+          # 今回cacheを保存します。
           cache-to: type=gha,mode=max
-
-  deploy:
-    name: Deploy to VPS
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    env:
-      VPS_HOST: ${{ secrets.VPS_HOST }}
-      VPS_USER: ${{ secrets.VPS_USER }}
-      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH || '/opt/tenhub' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "$VPS_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
-
-      - name: Create deploy directory
-        run: |
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST "mkdir -p $DEPLOY_PATH"
-
-      - name: Copy files to VPS
-        run: |
-          scp -i ~/.ssh/deploy_key -r \
-            docker-compose.prod.yml \
-            deploy \
-            $VPS_USER@$VPS_HOST:$DEPLOY_PATH/
-
-      - name: Pull latest images
-        run: |
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST \
-            "cd $DEPLOY_PATH && docker compose -f docker-compose.prod.yml pull"
-
-      - name: Restart services
-        run: |
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST \
-            "cd $DEPLOY_PATH && docker compose -f docker-compose.prod.yml up -d"
-
-      - name: Health check
-        run: |
-          sleep 10
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://$VPS_HOST/ || echo "000")
-          if [ "$response" != "200" ] && [ "$response" != "301" ] && [ "$response" != "302" ]; then
-            echo "Health check failed with status code: $response"
-            ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST \
-              "cd $DEPLOY_PATH && docker compose -f docker-compose.prod.yml logs --tail=50"
-            exit 1
-          fi
-          echo "Health check passed with status code: $response"
-
-      - name: Notify Slack on success
-        if: success()
-        run: |
-          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
-            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
-              -H 'Content-Type: application/json' \
-              -d '{
-                "text": "✅ TenHub deployed successfully",
-                "blocks": [
-                  {
-                    "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "*Deployment Success*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Branch:* ${{ github.ref_name }}"
-                    }
-                  }
-                ]
-              }'
-          fi
-
-      - name: Notify Slack on failure
-        if: failure()
-        run: |
-          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
-            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
-              -H 'Content-Type: application/json' \
-              -d '{
-                "text": "❌ TenHub deployment failed",
-                "blocks": [
-                  {
-                    "type": "section",
-                    "text": {
-                      "type": "mrkdwn",
-                      "text": "*Deployment Failed*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Branch:* ${{ github.ref_name }}\n\n<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
-                    }
-                  }
-                ]
-              }'
-          fi

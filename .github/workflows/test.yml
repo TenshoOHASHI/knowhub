@@ -1,25 +1,52 @@
 name: Test
 
+# このworkflowは2通りで実行されます。
+#
+# 1. push / pull_request:
+#    main または develop に変更が入った時、自動でテストします。
+#
+# 2. workflow_call:
+#    deploy.yml など、別のworkflowから再利用workflowとして呼び出されます。
+#    deploy.yml 側の `uses: ./.github/workflows/test.yml` は、この設定がないと失敗します。
 on:
+  # main/developへpushされた時に単体でテストを実行します。
   push:
     branches: [main, develop]
+  # main/develop向けPRが作成・更新された時にテストを実行します。
   pull_request:
     branches: [main, develop]
+  # 他のworkflowから `uses: ./.github/workflows/test.yml` で呼び出せるようにします。
+  # このキーがないと、deploy.yml 側で
+  # "workflow_call key is not defined in the referenced workflow" が出ます。
+  workflow_call:
 
 jobs:
+  # Goサービス群のテストです。
+  # auth/wiki/profile/ai/gateway をサービス単位でテストします。
   go-test:
     name: Go Tests
     runs-on: ubuntu-latest
 
     steps:
+      # GitHub Actionsの一時環境へリポジトリのコードを取得します。
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Goをインストールします。
+      # go-versionはプロジェクトで使うGoバージョンに合わせます。
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
 
+      # -v:
+      #   詳細ログを表示します。
+      # -race:
+      #   goroutineのデータ競合を検出します。
+      # -coverprofile:
+      #   カバレッジ結果をcoverage.outへ出力します。
+      # ./...:
+      #   現在ディレクトリ配下の全packageをテストします。
       - name: Go Test - Auth Service
         working-directory: services/auth
         run: go test -v -race -coverprofile=coverage.out ./...
@@ -32,6 +59,7 @@ jobs:
         working-directory: services/profile
         run: go test -v -race -coverprofile=coverage.out ./...
 
+      # AIサービスは外部処理・重めの処理を含む可能性があるため、timeoutを明示します。
       - name: Go Test - AI Service
         working-directory: services/ai
         run: go test -v -race -coverprofile=coverage.out ./... -timeout 5m
@@ -40,6 +68,8 @@ jobs:
         working-directory: services/gateway
         run: go test -v -race -coverprofile=coverage.out ./...
 
+  # Frontendの型チェック、lint、build確認です。
+  # production imageを作る前に、Next.jsがbuildできる状態か確認します。
   frontend-test:
     name: Frontend Tests
     runs-on: ubuntu-latest
@@ -48,6 +78,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Node.jsをインストールします。
+      # cache: npm により、npm依存の取得を高速化します。
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -55,22 +87,31 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      # package-lock.json通りに依存をインストールします。
+      # CIでは npm install より npm ci が再現性の面で適しています。
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
 
+      # TypeScriptの型エラーを確認します。
+      # --noEmit なので、JSファイルは生成しません。
       - name: Run TypeScript check
         working-directory: frontend
         run: npx tsc --noEmit
 
+      # ESLintでコード品質を確認します。
+      # --max-warnings 0 により、warningもCI失敗扱いにします。
       - name: Run ESLint
         working-directory: frontend
         run: npx eslint . --max-warnings 0
 
+      # Next.jsの本番buildが成功するか確認します。
       - name: Build Next.js
         working-directory: frontend
         run: npm run build
 
+  # docker-compose.prod.yml が本番用Compose設定として解釈できるか確認します。
+  # 実際にコンテナ起動はせず、構文と変数展開だけ検証します。
   docker-compose-validation:
     name: Docker Compose Validation
     runs-on: ubuntu-latest
@@ -79,6 +120,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # .env.production.example を使って、本番Composeの変数展開を検証します。
+      # > /dev/null は、展開結果を表示せず、成功/失敗だけを見るためです。
       - name: Validate production compose
         run: |
           docker compose -f docker-compose.prod.yml --env-file .env.production.example config > /dev/null
