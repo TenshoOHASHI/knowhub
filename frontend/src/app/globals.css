@@ -79,6 +79,7 @@ body {
 /* h2: accent bar left + bottom border */
 .article-content .article-h2 {
   position: relative;
+  scroll-margin-top: 1.5rem;
   padding-left: 0.875rem;
   padding-bottom: 0.5rem;
   margin-top: 2rem;
@@ -86,6 +87,10 @@ body {
   font-weight: 700;
   font-size: 1.5rem;
   border-bottom: 2px solid #d4d4d4;
+}
+
+.article-content h3 {
+  scroll-margin-top: 1.5rem;
 }
 
 .article-content .article-h2::before {
