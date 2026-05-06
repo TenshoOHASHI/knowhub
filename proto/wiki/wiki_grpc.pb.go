@@ -20,11 +20,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	WikiServices_Create_FullMethodName = "/wiki.WikiServices/Create"
-	WikiServices_Get_FullMethodName    = "/wiki.WikiServices/Get"
-	WikiServices_List_FullMethodName   = "/wiki.WikiServices/List"
-	WikiServices_Update_FullMethodName = "/wiki.WikiServices/Update"
-	WikiServices_Delete_FullMethodName = "/wiki.WikiServices/Delete"
+	WikiServices_Create_FullMethodName              = "/wiki.WikiServices/Create"
+	WikiServices_Get_FullMethodName                 = "/wiki.WikiServices/Get"
+	WikiServices_List_FullMethodName                = "/wiki.WikiServices/List"
+	WikiServices_Update_FullMethodName              = "/wiki.WikiServices/Update"
+	WikiServices_Delete_FullMethodName              = "/wiki.WikiServices/Delete"
+	WikiServices_ListCategories_FullMethodName      = "/wiki.WikiServices/ListCategories"
+	WikiServices_CreateCategory_FullMethodName      = "/wiki.WikiServices/CreateCategory"
+	WikiServices_DeleteCategory_FullMethodName      = "/wiki.WikiServices/DeleteCategory"
+	WikiServices_ToggleLike_FullMethodName          = "/wiki.WikiServices/ToggleLike"
+	WikiServices_GetLikeCount_FullMethodName        = "/wiki.WikiServices/GetLikeCount"
+	WikiServices_GetLikeCounts_FullMethodName       = "/wiki.WikiServices/GetLikeCounts"
+	WikiServices_SaveArticle_FullMethodName         = "/wiki.WikiServices/SaveArticle"
+	WikiServices_UnsaveArticle_FullMethodName       = "/wiki.WikiServices/UnsaveArticle"
+	WikiServices_ListSavedArticles_FullMethodName   = "/wiki.WikiServices/ListSavedArticles"
+	WikiServices_IsArticleSaved_FullMethodName      = "/wiki.WikiServices/IsArticleSaved"
+	WikiServices_RecordPageView_FullMethodName      = "/wiki.WikiServices/RecordPageView"
+	WikiServices_GetAnalyticsSummary_FullMethodName = "/wiki.WikiServices/GetAnalyticsSummary"
 )
 
 // WikiServicesClient is the client API for WikiServices service.
@@ -36,6 +48,21 @@ type WikiServicesClient interface {
 	List(ctx context.Context, in *ListArticleRequest, opts ...grpc.CallOption) (*ListArticleResponse, error)
 	Update(ctx context.Context, in *UpdateArticleRequest, opts ...grpc.CallOption) (*UpdateArticleResponse, error)
 	Delete(ctx context.Context, in *DeleteArticleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Category
+	ListCategories(ctx context.Context, in *ListCategoriesRequest, opts ...grpc.CallOption) (*ListCategoriesResponse, error)
+	CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*CreateCategoryResponse, error)
+	DeleteCategory(ctx context.Context, in *DeleteCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Like / Save
+	ToggleLike(ctx context.Context, in *ToggleLikeRequest, opts ...grpc.CallOption) (*ToggleLikeResponse, error)
+	GetLikeCount(ctx context.Context, in *GetLikeCountRequest, opts ...grpc.CallOption) (*GetLikeCountResponse, error)
+	GetLikeCounts(ctx context.Context, in *GetLikeCountsRequest, opts ...grpc.CallOption) (*GetLikeCountsResponse, error)
+	SaveArticle(ctx context.Context, in *SaveArticleRequest, opts ...grpc.CallOption) (*SaveArticleResponse, error)
+	UnsaveArticle(ctx context.Context, in *UnsaveArticleRequest, opts ...grpc.CallOption) (*UnsaveArticleResponse, error)
+	ListSavedArticles(ctx context.Context, in *ListSavedArticlesRequest, opts ...grpc.CallOption) (*ListSavedArticlesResponse, error)
+	IsArticleSaved(ctx context.Context, in *IsArticleSavedRequest, opts ...grpc.CallOption) (*IsArticleSavedResponse, error)
+	// Analytics
+	RecordPageView(ctx context.Context, in *RecordPageViewRequest, opts ...grpc.CallOption) (*RecordPageViewResponse, error)
+	GetAnalyticsSummary(ctx context.Context, in *GetAnalyticsSummaryRequest, opts ...grpc.CallOption) (*GetAnalyticsSummaryResponse, error)
 }
 
 type wikiServicesClient struct {
@@ -96,6 +123,126 @@ func (c *wikiServicesClient) Delete(ctx context.Context, in *DeleteArticleReques
 	return out, nil
 }
 
+func (c *wikiServicesClient) ListCategories(ctx context.Context, in *ListCategoriesRequest, opts ...grpc.CallOption) (*ListCategoriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCategoriesResponse)
+	err := c.cc.Invoke(ctx, WikiServices_ListCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*CreateCategoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCategoryResponse)
+	err := c.cc.Invoke(ctx, WikiServices_CreateCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) DeleteCategory(ctx context.Context, in *DeleteCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, WikiServices_DeleteCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) ToggleLike(ctx context.Context, in *ToggleLikeRequest, opts ...grpc.CallOption) (*ToggleLikeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ToggleLikeResponse)
+	err := c.cc.Invoke(ctx, WikiServices_ToggleLike_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) GetLikeCount(ctx context.Context, in *GetLikeCountRequest, opts ...grpc.CallOption) (*GetLikeCountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLikeCountResponse)
+	err := c.cc.Invoke(ctx, WikiServices_GetLikeCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) GetLikeCounts(ctx context.Context, in *GetLikeCountsRequest, opts ...grpc.CallOption) (*GetLikeCountsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLikeCountsResponse)
+	err := c.cc.Invoke(ctx, WikiServices_GetLikeCounts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) SaveArticle(ctx context.Context, in *SaveArticleRequest, opts ...grpc.CallOption) (*SaveArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SaveArticleResponse)
+	err := c.cc.Invoke(ctx, WikiServices_SaveArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) UnsaveArticle(ctx context.Context, in *UnsaveArticleRequest, opts ...grpc.CallOption) (*UnsaveArticleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnsaveArticleResponse)
+	err := c.cc.Invoke(ctx, WikiServices_UnsaveArticle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) ListSavedArticles(ctx context.Context, in *ListSavedArticlesRequest, opts ...grpc.CallOption) (*ListSavedArticlesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSavedArticlesResponse)
+	err := c.cc.Invoke(ctx, WikiServices_ListSavedArticles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) IsArticleSaved(ctx context.Context, in *IsArticleSavedRequest, opts ...grpc.CallOption) (*IsArticleSavedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsArticleSavedResponse)
+	err := c.cc.Invoke(ctx, WikiServices_IsArticleSaved_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) RecordPageView(ctx context.Context, in *RecordPageViewRequest, opts ...grpc.CallOption) (*RecordPageViewResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecordPageViewResponse)
+	err := c.cc.Invoke(ctx, WikiServices_RecordPageView_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *wikiServicesClient) GetAnalyticsSummary(ctx context.Context, in *GetAnalyticsSummaryRequest, opts ...grpc.CallOption) (*GetAnalyticsSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAnalyticsSummaryResponse)
+	err := c.cc.Invoke(ctx, WikiServices_GetAnalyticsSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // WikiServicesServer is the server API for WikiServices service.
 // All implementations must embed UnimplementedWikiServicesServer
 // for forward compatibility.
@@ -105,6 +252,21 @@ type WikiServicesServer interface {
 	List(context.Context, *ListArticleRequest) (*ListArticleResponse, error)
 	Update(context.Context, *UpdateArticleRequest) (*UpdateArticleResponse, error)
 	Delete(context.Context, *DeleteArticleRequest) (*emptypb.Empty, error)
+	// Category
+	ListCategories(context.Context, *ListCategoriesRequest) (*ListCategoriesResponse, error)
+	CreateCategory(context.Context, *CreateCategoryRequest) (*CreateCategoryResponse, error)
+	DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error)
+	// Like / Save
+	ToggleLike(context.Context, *ToggleLikeRequest) (*ToggleLikeResponse, error)
+	GetLikeCount(context.Context, *GetLikeCountRequest) (*GetLikeCountResponse, error)
+	GetLikeCounts(context.Context, *GetLikeCountsRequest) (*GetLikeCountsResponse, error)
+	SaveArticle(context.Context, *SaveArticleRequest) (*SaveArticleResponse, error)
+	UnsaveArticle(context.Context, *UnsaveArticleRequest) (*UnsaveArticleResponse, error)
+	ListSavedArticles(context.Context, *ListSavedArticlesRequest) (*ListSavedArticlesResponse, error)
+	IsArticleSaved(context.Context, *IsArticleSavedRequest) (*IsArticleSavedResponse, error)
+	// Analytics
+	RecordPageView(context.Context, *RecordPageViewRequest) (*RecordPageViewResponse, error)
+	GetAnalyticsSummary(context.Context, *GetAnalyticsSummaryRequest) (*GetAnalyticsSummaryResponse, error)
 	mustEmbedUnimplementedWikiServicesServer()
 }
 
@@ -129,6 +291,42 @@ func (UnimplementedWikiServicesServer) Update(context.Context, *UpdateArticleReq
 }
 func (UnimplementedWikiServicesServer) Delete(context.Context, *DeleteArticleRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedWikiServicesServer) ListCategories(context.Context, *ListCategoriesRequest) (*ListCategoriesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCategories not implemented")
+}
+func (UnimplementedWikiServicesServer) CreateCategory(context.Context, *CreateCategoryRequest) (*CreateCategoryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCategory not implemented")
+}
+func (UnimplementedWikiServicesServer) DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteCategory not implemented")
+}
+func (UnimplementedWikiServicesServer) ToggleLike(context.Context, *ToggleLikeRequest) (*ToggleLikeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ToggleLike not implemented")
+}
+func (UnimplementedWikiServicesServer) GetLikeCount(context.Context, *GetLikeCountRequest) (*GetLikeCountResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLikeCount not implemented")
+}
+func (UnimplementedWikiServicesServer) GetLikeCounts(context.Context, *GetLikeCountsRequest) (*GetLikeCountsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLikeCounts not implemented")
+}
+func (UnimplementedWikiServicesServer) SaveArticle(context.Context, *SaveArticleRequest) (*SaveArticleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SaveArticle not implemented")
+}
+func (UnimplementedWikiServicesServer) UnsaveArticle(context.Context, *UnsaveArticleRequest) (*UnsaveArticleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnsaveArticle not implemented")
+}
+func (UnimplementedWikiServicesServer) ListSavedArticles(context.Context, *ListSavedArticlesRequest) (*ListSavedArticlesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSavedArticles not implemented")
+}
+func (UnimplementedWikiServicesServer) IsArticleSaved(context.Context, *IsArticleSavedRequest) (*IsArticleSavedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method IsArticleSaved not implemented")
+}
+func (UnimplementedWikiServicesServer) RecordPageView(context.Context, *RecordPageViewRequest) (*RecordPageViewResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RecordPageView not implemented")
+}
+func (UnimplementedWikiServicesServer) GetAnalyticsSummary(context.Context, *GetAnalyticsSummaryRequest) (*GetAnalyticsSummaryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAnalyticsSummary not implemented")
 }
 func (UnimplementedWikiServicesServer) mustEmbedUnimplementedWikiServicesServer() {}
 func (UnimplementedWikiServicesServer) testEmbeddedByValue()                      {}
@@ -241,6 +439,222 @@ func _WikiServices_Delete_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _WikiServices_ListCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCategoriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).ListCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_ListCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).ListCategories(ctx, req.(*ListCategoriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_CreateCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).CreateCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_CreateCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).CreateCategory(ctx, req.(*CreateCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_DeleteCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCategoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).DeleteCategory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_DeleteCategory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).DeleteCategory(ctx, req.(*DeleteCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_ToggleLike_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleLikeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).ToggleLike(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_ToggleLike_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).ToggleLike(ctx, req.(*ToggleLikeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_GetLikeCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLikeCountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).GetLikeCount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_GetLikeCount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).GetLikeCount(ctx, req.(*GetLikeCountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_GetLikeCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLikeCountsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).GetLikeCounts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_GetLikeCounts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).GetLikeCounts(ctx, req.(*GetLikeCountsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_SaveArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).SaveArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_SaveArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).SaveArticle(ctx, req.(*SaveArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_UnsaveArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnsaveArticleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).UnsaveArticle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_UnsaveArticle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).UnsaveArticle(ctx, req.(*UnsaveArticleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_ListSavedArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSavedArticlesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).ListSavedArticles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_ListSavedArticles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).ListSavedArticles(ctx, req.(*ListSavedArticlesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_IsArticleSaved_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsArticleSavedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).IsArticleSaved(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_IsArticleSaved_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).IsArticleSaved(ctx, req.(*IsArticleSavedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_RecordPageView_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordPageViewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).RecordPageView(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_RecordPageView_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).RecordPageView(ctx, req.(*RecordPageViewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _WikiServices_GetAnalyticsSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAnalyticsSummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(WikiServicesServer).GetAnalyticsSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: WikiServices_GetAnalyticsSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(WikiServicesServer).GetAnalyticsSummary(ctx, req.(*GetAnalyticsSummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // WikiServices_ServiceDesc is the grpc.ServiceDesc for WikiServices service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -267,6 +681,54 @@ var WikiServices_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _WikiServices_Delete_Handler,
+		},
+		{
+			MethodName: "ListCategories",
+			Handler:    _WikiServices_ListCategories_Handler,
+		},
+		{
+			MethodName: "CreateCategory",
+			Handler:    _WikiServices_CreateCategory_Handler,
+		},
+		{
+			MethodName: "DeleteCategory",
+			Handler:    _WikiServices_DeleteCategory_Handler,
+		},
+		{
+			MethodName: "ToggleLike",
+			Handler:    _WikiServices_ToggleLike_Handler,
+		},
+		{
+			MethodName: "GetLikeCount",
+			Handler:    _WikiServices_GetLikeCount_Handler,
+		},
+		{
+			MethodName: "GetLikeCounts",
+			Handler:    _WikiServices_GetLikeCounts_Handler,
+		},
+		{
+			MethodName: "SaveArticle",
+			Handler:    _WikiServices_SaveArticle_Handler,
+		},
+		{
+			MethodName: "UnsaveArticle",
+			Handler:    _WikiServices_UnsaveArticle_Handler,
+		},
+		{
+			MethodName: "ListSavedArticles",
+			Handler:    _WikiServices_ListSavedArticles_Handler,
+		},
+		{
+			MethodName: "IsArticleSaved",
+			Handler:    _WikiServices_IsArticleSaved_Handler,
+		},
+		{
+			MethodName: "RecordPageView",
+			Handler:    _WikiServices_RecordPageView_Handler,
+		},
+		{
+			MethodName: "GetAnalyticsSummary",
+			Handler:    _WikiServices_GetAnalyticsSummary_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

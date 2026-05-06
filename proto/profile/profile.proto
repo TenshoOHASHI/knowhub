@@ -1,0 +1,143 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+
+
+package profile;
+
+option go_package = "github.com/TenshoOHASHI/knowhub/proto/profile";
+
+// 自己紹介
+message Profile {
+  string id = 1;
+  string title = 2;
+  string bio = 3;
+  string github_url = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  string avatar_url = 7;
+  string twitter_url = 8;
+  string linkedin_url = 9;
+  string skills = 10; // JSON array string
+  string languages = 11; // JSON array: [{"name":"Japanese","level":"Native"}]
+  string wantedly_url = 12;
+}
+
+// ポートフォリオアイテム
+message PortfolioItem {
+  string id = 1;
+  string title = 2;           // プロジェクト名
+  string description = 3;     // 説明
+  string url = 4;             // URL
+  string status = 5;          // "developing" / "completed"
+  google.protobuf.Timestamp created_at = 6;
+  string category = 7;        // "project" / "assignment" / "contribution"
+  string tech_stack = 8;      // JSON array: ["Go","React","MySQL"]
+}
+
+// RPCS
+
+message GetProfileRequest {}
+message GetProfileResponse {
+  Profile Profile = 1;
+}
+
+message UpdateProfileRequest {
+    string title = 1;
+    string bio = 2;
+    string github_url = 3;
+    string avatar_url = 4;
+    string twitter_url = 5;
+    string linkedin_url = 6;
+    string skills = 7;
+    string languages = 8;
+    string wantedly_url = 9;
+  }
+
+message UpdateProfileResponse {
+    Profile profile = 1;
+}
+
+
+// --- Portfolio RPCs ---
+message CreatePortfolioItemRequest {
+  string title = 1;
+  string description = 2;
+  string url = 3;
+  string status = 4;
+  string category = 5;
+  string tech_stack = 6;
+}
+
+message CreatePortfolioItemResponse {
+  PortfolioItem item = 1;
+}
+
+message ListPortfolioItemsRequest {}
+
+message ListPortfolioItemsResponse {
+  repeated PortfolioItem items = 1;
+}
+
+message UpdatePortfolioItemRequest {
+  string id = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional string url = 4;
+  optional string status = 5;
+  optional string category = 6;
+  optional string tech_stack = 7;
+}
+
+message UpdatePortfolioItemResponse {
+  PortfolioItem item = 1;
+}
+
+message DeletePortfolioItemRequest {
+  string id = 1;
+}
+
+
+message GetPortfolioItemRequest {
+  string id = 1;
+}
+
+
+message GetPortfolioItemResponse {
+  PortfolioItem item = 1;
+}
+
+
+
+message CreateProfileRequest {
+  string title = 1;
+  string bio = 2;
+  string github_url = 3;
+  string avatar_url = 4;
+  string twitter_url = 5;
+  string linkedin_url = 6;
+  string skills = 7;
+  string languages = 8;
+  string wantedly_url = 9;
+}
+
+message CreateProfileResponse {
+  Profile profile = 1;
+}
+
+
+
+service ProfileService {
+  // Profile
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
+
+  // Portfolio
+  rpc CreatePortfolioItem(CreatePortfolioItemRequest) returns (CreatePortfolioItemResponse);
+  rpc ListPortfolioItems(ListPortfolioItemsRequest) returns (ListPortfolioItemsResponse);
+  rpc GetPortfolioItem(GetPortfolioItemRequest) returns (GetPortfolioItemResponse);
+  rpc UpdatePortfolioItem(UpdatePortfolioItemRequest) returns (UpdatePortfolioItemResponse);
+  rpc DeletePortfolioItem(DeletePortfolioItemRequest) returns (google.protobuf.Empty);
+}

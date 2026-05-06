@@ -4,6 +4,7 @@ services:
   db: # サービス名
     container_name: mysql
     image: mysql:8.0 # キーと値
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ports:
       - '3306:3306' # リスト形式
     environment: # 環境変数（セクション）
@@ -32,3 +33,11 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  searxng:
+    container_name: searxng
+    image: searxng/searxng:latest
+    ports:
+      - '8888:8080'
+    volumes:
+      - ./data/searxng:/etc/searxng:rw
