@@ -1,16 +1,71 @@
+# ============================================================
+# Secrets / local environment
+# ============================================================
 .env
-.env.production
+.env.*
+!.env.example
+.env.production.example
+*.pem
+*.key
+*.crt
+*.p12
+
+# ============================================================
+# Deploy / private inventory
+# ============================================================
+docker-compose.prod.yml
+docker-compose.prod.yaml
 deploy/ansible/host_vars/*.yml
 deploy/ansible/group_vars/vault.yml
+
+# ============================================================
+# Runtime data / generated files
+# ============================================================
 data/
 logs/
-services/auth/keys
-doc/
 uploads/
-plan.md
+services/auth/keys
+services/*/logs/
+services/*/uploads/
 .gocache/
+**/.gocache/
+coverage/
+tmp/
+temp/
+*.log
+
+# ============================================================
+# Node / Next.js
+# ============================================================
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# Local docs / personal notes
+# ============================================================
+doc/
+plan.md
+
+# ============================================================
+# Local tools / AI assistant state
+# ============================================================
+.claude/
+.direnv/
 services/mcp/tenhub-mcp
 github.com/
-.direnv/
 result
 result-*
+
+# ============================================================
+# OS / editor
+# ============================================================
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
