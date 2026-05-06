@@ -260,10 +260,16 @@ export default function ChatInterface() {
           { role: 'assistant', content: answer, sources },
         ]);
       }
-    } catch {
+    } catch (error) {
       updateMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'エラーが発生しました。' },
+        {
+          role: 'assistant',
+          content:
+            error instanceof Error
+              ? error.message
+              : 'エラーが発生しました。',
+        },
       ]);
     } finally {
       setLoading(false);
@@ -510,7 +516,7 @@ export default function ChatInterface() {
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeHighlight]}
                     components={{
-                      pre({ node, children, ...props }) {
+                      pre({ children, ...props }) {
                         return <CodeBlock {...props}>{children}</CodeBlock>;
                       },
                       a: ({ href, children }) => (

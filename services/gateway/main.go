@@ -132,9 +132,10 @@ func main() {
 	}
 
 	authMW := middleware.NewAuthMiddleware(pb.NewAuthServiceClient(authConn))
+	aiRateLimiter := middleware.NewAIRateLimiter(cfg.AIAnonMaxConcurrent, cfg.AIAnonDailyLimit)
 	handler := middleware.NewCoreMiddleware(cfg.AllowedOrigin, cfg.AllowedMethods, cfg.AllowedHeaders, cfg.AllowedCredential).CorsMiddleware(
 		middleware.RequestIDMiddleware(
-			authMW.RequireAuth(mux),
+			authMW.RequireAuth(aiRateLimiter.Middleware(mux)),
 		),
 	)
 

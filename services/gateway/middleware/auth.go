@@ -41,9 +41,11 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// ai 関連パスは認証不要
+		// ai 関連パスは認証不要。ただし token があれば userID を context に入れる。
+		// これにより、後段の AI rate limit middleware で
+		// ログイン済みユーザーだけ制限をバイパスできる。
 		if strings.HasPrefix(r.URL.Path, "/api/ai/") {
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, m.withOptionalAuth(r))
 			return
 		}
 
@@ -65,13 +67,7 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Token を Cookie または Authorization ヘッダーから取得
-		var tokenStr string
-		if cookie, err := r.Cookie("token"); err == nil {
-			tokenStr = cookie.Value
-		} else if authHeader := r.Header.Get("Authorization"); strings.HasPrefix(authHeader, "Bearer ") {
-			tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
-		}
+		tokenStr := tokenFromRequest(r)
 
 		// GET /api/user/me 以外: token がなくても通す（Optional Auth）
 		// token があれば検証して userID を context に保存
@@ -109,4 +105,32 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})
+}
+
+func (m *AuthMiddleWare) withOptionalAuth(r *http.Request) *http.Request {
+	tokenStr := tokenFromRequest(r)
+	if tokenStr == "" {
+		return r
+	}
+
+	resp, err := m.authClient.VerifyToken(r.Context(), &pb.VerifyTokenRequest{Token: tokenStr})
+	if err != nil {
+		return r
+	}
+
+	ctx := context.WithValue(r.Context(), "userID", resp.User.Id)
+	return r.WithContext(ctx)
+}
+
+func tokenFromRequest(r *http.Request) string {
+	if cookie, err := r.Cookie("token"); err == nil {
+		return cookie.Value
+	}
+
+	authHeader := r.Header.Get("Authorization")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		return strings.TrimPrefix(authHeader, "Bearer ")
+	}
+
+	return ""
 }

@@ -7,6 +7,78 @@ const API_BASE =
     ? process.env.SERVER_API_URL || 'http://localhost:8080/api'
     : '/api';
 
+async function buildAIErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
+  // Gateway / Next.js Route Handler から返ってくる rate limit 情報を
+  // UI 表示用の日本語メッセージへ変換する。
+  //
+  // 想定する入力:
+  // res.status = 429
+  // res.headers["Retry-After"] = "30" | "3600" | ...
+  // res.body = "too many anonymous AI requests; please try again later"
+  //         or "anonymous AI daily limit exceeded"
+  //
+  // 出力例:
+  // "現在、未ログインユーザーのAI処理が混み合っています。30秒後に再度お試しください。"
+  const retryAfter = res.headers.get('Retry-After');
+  let body = '';
+  try {
+    body = await res.text();
+  } catch {
+    body = '';
+  }
+
+  if (res.status === 429) {
+    const retryText = retryAfter
+      ? `${formatRetryAfter(retryAfter)}後に再度お試しください。`
+      : '少し時間を置いて再度お試しください。';
+
+    if (body.toLowerCase().includes('daily limit')) {
+      return `未ログイン状態での本日のAI利用上限に達しました。ログインするか、${retryText}`;
+    }
+
+    return `現在、未ログインユーザーのAI処理が混み合っています。${retryText}`;
+  }
+
+  if (res.status === 502 || res.status === 504) {
+    return 'AIサービスの応答がタイムアウトしました。しばらくしてから再度お試しください。';
+  }
+
+  if (res.status === 503) {
+    return 'AIサービスが一時的に利用できません。しばらくしてから再度お試しください。';
+  }
+
+  return `${fallback} (HTTP ${res.status})`;
+}
+
+function formatRetryAfter(value: string): string {
+  // Retry-After は HTTP ヘッダーなので文字列で届く。
+  // サーバー側では「再試行までの秒数」を入れているため、
+  // 画面表示では 秒 / 分 / 時間 に丸めて読みやすくする。
+  //
+  // "30"   -> "30秒"
+  // "180"  -> "3分"
+  // "7200" -> "2時間"
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return '';
+  }
+
+  if (seconds < 60) {
+    return `${Math.ceil(seconds)}秒`;
+  }
+
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}分`;
+  }
+
+  const hours = Math.ceil(minutes / 60);
+  return `${hours}時間`;
+}
+
 // -- Auth --
 // ログイン状態チェック（Cookie が rewrites で Gateway に転送される）
 export async function checkAuth() {
@@ -194,7 +266,7 @@ export async function askQuestion(
       search_engine: searchEngine,
     }),
   });
-  if (!res.ok) throw new Error('Failed to ask question');
+  if (!res.ok) throw new Error(await buildAIErrorMessage(res, '質問に失敗しました'));
   return res.json();
 }
 
@@ -237,7 +309,8 @@ export async function askWithAgent(
       history: JSON.stringify(history),
     }),
   });
-  if (!res.ok) throw new Error('Failed to ask with agent');
+  if (!res.ok)
+    throw new Error(await buildAIErrorMessage(res, 'Agent の実行に失敗しました'));
   return res.json();
 }
 
@@ -338,7 +411,9 @@ export async function askWithAgentStream(
   });
 
   if (!res.ok) {
-    callbacks.onError(`HTTP ${res.status}`);
+    callbacks.onError(
+      await buildAIErrorMessage(res, 'Agent streaming の開始に失敗しました'),
+    );
     return;
   }
 
@@ -468,6 +543,9 @@ export async function getKnowledgeGraph(): Promise<{
 }> {
   const res = await fetch(`${API_BASE}/ai/graph`);
   if (!res.ok) {
+    if (res.status === 429) {
+      throw new Error(await buildAIErrorMessage(res, 'グラフの取得に失敗しました'));
+    }
     if (res.status === 504 || res.status === 502)
       throw new Error(
         'サーバーがタイムアウトしました。AIサービスが起動しているか確認してください。',
