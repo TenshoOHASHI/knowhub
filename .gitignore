@@ -2,11 +2,12 @@
 data/
 logs/
 services/auth/keys
-WORKFLOW.md
-Makefile
 doc/
 uploads/
 plan.md
 .gocache/
 services/mcp/tenhub-mcp
 github.com/
+.direnv/
+result
+result-*
