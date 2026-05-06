@@ -110,8 +110,12 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-  # docker-compose.prod.yml が本番用Compose設定として解釈できるか確認します。
+  # docker-compose.yml が開発用Compose設定として解釈できるか確認します。
   # 実際にコンテナ起動はせず、構文と変数展開だけ検証します。
+  #
+  # 注意:
+  #   docker-compose.prod.yml / .env.production.example は本番構成を含むためGit管理から外しています。
+  #   そのためCIでは参照しません。PRでは、Gitに存在する開発用Composeだけを検証します。
   docker-compose-validation:
     name: Docker Compose Validation
     runs-on: ubuntu-latest
@@ -120,8 +124,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # .env.production.example を使って、本番Composeの変数展開を検証します。
+      # docker-compose.yml は ${MYSQL_PASSWORD} のような環境変数を参照します。
+      # CIでは本物の値を使わず、構文検証用のダミー値だけを渡します。
       # > /dev/null は、展開結果を表示せず、成功/失敗だけを見るためです。
-      - name: Validate production compose
+      - name: Validate development compose
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_DATABASE: ci_database
+          MYSQL_USER: ci_user
+          MYSQL_PASSWORD: ci-app-password
         run: |
-          docker compose -f docker-compose.prod.yml --env-file .env.production.example config > /dev/null
+          docker compose -f docker-compose.yml config > /dev/null
