@@ -1,3 +1,67 @@
+## 2026-05-06 AIレート制限のクライアント表示
+- Frontend: AI API が 429 を返した場合、混雑中または未ログイン利用上限の説明をチャット画面に表示
+- Frontend: Retry-After ヘッダーを秒/分/時間に変換して再試行目安を表示
+- Frontend: Agent streaming Route Handler で Cookie / Authorization と RateLimit 関連ヘッダーを Gateway に伝播
+
+## 2026-05-06 デプロイ完全ガイド追加
+- Docs: doc/deploy-basics.md を全面書き換え（詳細なデプロイガイド）
+  - 開発→本番の全体フロー図解、ポート構成、Dockerネットワーク
+  - VPS構造: ディレクトリツリー、コード配置方法（3通り）
+  - 初期設定: 10ステップの詳細（何をどこに変更か）
+  - 環境変数: パスワード生成・設定例・ベストプラクティス
+  - 本番対応: localhost→Dockerサービス名の切り替え
+  - セキュリティ: SSH/Firewall/Fail2Ban/Docker/アプリ/SSL
+  - デプロイ手順: 初回/SSL/更新のステップバイステップ
+  - トラブルシューティング: 6パターンの問題と解決策
+- Docs: doc/DEPLOYMENT.md 更新（Tencent Cloud/AWS対応）
+- Docs: doc/backend/SPEC.md Phase 8更新（詳細説明への参照追加）
+- Docs: doc/backend/WORKFLOW.md Phase 8 Progress更新（詳細説明への参照追加）
+  - 開発→本番の全体フロー図解
+  - VPS上のディレクトリ構造詳細
+  - サーバー初期設定の何をどこに変更か完全に記述
+  - 環境変数・パスワード設定の具体的な手順
+  - localhostの本番対応（Next.js rewrites / Dockerサービス名）
+  - SSH/ファイアウォール/Fail2Ban/Docker/アプリ/SSLのセキュリティ対策
+  - backup.sh/health.shの変数説明と実行内容
+  - 初回デプロイ・SSL証明書設定・更新デプロイの手順
+  - トラブルシューティング（9パターンの問題と解決策）
+- Docs: doc/DEPLOYMENT.md 更新（Tencent Cloud/AWS対応）
+
+## 2026-05-06 CI/CD環境構築 + デプロイドキュメント追加
+- CI/CD: .github/workflows/test.yml 追加（Go Tests / Frontend Tests / Docker Compose validation）
+- CI/CD: .github/workflows/deploy.yml 追加（Build & Push / Deploy to VPS / Health Check / Slack通知）
+- Deploy: deploy/scripts/setup-vps.sh 追加（VPS初期設定スクリプト: SSH/Firewall/Docker/MySQLチューニング）
+- Deploy: deploy/scripts/backup.sh 追加（MySQL/Redis/アップロード/JWT鍵バックアップ + S3アップロード対応）
+- Deploy: deploy/ssl/certbot-setup.sh 追加（Let's Encrypt SSL証明書取得・自動更新設定）
+- Deploy: deploy/monitoring/health.sh 追加（コンテナ/HTTP/ディスク/メモリ監視 + Slack/Discord通知）
+- Deploy: deploy/nginx/templates/ssl.conf.template 追加（HTTPS Nginx設定）
+- Deploy: deploy/nginx/templates/ssl-server.conf.template 追加（HTTPSサーバー設定）
+- Deploy: docker-compose.prod.yml に443ポート追加（HTTPS対応）
+- Deploy: Makefile に deploy-vps / setup-vps / backup / health コマンド追加
+- Docs: doc/DEPLOYMENT.md 全面更新（Tencent Cloud/AWS対応 / SSL設定 / トラブルシューティング）
+- Docs: doc/deploy-basics.md 追加（シェルスクリプト基礎 / デプロイ設定 / CI/CD仕組み / 環境変数管理）
+- Docs: doc/backend/SPEC.md の Phase 8 進捗更新（CI/CD完了）
+- Docs: doc/backend/WORKFLOW.md の Phase 8 Progress 更新（デプロイスクリプト完了）
+
+## 2026-05-06 Wiki TOC スクロール修正
+- Frontend: TableOfContents のクリック時に対象見出しが存在する場合だけ smooth scroll し、URL hash も更新
+- Frontend: TOC の見出しID生成を rehype-slug と同じ github-slugger に統一
+- Fix: 日本語・記号・Markdownリンクを含む見出しで TOC の ID と本文 h2/h3 の ID がズレ、クリックしても遷移しない問題を修正
+
+## 2026-05-06 Nix devShell 整備 + Advanced Search 簡易テスト
+- DevEnv: flake.nix / flake.lock / NIX.md を追加し、Go / Node.js / protoc / CLI ツールを Nix devShell で固定
+- DevEnv: Makefile に nix-shell / nix-zsh / nix-proto を追加
+- DevEnv: dotfiles 連携向けに zsh / neovim / tmux / fd / fzf / eza / bat / zoxide 等を devShell に追加
+- Deploy: docker-compose.prod.yml を追加（DB / Redis / SearXNG / Go services / Frontend / Nginx）
+- Deploy: Go services 共通 multi-stage Dockerfile と Frontend standalone Dockerfile を追加
+- Deploy: Nginx HTTP reverse proxy template と .env.production.example を追加
+- Deploy: Next.js rewrites を GATEWAY_INTERNAL_URL で本番 gateway に向けられるように変更
+- Backend: AI service の SIGTERM graceful shutdown を有効化
+- Docs: NIX.md に zsh / dotfiles / Neovim / Obsidian の使い方と練習メニューを追加
+- Test: fake EmbeddingProvider で VectorEngine / HybridEngine の簡易ユニットテスト追加
+- Test: fake LLMProvider で GraphEngine の BFS 関連記事検索テスト追加
+- Test: services/ai で go test ./... 通過
+
 ## 2026-05-04 Agent モード改善 + UI ブラッシュアップ + Embedding 修正
 - Backend: Agent 実行モード自動切替（外部モデル → 自律ReAct、Ollama → 固定パイプライン）
 - Backend: isExternalModel ヘルパー追加（llm.NewProvider と同じプレフィックス判定ロジック）
