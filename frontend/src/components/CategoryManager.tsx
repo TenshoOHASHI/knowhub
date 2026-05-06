@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/context/ToastContext';
 import type { Category } from '@/lib/types';
 import { getCategories, createCategory, deleteCategory } from '@/lib/api';
@@ -14,15 +14,15 @@ export function CategoryManager() {
   const { toast } = useToast();
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     getCategories()
       .then((data) => setCategories(data.categories || []))
       .catch(() => toast('取得に失敗しました', 'error'));
-  };
+  }, [toast]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const handleCreate = async (e: React.SubmitEvent) => {
     e.preventDefault();

@@ -2,6 +2,7 @@ import MermaidDiagram from './MermaidDiagram';
 import Callout from './Callout';
 import type { CalloutType } from '@/lib/remark-callout';
 import { useState, useRef, useCallback } from 'react';
+import type { Components } from 'react-markdown';
 
 const CALLOUT_TYPE_RE = /callout callout-(note|info|tip|warning|caution|important|warm)/;
 
@@ -42,9 +43,9 @@ function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
 }
 
 // Markdownレンダリングの共通components設定
-export default function markdownComponents() {
+export default function markdownComponents(): Components {
   return {
-    pre({ node, children, ...props }: any) {
+    pre({ children, ...props }) {
       return <CodeBlock {...props}>{children}</CodeBlock>;
     },
     code({

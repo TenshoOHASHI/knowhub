@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import Editor from '@/components/Editor';
 import { CategoryManager } from '@/components/CategoryManager';
@@ -65,7 +65,9 @@ export default function AdminPage() {
       </div>
 
       {activeTab === 'article' ? (
-        <Editor />
+        <Suspense fallback={null}>
+          <Editor />
+        </Suspense>
       ) : activeTab === 'category' ? (
         <CategoryManager />
       ) : activeTab === 'profile' ? (

@@ -16,7 +16,7 @@ type Message struct {
 	Content string
 }
 
-func NewProvider(model, apiKey string) LLMProvider {
+func NewProvider(ollamaURL, model, apiKey string) LLMProvider {
 
 	switch {
 	// 他のモデルに対応するために、prefixを使用。例：deepseek-chat や gemeini-2.0-flash
@@ -30,6 +30,6 @@ func NewProvider(model, apiKey string) LLMProvider {
 		return NewOpenAIProvider(apiKey)
 	default:
 		// ollama の場合（apiKey不要）
-		return NewOllamaProvider("http://localhost:11434", model)
+		return NewOllamaProvider(ollamaURL, model)
 	}
 }

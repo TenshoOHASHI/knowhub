@@ -90,7 +90,7 @@ export default function ArticleContent({ content }: { content: string }) {
               </a>
             );
           },
-          pre({ node, children, ...props }) {
+          pre({ children, ...props }) {
             return <CodeBlock {...props}>{children}</CodeBlock>;
           },
           code({ className, children, ...props }) {
@@ -108,7 +108,7 @@ export default function ArticleContent({ content }: { content: string }) {
               </code>
             );
           },
-          div({ node, className, children, ...props }) {
+          div({ className, children, ...props }) {
             const classStr = className || '';
             const match = classStr.match(CALLOUT_TYPE_RE);
             if (match) {

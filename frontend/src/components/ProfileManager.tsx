@@ -5,7 +5,7 @@ import { useToast } from '@/context/ToastContext';
 import { getProfile } from '@/lib/api';
 import { Profile } from '@/lib/types';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import ImageUploader from './ImageUploader';
 
 export default function ProfileManager() {
@@ -23,7 +23,7 @@ export default function ProfileManager() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const load = () => {
+  const load = useCallback(() => {
     getProfile()
       .then((data) => {
         const p = data.Profile || {};
@@ -58,11 +58,11 @@ export default function ProfileManager() {
         }
       })
       .catch(() => toast('取得に失敗しました', 'error'));
-  };
+  }, [toast]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

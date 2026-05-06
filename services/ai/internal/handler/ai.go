@@ -207,7 +207,7 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	// LLM プロバイダー選択（リクエストで動的切替）
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
 	}
 
 	// Embedding プロバイダー生成（model + apiKey から自動判定）
@@ -409,7 +409,7 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	// LLM プロバイダー選択
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
 	}
 
 	// Embedding プロバイダー生成（model + apiKey から自動判定）
@@ -507,7 +507,7 @@ func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc
 	// LLM プロバイダー選択
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
 	}
 
 	// Embedding プロバイダー生成

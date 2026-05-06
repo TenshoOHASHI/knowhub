@@ -138,53 +138,26 @@ export function number(): NumberValidator {
 }
 
 // ============================================================
-// 使い方（このファイル内でのテスト）
+// 使い方
 // ============================================================
-
-// --- パスワードバリデーション ---
-const passwordResult = string()
-  .required('パスワードを入力してください')
-  .min(8, 'パスワードは8文字以上必要です')
-  .max(128)
-  .regex(/[A-Z]/, '大文字を1つ以上含めてください')
-  .regex(/[a-z]/, '小文字を1つ以上含めてください')
-  .regex(/[0-9]/, '数字を1つ以上含めてください')
-  .validate('Pass1');
-
-console.log(passwordResult);
-// → { success: false, errors: ['パスワードは8文字以上必要です'] }
-
-// --- 成功ケース ---
-const validResult = string()
-  .min(8)
-  .regex(/[A-Z]/, '大文字が必要です')
-  .validate('Password1');
-
-console.log(validResult);
-// → { success: true, data: 'Password1', errors: [] }
-
-// --- Result型の絞り込み（Discriminated Union の活用）---
-function handleResult() {
-  const result = string().email().validate('user@example.com');
-
-  // TypeScript が success フィールドで型を絞り込む
-  if (result.success) {
-    // ここでは result.data が string 型として使える
-    console.log('有効なメール:', result.data.toUpperCase());
-  } else {
-    // ここでは result.errors が string[] 型として使える
-    console.log('エラー:', result.errors.join(', '));
-  }
-}
-
-handleResult();
-
-// --- 数字バリデーション ---
-const ageResult = number()
-  .integer('年齢は整数で入力してください')
-  .min(0, '0以上の数値を入力してください')
-  .max(150, '正しい年齢を入力してください')
-  .validate(25);
-
-console.log(ageResult);
-// → { success: true, data: 25, errors: [] }
+// 注意:
+//   ライブラリファイルの直下でサンプルコードを実行すると、
+//   Next.js の production build 中にも実行されてログが出ます。
+//   そのため、ここでは「実行されない例」としてコメントに残します。
+//
+// パスワードバリデーション例:
+//   const result = string()
+//     .required('パスワードを入力してください')
+//     .min(8, 'パスワードは8文字以上必要です')
+//     .max(128)
+//     .regex(/[A-Z]/, '大文字を1つ以上含めてください')
+//     .regex(/[a-z]/, '小文字を1つ以上含めてください')
+//     .regex(/[0-9]/, '数字を1つ以上含めてください')
+//     .validate('Password1');
+//
+// Result型の使い方:
+//   if (result.success) {
+//     // result.data は string として扱える
+//   } else {
+//     // result.errors は string[] として扱える
+//   }

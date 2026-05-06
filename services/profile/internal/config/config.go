@@ -24,7 +24,7 @@ func Load(path string) *Config {
 		DBHost:     getEnv("MYSQL_HOST", "localhost"),
 		DBPort:     getEnv("MYSQL_PORT", "3306"),
 		DBName:     os.Getenv("MYSQL_DATABASE"),
-		GRPCPort:   getEnv("GRPC_PORT_PROFILE", "50050"),
+		GRPCPort:   getEnv("GRPC_PORT_PROFILE", "50053"),
 		LogLevel:   os.Getenv("LOG_LEVEL"),
 	}
 }

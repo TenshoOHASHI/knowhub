@@ -71,9 +71,26 @@ export default function KnowledgeGraph() {
 
   // 初回フェッチ
   useEffect(() => {
-    const cancel = fetchGraph();
-    return cancel;
-  }, [fetchGraph]);
+    let cancelled = false;
+
+    getKnowledgeGraph()
+      .then((data) => {
+        if (cancelled) return;
+        // 初期状態は loading=true なので、effect内では同期的にsetStateしない。
+        // 非同期レスポンスが戻ったタイミングでだけ描画状態を更新する。
+        setLoading(false);
+        setGraphData(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // graphData がセットされた後（SVG が DOM にある状態）で D3 描画
   useEffect(() => {

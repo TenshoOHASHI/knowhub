@@ -16,7 +16,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import ConfirmModal from './ConfirmModal';
 
@@ -57,18 +57,18 @@ export function PortfolioManager() {
 
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     getPortfolioItems()
       .then((data) => {
         setItems(data.items || []);
       })
       .catch(() => toast('取得に失敗しました', 'error'))
       .finally(() => setLoading(false));
-  };
+  }, [toast]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const resetForm = () => {
     setEditId(null);

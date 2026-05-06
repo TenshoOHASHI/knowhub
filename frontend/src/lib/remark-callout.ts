@@ -1,5 +1,5 @@
 import type { Plugin } from 'unified';
-import type { Root } from 'mdast';
+import type { Html, Paragraph, Root } from 'mdast';
 
 export type CalloutType = 'note' | 'info' | 'tip' | 'warning' | 'caution' | 'important' | 'warm';
 
@@ -66,23 +66,26 @@ export const remarkCallout: Plugin<[], Root> = function () {
                   const contentNodes: typeof children = [];
 
                   if (restText.trim()) {
-                    contentNodes.push({
+                    const paragraph: Paragraph = {
                       type: 'paragraph',
                       children: [{ type: 'text', value: restText.replace(/^\n/, '') }],
-                    } as any);
+                    };
+                    contentNodes.push(paragraph);
                   }
 
                   contentNodes.push(...children.slice(1));
 
-                  (newChildren as any).push({
+                  const openCallout: Html = {
                     type: 'html',
                     value: `<div class="callout callout-${calloutType}">`,
-                  });
+                  };
+                  newChildren.push(openCallout);
                   newChildren.push(...contentNodes);
-                  (newChildren as any).push({
+                  const closeCallout: Html = {
                     type: 'html',
                     value: '</div>',
-                  });
+                  };
+                  newChildren.push(closeCallout);
                   continue;
                 }
               }

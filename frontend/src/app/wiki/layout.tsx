@@ -1,4 +1,5 @@
 import Sidebar from '@/components/Sidebar';
+import { Suspense } from 'react';
 
 export default function WikiLayout({
   children,
@@ -9,8 +10,12 @@ export default function WikiLayout({
     <>
       <style>{`footer { display: none !important; }`}</style>
       <div className='flex flex-1 overflow-hidden h-full'>
-        <Sidebar />
-        <div className='flex-1 overflow-y-auto'>{children}</div>
+        <Suspense fallback={null}>
+          <Sidebar />
+        </Suspense>
+        <div className='flex-1 overflow-y-auto'>
+          <Suspense fallback={null}>{children}</Suspense>
+        </div>
       </div>
     </>
   );

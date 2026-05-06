@@ -1,12 +1,20 @@
 import type { NextConfig } from 'next';
 
+// Next.js server から Gateway へ接続する内部URLです。
+//
+// local:
+//   GATEWAY_INTERNAL_URL 未設定 -> http://localhost:8080
+//
+// production docker:
+//   docker-compose.prod.yml で GATEWAY_INTERNAL_URL=http://gateway:8080 を渡す
+//   gateway は Docker Compose の service名で、Docker内部DNSで解決されます。
 const gatewayInternalUrl = process.env.GATEWAY_INTERNAL_URL || 'http://localhost:8080';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
   // /api/* を Gateway にプロキシ（リバースプロキシ）
-  // ブラウザは同一オリジン (localhost:3000) にリクエスト → Cookie が自動送信される
-  // Next.js がサーバー側で Gateway (localhost:8080) に転送
+  // Browser は同一originの /api/* に送るため Cookie が自動送信される
+  // Next.js server が Gateway へ server-to-server で転送する
   //
   // Route Handlers (/api/auth/*) は rewrites より優先されるため、
   // ログイン/登録の Cookie セット処理は Route Handlers が担当

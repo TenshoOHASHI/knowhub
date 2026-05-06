@@ -4,8 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 // login/route.ts と同じ理由で Route Handler を経由する
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  const gatewayURL =
+    process.env.GATEWAY_INTERNAL_URL || 'http://localhost:8080';
 
-  const res = await fetch('http://localhost:8080/api/user/register', {
+  // local:
+  //   http://localhost:8080
+  // production docker:
+  //   http://gateway:8080
+  const res = await fetch(`${gatewayURL}/api/user/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

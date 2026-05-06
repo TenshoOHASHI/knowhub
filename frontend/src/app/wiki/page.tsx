@@ -1,6 +1,7 @@
 import WikiClient from '@/components/WikiClient';
 import { getArticles } from '@/lib/api';
 import type { Article } from '@/lib/types';
+import { Suspense } from 'react';
 
 export default async function WikiPage() {
   let articles: Article[] = [];
@@ -24,5 +25,9 @@ export default async function WikiPage() {
     );
   }
 
-  return <WikiClient articles={articles} />;
+  return (
+    <Suspense fallback={null}>
+      <WikiClient articles={articles} />
+    </Suspense>
+  );
 }
