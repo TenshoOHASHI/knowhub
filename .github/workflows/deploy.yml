@@ -187,6 +187,26 @@ jobs:
           # 今回cacheを保存します。
           cache-to: type=gha,mode=max
 
+      - name: Build and push Migrator
+        # DB migration専用imageです。
+        # gooseを組み込んだ小さなGoバイナリと deploy/migrations/*.sql を含みます。
+        # VPSでは `docker compose run --rm migrator up` のように手動実行します。
+        uses: docker/build-push-action@v5
+        with:
+          # リポジトリrootをDocker build contextにします。
+          # migrator imageは services/migrator と deploy/migrations をCOPYします。
+          context: .
+          # DB migration専用Dockerfileです。
+          file: docker/migrator.Dockerfile
+          # build後、GHCRへpushします。
+          push: true
+          # migratorのlatestタグとcommit SHAタグを作ります。
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/migrator:latest,${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/migrator:${{ github.sha }}
+          # 前回cacheを読み込みます。
+          cache-from: type=gha
+          # 今回cacheを保存します。
+          cache-to: type=gha,mode=max
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:

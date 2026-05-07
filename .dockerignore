@@ -16,6 +16,7 @@ doc/
 *.md
 .env
 .env.*
+deploy/.env.local
 !*.example
 services/auth/keys/
 services/*/logs/

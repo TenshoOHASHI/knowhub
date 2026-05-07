@@ -53,7 +53,7 @@ func main() {
 	wikiHandler := handler.NewWikiHandler(wikiConn)
 	wikiHandler.SetAIClient(aiPb.NewAIServiceClient(aiConn))
 	wikiHandler.SetNotifier(notifier.NewSlackNotifier(cfg.SlackWebhookURL))
-	authHandler := handler.NewAuthHandler(authConn)
+	authHandler := handler.NewAuthHandler(authConn, cfg.EnablePublicRegister, cfg.SetupRegisterToken)
 	profileHandler := handler.NewProfileHandle(profileConn)
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
 	aiHandler := handler.NewAIHandler(aiConn)

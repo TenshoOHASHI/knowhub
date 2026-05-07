@@ -2,15 +2,39 @@
 # TenHub バックアップスクリプト
 # S3 / Rclone / ローカルにバックアップ
 
-set -e
+set -euo pipefail
+# set -e:
+#   途中で失敗したら終了します。
+# set -u:
+#   未定義の変数を使ったら終了します。
+#   例: MYSQL_ROOT_PASSWORD が読み込めていない場合に気づけます。
+# set -o pipefail:
+#   `mysqldump | gzip` のようなpipeで、左側のmysqldump失敗も検知できます。
 
 # 設定
+# BACKUP_ROOT:
+#   VPS上でバックアップファイルを保存する親ディレクトリです。
 BACKUP_ROOT="/opt/tenhub/backups"
+
+# DATE:
+#   バックアップごとに重複しないディレクトリ名・ファイル名を作るための日時です。
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="$BACKUP_ROOT/$DATE"
+
+# RETENTION_DAYS:
+#   何日より古いバックアップを削除するかです。
 RETENTION_DAYS=30
 COMPRESSION_LEVEL=6
+
+# COMPOSE_FILE / ENV_FILE:
+#   本番Docker Composeと環境変数ファイルの場所です。
+#   ENV_FILEを読み込むことで MYSQL_ROOT_PASSWORD などを使えるようにします。
 COMPOSE_FILE="${DOCKER_COMPOSE_FILE:-/opt/tenhub/docker-compose.prod.yml}"
+ENV_FILE="${DOCKER_ENV_FILE:-/opt/tenhub/.env.production}"
+
+# UPLOAD_VOLUME_NAME:
+#   gatewayのアップロードファイルを保存するDocker volume名です。
+#   compose project名が変わるとvolume名も変わるため、必要なら実行時に上書きします。
 UPLOAD_VOLUME_NAME="${UPLOAD_VOLUME_NAME:-tenhub-prod_gateway-uploads}"
 
 # S3設定（オプション）
@@ -33,11 +57,33 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
+# .env.production をshell変数として読み込みます。
+# set -a:
+#   読み込んだ変数を子プロセスにも渡せるようにexportします。
+# . "$ENV_FILE":
+#   envファイルを現在のshellに読み込みます。
+# 注意:
+#   .env.production は `KEY=value` 形式で書きます。
+#   valueに空白を含める場合はquoteが必要です。
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    . "$ENV_FILE"
+    set +a
+else
+    log_error "env file is missing: $ENV_FILE"
+    exit 1
+fi
+
 # 通知送信
 send_notification() {
+    # local:
+    #   関数の中だけで使う変数です。
+    #   外側の変数名とぶつかりにくくします。
     local status=$1
     local message=$2
 
+    # [ -n "$SLACK_WEBHOOK_URL" ]:
+    #   文字列が空でなければSlack通知します。
     if [ -n "$SLACK_WEBHOOK_URL" ]; then
         local emoji="✅"
         [ "$status" = "failed" ] && emoji="❌"
@@ -62,8 +108,12 @@ log_info "バックアップを開始します..."
 mkdir -p "$BACKUP_DIR"
 
 # Dockerコンテナ名取得
-DB_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q db 2>/dev/null | head -1)
-REDIS_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q cache 2>/dev/null | head -1)
+# $(...):
+#   コマンド結果を変数へ入れます。
+# docker compose ps -q db:
+#   dbサービスのコンテナIDだけを取得します。
+DB_CONTAINER=$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps -q db 2>/dev/null | head -1)
+REDIS_CONTAINER=$(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" ps -q cache 2>/dev/null | head -1)
 
 if [ -z "$DB_CONTAINER" ]; then
     log_error "データベースコンテナが見つかりません"
@@ -73,6 +123,14 @@ fi
 
 # 1. MySQLバックアップ
 log_info "MySQLバックアップ中..."
+# mysqldump:
+#   MySQL全体をSQLとして出力します。
+# --single-transaction:
+#   InnoDBでロックを抑えて一貫性のあるdumpを取ります。
+# --quick:
+#   大きいテーブルでも一気にメモリへ載せず、行を順に読みます。
+# gzip:
+#   SQLを圧縮してディスク使用量を減らします。
 docker exec "$DB_CONTAINER" mysqldump \
     -u root \
     -p"${MYSQL_ROOT_PASSWORD}" \
@@ -94,6 +152,10 @@ fi
 # 2. Redisバックアップ
 log_info "Redisバックアップ中..."
 if [ -n "$REDIS_CONTAINER" ]; then
+    # BGSAVE:
+    #   Redisにバックグラウンドでdump.rdbを書かせます。
+    # docker cp:
+    #   コンテナ内のdump.rdbをVPS側のバックアップディレクトリへコピーします。
     docker exec "$REDIS_CONTAINER" redis-cli BGSAVE
     docker cp "$REDIS_CONTAINER:/data/dump.rdb" "$BACKUP_DIR/redis.rdb"
     gzip "$BACKUP_DIR/redis.rdb"
@@ -105,6 +167,8 @@ fi
 # 3. アップロードファイルバックアップ
 log_info "アップロードファイルバックアップ中..."
 if docker volume inspect "$UPLOAD_VOLUME_NAME" >/dev/null 2>&1; then
+    # Docker volumeはホストの通常パスから直接扱いづらいため、
+    # 一時的なalpineコンテナにvolumeをreadonly mountしてtarにします。
     docker run --rm \
         -v "$UPLOAD_VOLUME_NAME:/data:ro" \
         -v "$BACKUP_DIR":/backup \
@@ -126,6 +190,9 @@ cp /opt/tenhub/.env.production "$BACKUP_DIR/env.production" 2>/dev/null || true
 # 6. アーカイブ作成
 log_info "バックアップアーカイブ作成中..."
 cd "$BACKUP_ROOT"
+# tar czf:
+#   c=create, z=gzip, f=file指定です。
+#   日時ディレクトリを1つのtar.gzにまとめます。
 tar czf "tenhub_backup_$DATE.tar.gz" "$DATE"
 rm -rf "$DATE"
 
@@ -160,6 +227,8 @@ fi
 
 # 8. 古いバックアップ削除
 log_info "古いバックアップを清理中..."
+# find ... -mtime +30 -delete:
+#   30日より古いバックアップファイルを削除します。
 find "$BACKUP_ROOT" -name "tenhub_backup_*.tar.gz" -mtime +$RETENTION_DAYS -delete
 
 # 9. まとめ

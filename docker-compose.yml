@@ -5,8 +5,8 @@ name: knowhub # オプション
 x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: '10m'
+    max-file: '3'
 
 services:
   db: # サービス名
@@ -31,6 +31,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrator:
+    # gooseを使ってDB migrationを実行する一回実行用コンテナです。
+    # 普段は起動し続けず、必要な時に `docker compose run --rm migrator up` で実行します。
+    build:
+      context: .
+      dockerfile: docker/migrator.Dockerfile
+    logging: *default-logging
+    environment:
+      # migrator内のGoコードが mysql.Config.FormatDSN() で安全にDSNを組み立てます。
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MIGRATION_DIR: /migrations
+    depends_on:
+      db:
+        condition: service_healthy
 
   cache: # サービス名
     container_name: redis
