@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isSecureCookieEnabled } from '../cookie';
 
 // ログイン Route Handler
 // Browser → Next.js Route Handler → Gateway
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
   const response = NextResponse.json({ user: data.user });
   response.cookies.set('token', data.token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureCookieEnabled(),
     sameSite: 'lax',
     maxAge: 86400, // 24時間
     path: '/',

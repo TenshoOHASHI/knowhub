@@ -19,6 +19,49 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
+    # Next.js Route Handler に通すAPIです。
+    # /api/auth/*:
+    #   login/register/logout は Next.js 側で HttpOnly Cookie をセット/削除します。
+    #
+    # /api/ai/agent/stream:
+    #   SSE をリアルタイム転送するため、Next.js の専用 Route Handler を通します。
+    #
+    # /api/changelog:
+    #   frontend image内の Markdown を読む Route Handler です。
+    #
+    # 注意:
+    #   これらは `location /api/` より上に置きます。
+    #   nginx はより具体的な location を優先するためです。
+    location /api/auth/ {
+        proxy_pass http://frontend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/ai/agent/stream {
+        proxy_pass http://frontend:3000;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/changelog {
+        proxy_pass http://frontend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # その他の /api/* は Go gateway に直接流します。
     location /api/ {
         proxy_pass http://gateway:8080/api/;
         proxy_http_version 1.1;
