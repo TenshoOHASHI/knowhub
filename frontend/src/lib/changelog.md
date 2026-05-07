@@ -2,6 +2,7 @@
 - Frontend: AI API が 429 を返した場合、混雑中または未ログイン利用上限の説明をチャット画面に表示
 - Frontend: Retry-After ヘッダーを秒/分/時間に変換して再試行目安を表示
 - Frontend: Agent streaming Route Handler で Cookie / Authorization と RateLimit 関連ヘッダーを Gateway に伝播
+- Frontend: RAG / Agent ヘルプに未ログイン利用制限、外部モデル API Key、API提供元の利用上限に関する説明を追加
 
 ## 2026-05-06 Wiki TOC スクロール修正
 - Frontend: TableOfContents のクリック時に対象見出しが存在する場合だけ smooth scroll し、URL hash も更新
