@@ -8,14 +8,14 @@ export default function ChatPage() {
   const [tab, setTab] = useState<'chat' | 'graph'>('chat');
 
   return (
-    <div className='flex flex-col h-full max-w-5xl mx-auto px-6 py-4'>
+    <div className='flex h-full flex-col px-3 py-3 sm:mx-auto sm:max-w-5xl sm:px-6 sm:py-4'>
       <div className='shrink-0 mb-3'>
-        <div className='flex items-center justify-between mb-1'>
-          <h1 className='text-3xl font-bold'>Chat</h1>
-          <div className='flex gap-1 bg-stone-100 dark:bg-stone-800 rounded-lg p-1'>
+        <div className='mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <h1 className='text-2xl font-bold sm:text-3xl'>Chat</h1>
+          <div className='flex w-full gap-1 rounded-lg bg-stone-100 p-1 dark:bg-stone-800 sm:w-auto'>
             <button
               onClick={() => setTab('chat')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`flex-1 rounded-md px-3 py-1 text-sm transition-colors sm:flex-none ${
                 tab === 'chat'
                   ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'
                   : 'text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'
@@ -25,7 +25,7 @@ export default function ChatPage() {
             </button>
             <button
               onClick={() => setTab('graph')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`flex-1 rounded-md px-3 py-1 text-sm transition-colors sm:flex-none ${
                 tab === 'graph'
                   ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm'
                   : 'text-stone-500 hover:text-stone-700 dark:hover:text-stone-300'

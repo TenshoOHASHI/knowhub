@@ -277,14 +277,14 @@ export default function ChatInterface() {
   return (
     <div className='flex flex-col h-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'>
       {/* モデル選択 + モード切替 + 検索エンジン選択 + API Key 入力 + 履歴削除 */}
-      <div className='flex items-center gap-3 p-3 border-b border-stone-300 dark:border-stone-600'>
+      <div className='flex flex-wrap items-center gap-2 border-b border-stone-300 p-3 dark:border-stone-600 sm:gap-3'>
         <select
           value={chatMode}
           onChange={(e) => {
             setChatMode(e.target.value);
             setShowHelp(false);
           }}
-          className='rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          className='min-w-0 flex-1 basis-36 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 sm:flex-none'
         >
           {CHAT_MODES.map((m) => (
             <option key={m.id} value={m.id}>
@@ -296,7 +296,7 @@ export default function ChatInterface() {
         <select
           value={model}
           onChange={(e) => handleModelChange(e.target.value)}
-          className='rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          className='min-w-0 flex-1 basis-36 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 sm:flex-none'
         >
           {MODELS.map((m) => (
             <option key={m.id} value={m.id}>
@@ -308,7 +308,7 @@ export default function ChatInterface() {
         <select
           value={searchEngine}
           onChange={(e) => setSearchEngine(e.target.value)}
-          className='rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-blue-500'
+          className='min-w-0 flex-1 basis-36 rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 sm:flex-none'
         >
           {SEARCH_ENGINES.map((e) => (
             <option key={e.id} value={e.id}>
@@ -319,7 +319,7 @@ export default function ChatInterface() {
 
         {chatMode === 'agent' && (
           <button
-            className={`flex items-center gap-1 text-sm text-stone-600 dark:text-stone-300 ${enableWebSearch && 'bg-blue-300 rounded-2xl dark:text-stone-800 p-1'}`}
+            className={`flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2 py-1.5 text-sm text-stone-600 dark:text-stone-300 ${enableWebSearch && 'bg-blue-300 dark:text-stone-800'}`}
             type='button'
             // value={enableWebSearch}
             onClick={() => setEnableWebSearch((prev) => !prev)}
@@ -336,7 +336,7 @@ export default function ChatInterface() {
             value={apiKey}
             onChange={(e) => handleKeyChange(e.target.value)}
             placeholder='API Key（タブ閉じると消えます）'
-            className='flex-1 rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='min-w-0 flex-1 basis-full rounded-lg border border-stone-300 bg-white px-3 py-1 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500 sm:basis-64'
           />
         )}
 
@@ -365,7 +365,7 @@ export default function ChatInterface() {
 
       {/* ヘルプパネル（モード別に内容を切り替え） */}
       {showHelp && (
-        <div className='border-b border-stone-300 dark:border-stone-600 bg-stone-50 dark:bg-stone-800/50 p-4 text-sm text-stone-700 dark:text-stone-300'>
+        <div className='thin-scrollbar max-h-[42dvh] overflow-y-auto overscroll-contain border-b border-stone-300 bg-stone-50 p-3 text-sm text-stone-700 dark:border-stone-600 dark:bg-stone-800/50 dark:text-stone-300 sm:max-h-[50vh] sm:p-4'>
           <div className='flex items-center justify-between mb-2'>
             <h3 className='font-semibold text-stone-900 dark:text-stone-100'>
               {chatMode === 'agent' ? 'Agent モード' : 'RAG モード'}の使い方
@@ -533,7 +533,7 @@ export default function ChatInterface() {
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex min-w-0 gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.role === 'assistant' && (
               <div className='shrink-0 w-8 h-8 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center'>
@@ -544,7 +544,7 @@ export default function ChatInterface() {
               </div>
             )}
             <div
-              className={`rounded-lg px-4 py-2 max-w-[80%] text-sm ${
+              className={`min-w-0 max-w-[85%] rounded-lg px-4 py-2 text-sm sm:max-w-[80%] ${
                 msg.role === 'user'
                   ? 'bg-blue-600 text-white'
                   : 'bg-stone-200 dark:bg-stone-700 text-stone-900 dark:text-stone-100'
@@ -649,19 +649,19 @@ export default function ChatInterface() {
       {/* 入力フォーム */}
       <form
         onSubmit={handleSubmit}
-        className='flex gap-2 p-4 border-t border-stone-300 dark:border-stone-600'
+        className='flex gap-2 border-t border-stone-300 p-3 dark:border-stone-600 sm:p-4'
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder='Wikiについて質問してください...'
           disabled={loading}
-          className='flex-1 rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-2 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50'
+          className='min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500'
         />
         <button
           type='submit'
           disabled={loading}
-          className='rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          className='shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
         >
           送信
         </button>
