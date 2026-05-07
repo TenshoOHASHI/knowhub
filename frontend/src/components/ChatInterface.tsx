@@ -266,9 +266,7 @@ export default function ChatInterface() {
         {
           role: 'assistant',
           content:
-            error instanceof Error
-              ? error.message
-              : 'エラーが発生しました。',
+            error instanceof Error ? error.message : 'エラーが発生しました。',
         },
       ]);
     } finally {
@@ -338,7 +336,7 @@ export default function ChatInterface() {
             value={apiKey}
             onChange={(e) => handleKeyChange(e.target.value)}
             placeholder='API Key（タブ閉じると消えます）'
-            className='flex-1 rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1.5 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            className='flex-1 rounded-lg border border-stone-300 dark:border-stone-500 bg-white dark:bg-stone-700 px-3 py-1 text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500'
           />
         )}
 
@@ -383,6 +381,27 @@ export default function ChatInterface() {
           {chatMode === 'agent' ? (
             <div className='space-y-2'>
               <p>AIが自律的にツールを選択・実行して回答を導きます。</p>
+              <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2'>
+                <p className='font-medium text-amber-800 dark:text-amber-300'>
+                  利用制限:
+                </p>
+                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-amber-800 dark:text-amber-200'>
+                  <li>
+                    未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
+                  </li>
+                  <li>
+                    混雑時や利用上限に達した場合は、画面に再試行目安を表示します。
+                  </li>
+                  <li>
+                    外部モデルは入力した API Key
+                    を使います。利用料金・上限は各モデル提供元の設定に依存します。
+                  </li>
+                  <li>
+                    API Key はブラウザの sessionStorage
+                    に一時保存され、タブを閉じると消えます。
+                  </li>
+                </ul>
+              </div>
               <div>
                 <p className='font-medium'>
                   実行モード（モデルにより自動切替）:
@@ -448,6 +467,27 @@ export default function ChatInterface() {
                 質問に対して Wiki 内の関連記事を検索し、その内容をもとに LLM
                 が回答します。
               </p>
+              <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2'>
+                <p className='font-medium text-amber-800 dark:text-amber-300'>
+                  利用制限:
+                </p>
+                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-amber-800 dark:text-amber-200'>
+                  <li>
+                    未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
+                  </li>
+                  <li>
+                    混雑時や利用上限に達した場合は、画面に再試行目安を表示します。
+                  </li>
+                  <li>
+                    Vector / Hybrid / Graph RAG は Embedding や LLM API
+                    を使うため、外部モデル利用時は API Key が必要です。
+                  </li>
+                  <li>
+                    外部 API
+                    の利用料金・上限は各モデル提供元の設定に依存します。
+                  </li>
+                </ul>
+              </div>
               <div>
                 <p className='font-medium'>処理フロー:</p>
                 <ol className='list-decimal ml-4 mt-1 space-y-0.5'>
