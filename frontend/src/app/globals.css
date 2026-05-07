@@ -26,6 +26,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* モバイルヘッダーの横スクロールナビは、見た目を崩さないためスクロールバーを隠す */
+.nav-scrollbar {
+  scrollbar-width: none;
+}
+
+.nav-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* 細いスクロールバー */
 .thin-scrollbar::-webkit-scrollbar {
   width: 4px;
