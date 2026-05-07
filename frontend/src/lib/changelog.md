@@ -1,3 +1,10 @@
+## 2026-05-07 GitHub Actions テスト通知とWorkflow整理
+- Workflow: test.yml の Docker Compose 検証を Git 管理対象の開発用 docker-compose.yml に変更
+- Workflow: CI用ダミー環境変数で compose config の変数展開だけを検証し、本番envファイルは参照しない設計に変更
+- Workflow: test.yml に Slack Notification job を追加し、Go / Frontend / Compose のテスト結果を集約して通知
+- Workflow: Slack通知は SLACK_WEBHOOK_URL Secret が未設定ならskipし、テスト失敗時も通知できるように needs と always() を使用
+- Workflow: deploy.yml は main push / 手動実行で GHCR image build & push のみを担当し、VPS自動デプロイは行わない方針を整理
+
 ## 2026-05-06 AIレート制限のクライアント表示
 - Frontend: AI API が 429 を返した場合、混雑中または未ログイン利用上限の説明をチャット画面に表示
 - Frontend: Retry-After ヘッダーを秒/分/時間に変換して再試行目安を表示

@@ -135,3 +135,120 @@ jobs:
           MYSQL_PASSWORD: ci-app-password
         run: |
           docker compose -f docker-compose.yml config > /dev/null
+
+  # テスト結果だけをSlackへ通知します。
+  #
+  # 重要:
+  #   Webhook URL は workflow に直接書きません。
+  #   GitHub repository の Settings > Secrets and variables > Actions に
+  #   SLACK_WEBHOOK_URL という名前で登録します。
+  #
+  # 安全性:
+  #   - Secret が未設定なら通知せず、そのまま成功として終了します。
+  #   - Slack通知に失敗しても、テスト結果そのものは変えません。
+  #   - PR / push / workflow_call のどれでも、テストjob完了後に結果をまとめます。
+  #
+  # 文法:
+  #   needs:
+  #     このjobが待つjobを指定します。
+  #     ここでは Go / Frontend / Compose の3つのテスト結果を待ちます。
+  #
+  #   if: always()
+  #     前のjobが失敗しても、このjobを実行する指定です。
+  #     これがないと、テスト失敗時に通知job自体がskipされ、Slackへ失敗通知できません。
+  #
+  #   steps:
+  #     jobの中で実行する処理の一覧です。
+  #     ここではSlackへPOSTする1ステップだけを定義しています。
+  slack-notification:
+    name: Slack Notification
+    runs-on: ubuntu-latest
+
+    # needs:
+    #   この通知jobが依存するjobです。
+    #   3つのjobが終わるまで待ち、結果を needs.<job-id>.result で参照します。
+    needs:
+      - go-test
+      - frontend-test
+      - docker-compose-validation
+
+    # if: always():
+    #   依存jobが成功・失敗・キャンセルのどれでも、このjobを実行します。
+    #   Slack通知は「失敗したことを知らせる」用途もあるため、always() が必要です。
+    if: always()
+
+    # steps:
+    #   slack-notification job内で実際に実行する処理です。
+    #   GitHub Actionsでは、job -> steps -> step の順に処理を書きます。
+    steps:
+      - name: Send test result to Slack
+        env:
+          # GitHub Secrets から読むため、workflow上には実際のURLは表示されません。
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+          # needs.<job-id>.result で、各テストjobの結果を取得します。
+          # 値は success / failure / cancelled / skipped などです。
+          GO_RESULT: ${{ needs.go-test.result }}
+          FRONTEND_RESULT: ${{ needs.frontend-test.result }}
+          COMPOSE_RESULT: ${{ needs.docker-compose-validation.result }}
+
+          # Slack本文に表示するためのGitHub Actions実行情報です。
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL is not set. Skip Slack notification."
+            exit 0
+          fi
+
+          STATUS="success"
+          LABEL="[OK]"
+          if [ "$GO_RESULT" != "success" ] || [ "$FRONTEND_RESULT" != "success" ] || [ "$COMPOSE_RESULT" != "success" ]; then
+            STATUS="failed"
+            LABEL="[FAILED]"
+          fi
+
+          PAYLOAD=$(jq -n \
+            --arg text "$LABEL Test $STATUS: $GITHUB_REPOSITORY ($GITHUB_REF_NAME)" \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg event "$GITHUB_EVENT_NAME" \
+            --arg actor "$GITHUB_ACTOR" \
+            --arg go "$GO_RESULT" \
+            --arg frontend "$FRONTEND_RESULT" \
+            --arg compose "$COMPOSE_RESULT" \
+            --arg url "$WORKFLOW_URL" \
+            '{
+              text: $text,
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: ("*" + $text + "*")
+                  }
+                },
+                {
+                  type: "section",
+                  fields: [
+                    { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
+                    { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
+                    { type: "mrkdwn", text: ("*Event:*\n" + $event) },
+                    { type: "mrkdwn", text: ("*Actor:*\n" + $actor) },
+                    { type: "mrkdwn", text: ("*Go:*\n" + $go) },
+                    { type: "mrkdwn", text: ("*Frontend:*\n" + $frontend) },
+                    { type: "mrkdwn", text: ("*Compose:*\n" + $compose) }
+                  ]
+                },
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: ("<" + $url + "|Open GitHub Actions run>")
+                  }
+                }
+              ]
+            }')
+
+          if ! curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"; then
+            echo "Slack notification failed, but test result is unchanged."
+          fi
