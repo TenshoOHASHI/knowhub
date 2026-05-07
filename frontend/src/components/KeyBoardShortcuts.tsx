@@ -14,7 +14,12 @@ export default function KeyboardShortcuts() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 768px)');
+
     const handleKeyDown = (e: KeyboardEvent) => {
+      // モバイルではショートカットUIを非表示にするため、キー操作も無効にする。
+      if (!desktopQuery.matches) return;
+
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -46,7 +51,7 @@ export default function KeyboardShortcuts() {
   const isVisible = showHelp;
 
   return (
-    <div className='group fixed bottom-1 right-4'>
+    <div className='group fixed bottom-1 right-4 hidden md:block'>
       <button className='border border-black dark:border-stone-600 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-stone-800'>
         <FiCommand />
       </button>
