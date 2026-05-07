@@ -1,10 +1,20 @@
 name: knowhub # オプション
 
+# Dockerの標準ログ（docker logs で見るログ）の肥大化を防ぐ設定です。
+# 開発環境でも長時間起動するとログが増えるため、1コンテナ最大約30MBに制限します。
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db: # サービス名
     container_name: mysql
     image: mysql:8.0 # キーと値
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    # Docker標準ログの肥大化防止です。共通設定 x-logging を参照します。
+    logging: *default-logging
     ports:
       - '3306:3306' # リスト形式
     environment: # 環境変数（セクション）
@@ -25,6 +35,8 @@ services:
   cache: # サービス名
     container_name: redis
     image: redis:7 #
+    # Redisの標準出力ログにもサイズ上限を付けます。
+    logging: *default-logging
     ports:
       - '6379:6379'
 
@@ -37,6 +49,8 @@ services:
   searxng:
     container_name: searxng
     image: searxng/searxng:latest
+    # SearXNGのアクセス/エラーログが増えすぎないようにします。
+    logging: *default-logging
     ports:
       - '8888:8080'
     volumes:
