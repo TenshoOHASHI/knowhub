@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isSecureCookieEnabled } from '../cookie';
 
 // ユーザー登録 Route Handler
 // login/route.ts と同じ理由で Route Handler を経由する
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   const response = NextResponse.json({ user: data.user });
   response.cookies.set('token', data.token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureCookieEnabled(),
     sameSite: 'lax',
     maxAge: 86400,
     path: '/',
