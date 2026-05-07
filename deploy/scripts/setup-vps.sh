@@ -1,4 +1,12 @@
 #!/bin/bash
+# このスクリプトは現在使いません。
+# 理由:
+#   SSH、Firewall、Docker、証明書、cronを一気に変更すると、
+#   途中で失敗した時にVPSへ入れなくなるリスクが高いためです。
+#
+# 現在の方針:
+#   doc/lighthouse-setup.md を見ながら、手順を1つずつ実行します。
+#   初回構築を安全に進めるため、ここでは即終了します。
 echo "This legacy all-in-one setup script is deprecated."
 echo "Use doc/lighthouse-setup.md and step-by-step commands instead."
 exit 1

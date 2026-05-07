@@ -11,14 +11,25 @@ export async function POST(req: NextRequest) {
   //   http://localhost:8080
   // production docker:
   //   http://gateway:8080
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // 本番初回登録用の管理header。
+  // ブラウザ/CLIから受け取った値をgatewayへ転送し、gateway側で照合する。
+  const setupToken = req.headers.get('X-Setup-Token');
+  if (setupToken) {
+    headers['X-Setup-Token'] = setupToken;
+  }
+
   const res = await fetch(`${gatewayURL}/api/user/register`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    return NextResponse.json({ error: 'register failed' }, { status: 400 });
+    return NextResponse.json({ error: 'register failed' }, { status: res.status });
   }
 
   const data = await res.json();

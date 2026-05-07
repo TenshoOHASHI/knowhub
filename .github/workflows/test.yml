@@ -68,6 +68,12 @@ jobs:
         working-directory: services/gateway
         run: go test -v -race -coverprofile=coverage.out ./...
 
+      # DB migration専用の小さなGoプログラムです。
+      # goose / MySQL DSN生成まわりが壊れていないか、CIでcompile確認します。
+      - name: Go Test - Migrator
+        working-directory: services/migrator
+        run: go test -v -race -coverprofile=coverage.out ./...
+
   # Frontendの型チェック、lint、build確認です。
   # production imageを作る前に、Next.jsがbuildできる状態か確認します。
   frontend-test:

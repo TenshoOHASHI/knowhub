@@ -30,6 +30,10 @@ type Config struct {
 	// Slack
 	SlackWebhookURL string
 
+	// Registration
+	EnablePublicRegister bool
+	SetupRegisterToken   string
+
 	// AI rate limit
 	AIAnonMaxConcurrent int
 	AIAnonDailyLimit    int
@@ -38,20 +42,22 @@ type Config struct {
 func Load(envPath string) *Config {
 	godotenv.Load(envPath)
 	return &Config{
-		AllowedOrigin:       getEnv("ALLOWED_ORIGIN", "http://localhost:3000"),
-		AllowedMethods:      getEnv("ALLOWED_METHODS", "GET,POST,PUT,DELETE,OPTIONS"),
-		AllowedHeaders:      getEnv("ALLOWED_HEADERS", "Content-Type,Authorization"),
-		AllowedCredential:   getEnv("ALLOWED_CREDENTIALS", "true"),
-		AuthAddr:            getEnv("AUTH_ADDR", "localhost:50051"),
-		WikiAddr:            getEnv("WIKI_ADDR", "localhost:50052"),
-		ProfileAddr:         getEnv("PROFILE_ADDR", "localhost:50053"),
-		AIAddr:              getEnv("AI_ADDR", "localhost:50054"),
-		Port:                getEnv("GATEWAY_PORT", "8080"),
-		LogLevel:            getEnv("LOG_LEVEL", "info"),
-		UploadDir:           getEnv("UPLOAD_DIR", "./uploads"),
-		SlackWebhookURL:     getEnv("SLACK_WEBHOOK_URL", ""),
-		AIAnonMaxConcurrent: getEnvInt("AI_ANON_MAX_CONCURRENT", 1),
-		AIAnonDailyLimit:    getEnvInt("AI_ANON_DAILY_LIMIT", 5),
+		AllowedOrigin:        getEnv("ALLOWED_ORIGIN", "http://localhost:3000"),
+		AllowedMethods:       getEnv("ALLOWED_METHODS", "GET,POST,PUT,DELETE,OPTIONS"),
+		AllowedHeaders:       getEnv("ALLOWED_HEADERS", "Content-Type,Authorization"),
+		AllowedCredential:    getEnv("ALLOWED_CREDENTIALS", "true"),
+		AuthAddr:             getEnv("AUTH_ADDR", "localhost:50051"),
+		WikiAddr:             getEnv("WIKI_ADDR", "localhost:50052"),
+		ProfileAddr:          getEnv("PROFILE_ADDR", "localhost:50053"),
+		AIAddr:               getEnv("AI_ADDR", "localhost:50054"),
+		Port:                 getEnv("GATEWAY_PORT", "8080"),
+		LogLevel:             getEnv("LOG_LEVEL", "info"),
+		UploadDir:            getEnv("UPLOAD_DIR", "./uploads"),
+		SlackWebhookURL:      getEnv("SLACK_WEBHOOK_URL", ""),
+		EnablePublicRegister: getEnvBool("ENABLE_PUBLIC_REGISTER", true),
+		SetupRegisterToken:   getEnv("SETUP_REGISTER_TOKEN", ""),
+		AIAnonMaxConcurrent:  getEnvInt("AI_ANON_MAX_CONCURRENT", 1),
+		AIAnonDailyLimit:     getEnvInt("AI_ANON_DAILY_LIMIT", 5),
 	}
 }
 
@@ -67,6 +73,16 @@ func getEnvInt(key string, fallback int) int {
 		n, err := strconv.Atoi(v)
 		if err == nil && n >= 0 {
 			return n
+		}
+	}
+	return fallback
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	if v := os.Getenv(key); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err == nil {
+			return b
 		}
 	}
 	return fallback

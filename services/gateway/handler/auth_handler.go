@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -17,12 +18,16 @@ var (
 )
 
 type AuthHandler struct {
-	client pb.AuthServiceClient
+	client               pb.AuthServiceClient
+	enablePublicRegister bool
+	setupRegisterToken   string
 }
 
-func NewAuthHandler(conn *grpc.ClientConn) *AuthHandler {
+func NewAuthHandler(conn *grpc.ClientConn, enablePublicRegister bool, setupRegisterToken string) *AuthHandler {
 	return &AuthHandler{
-		client: pb.NewAuthServiceClient(conn),
+		client:               pb.NewAuthServiceClient(conn),
+		enablePublicRegister: enablePublicRegister,
+		setupRegisterToken:   setupRegisterToken,
 	}
 }
 
@@ -38,6 +43,14 @@ func NewAuthHandler(conn *grpc.ClientConn) *AuthHandler {
 // @Failure      500  {string}  string  "internal server error"
 // @Router       /api/user/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	// 本番では誰でも新規ユーザー登録できる状態にしない。
+	// ENABLE_PUBLIC_REGISTER=false の場合は、初回セットアップ用tokenを要求する。
+	if !h.allowRegister(r) {
+		slog.Warn("register request rejected", "remote_addr", r.RemoteAddr)
+		http.Error(w, "registration is disabled", http.StatusForbidden)
+		return
+	}
+
 	// ここでrequiredにする必要ある？
 	// あとメールアドレスの型チェックとかも、ドメインでするべきですかね?
 	// パスワードの長さとか
@@ -82,6 +95,25 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		"user":  resp.User,
 		"token": resp.Token, // Route Handler 用: body からも token を返す
 	})
+}
+
+func (h *AuthHandler) allowRegister(r *http.Request) bool {
+	// 開発環境向け。trueなら従来通りtokenなしで登録を許可する。
+	if h.enablePublicRegister {
+		return true
+	}
+	// 本番でtoken未設定なら、登録APIを完全に閉じる。
+	if h.setupRegisterToken == "" {
+		return false
+	}
+
+	got := r.Header.Get("X-Setup-Token")
+	if got == "" {
+		return false
+	}
+
+	// token比較は処理時間の差から値を推測されにくいConstantTimeCompareを使う。
+	return subtle.ConstantTimeCompare([]byte(got), []byte(h.setupRegisterToken)) == 1
 }
 
 // Login ログイン
