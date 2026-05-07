@@ -20,7 +20,7 @@ export default function Navbar() {
   const links = isLoggedIn ? NAV_LINKS_WITH_AUTH : NAV_LINKS;
 
   return (
-    <nav className='border-b border-zinc-300 bg-zinc-100/95 shadow-sm backdrop-blur dark:border-stone-800 dark:bg-stone-800/20'>
+    <nav className='border-b border-zinc-300 bg-zinc-100/95 shadow-sm backdrop-blur dark:border-stone-800 dark:bg-stone-950/50'>
       <div className='flex w-full flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4 lg:px-8'>
         <div className='flex min-w-0 items-center justify-between gap-2 sm:justify-start'>
           <div className='flex min-w-0 items-center gap-2'>
