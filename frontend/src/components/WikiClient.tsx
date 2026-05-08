@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FiSearch, FiCalendar, FiFileText, FiLock } from 'react-icons/fi';
+import { FiSearch, FiCalendar, FiFileText, FiLock, FiX } from 'react-icons/fi';
 import type { Article } from '@/lib/types';
 import { motion } from 'motion/react';
 
@@ -31,9 +31,24 @@ function stripMarkdown(md: string): string {
 
 export default function WikiClient({ articles }: { articles: Article[] }) {
   const [query, setQuery] = useState('');
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [searchDialogQuery, setSearchDialogQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
   const searchParams = useSearchParams();
   const categoryId = searchParams.get('category');
 
+  // ダイアログ用のフィルタリング
+  const dialogFiltered = articles.filter((a) => {
+    const q = searchDialogQuery.toLowerCase();
+    return (
+      a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q)
+    );
+  });
+
+  // 既存の検索バー用のフィルタリング
   const filtered = articles.filter((a) => {
     const q = query.toLowerCase();
     const matchesQuery =
@@ -42,19 +57,104 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
     return matchesQuery && matchesCategory;
   });
 
+  // 「/」キーで検索ダイアログを開く
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 入力欄にフォーカスがある場合は無視
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // 「/」キーで検索ダイアログを開く
+      if (e.key === '/') {
+        e.preventDefault();
+        setSearchDialogOpen(true);
+        setSearchDialogQuery('');
+        setSelectedIndex(0);
+      }
+
+      // Cmd/Ctrl + K でも開く
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchDialogOpen(true);
+        setSearchDialogQuery('');
+        setSelectedIndex(0);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // ダイアログ内のキーボードナビゲーション
+  useEffect(() => {
+    if (!searchDialogOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSearchDialogOpen(false);
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.min(i + 1, dialogFiltered.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+      } else if (e.key === 'Enter' && dialogFiltered.length > 0) {
+        e.preventDefault();
+        const selected = dialogFiltered[selectedIndex];
+        if (selected) {
+          window.location.href = `/wiki/${selected.id}`;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [searchDialogOpen, dialogFiltered, selectedIndex]);
+
+  // ダイアログが開いたときにフォーカス
+  useEffect(() => {
+    if (searchDialogOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchDialogOpen]);
+
+  // 選択項目がスクロール範囲外の場合はスクロール
+  useEffect(() => {
+    if (listRef.current && dialogFiltered.length > 0) {
+      const items = listRef.current.querySelectorAll('[data-index]');
+      const selectedEl = items[selectedIndex] as HTMLElement;
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [selectedIndex, dialogFiltered.length]);
+
   return (
-    <div className='max-w-4xl mx-auto p-6'>
-      {/* 検索バー */}
-      <div className='relative mb-6'>
-        <FiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' />
-        <input
-          type='text'
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder='記事を検索...'
-          className='w-full border border-black dark:border-stone-600 rounded-lg pl-10 pr-4 py-2 bg-transparent'
-        />
-      </div>
+    <>
+      <div className='max-w-4xl mx-auto p-6'>
+        {/* 検索バー */}
+        <div className='relative mb-6'>
+          <FiSearch className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' />
+          <input
+            type='text'
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder='記事を検索...'
+            className='w-full border border-black dark:border-stone-600 rounded-lg pl-10 pr-16 py-2 bg-transparent'
+          />
+          <span className='absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 select-none'>
+            <kbd className='px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 font-mono'>/</kbd>
+          </span>
+        </div>
 
       <h1 className='text-4xl font-bold mb-6'>
         <span className='inline-block border-b-2 border-red-500/40 pb-1'>
@@ -118,7 +218,127 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
             </div>
           </Link>
         ))}
+        </div>
       </div>
-    </div>
+
+      {/* クイック検索ダイアログ */}
+      {searchDialogOpen && (
+        <div
+          className='fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-start justify-center pt-[20vh] p-4'
+          onClick={() => setSearchDialogOpen(false)}
+        >
+          <div
+            className='bg-white dark:bg-stone-900 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[60vh]'
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 検索入力欄 */}
+            <div className='flex items-center gap-3 px-4 py-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50'>
+              <FiSearch className='text-stone-400 shrink-0' />
+              <input
+                ref={searchInputRef}
+                type='text'
+                value={searchDialogQuery}
+                onChange={(e) => {
+                  setSearchDialogQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                placeholder='記事を検索... (↑↓で選択、Enterで開く)'
+                className='flex-1 bg-transparent border-none outline-none text-stone-900 dark:text-stone-100 placeholder-stone-400'
+              />
+              <button
+                onClick={() => setSearchDialogOpen(false)}
+                className='text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors p-1 rounded hover:bg-stone-200 dark:hover:bg-stone-700'
+                title='閉じる (ESC)'
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            {/* 記事リスト */}
+            <div ref={listRef} className='flex-1 overflow-y-auto thin-scrollbar'>
+              {dialogFiltered.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-12 text-stone-400'>
+                  <FiFileText size={40} className='mb-2' />
+                  <p>
+                    {searchDialogQuery
+                      ? '一致する記事が見つかりません'
+                      : '記事が存在しません'}
+                  </p>
+                </div>
+              ) : (
+                <div className='py-1'>
+                  {dialogFiltered.map((article, index) => (
+                    <Link
+                      key={article.id}
+                      href={`/wiki/${article.id}`}
+                      data-index={index}
+                      onClick={() => setSearchDialogOpen(false)}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      className={`block w-full text-left px-4 py-3 border-l-2 transition-colors ${
+                        index === selectedIndex
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+                          : 'bg-transparent border-transparent hover:bg-stone-50 dark:hover:bg-stone-800/30'
+                      }`}
+                    >
+                      <div className='flex items-start gap-3'>
+                        <div className='flex-1 min-w-0'>
+                          <div className='flex items-center gap-2 mb-1'>
+                            {article.visibility === 'locked' && (
+                              <FiLock
+                                size={12}
+                                className='text-stone-400 shrink-0'
+                              />
+                            )}
+                            <h3
+                              className={`font-medium truncate ${
+                                index === selectedIndex
+                                  ? 'text-blue-700 dark:text-blue-300'
+                                  : 'text-stone-900 dark:text-stone-100'
+                              }`}
+                            >
+                              {article.title}
+                            </h3>
+                          </div>
+                          <p className='text-xs text-stone-500 dark:text-stone-400 line-clamp-1'>
+                            {article.visibility === 'locked'
+                              ? 'この記事は限定公開です'
+                              : stripMarkdown(article.content).slice(0, 100)}
+                          </p>
+                          <div className='flex items-center gap-1.5 mt-1.5 text-xs text-stone-400 dark:text-stone-500'>
+                            <FiCalendar size={10} />
+                            <span>
+                              {article.created_at
+                                ? new Date(
+                                    article.created_at.seconds * 1000,
+                                  ).toLocaleDateString('ja-JP')
+                                : ''}
+                            </span>
+                          </div>
+                        </div>
+                        {index === selectedIndex && (
+                          <span className='text-xs text-stone-400 dark:text-stone-500 self-center'>
+                            Enter
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* フッター */}
+            <div className='px-4 py-2 border-t border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 text-xs text-stone-500 dark:text-stone-400 flex items-center justify-between'>
+              <span>{dialogFiltered.length} 件の記事</span>
+              <div className='flex gap-3'>
+                <span>↑↓ 選択</span>
+                <span>Enter 開く</span>
+                <span>ESC 閉じる</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

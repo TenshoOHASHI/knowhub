@@ -69,7 +69,7 @@ func (p *GeminiProvider) Chat(ctx context.Context, messages []Message) (string, 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		slog.Error("Gemini error", "status", resp.StatusCode, "body", string(respBody))
-		return "", fmt.Errorf("Gemini returned status %d", resp.StatusCode)
+		return "", NewHTTPError(resp.StatusCode, string(respBody))
 	}
 
 	var result chatCompletionResponse

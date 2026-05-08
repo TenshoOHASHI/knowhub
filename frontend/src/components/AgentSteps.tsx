@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { FaChevronDown, FaChevronRight, FaSearch, FaBookOpen, FaGlobe, FaList } from 'react-icons/fa';
+import {
+  FaChevronDown,
+  FaChevronRight,
+  FaSearch,
+  FaBookOpen,
+  FaGlobe,
+  FaList,
+} from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
 import type { AgentStep, AgentSource } from '@/lib/api';
 
@@ -11,12 +18,37 @@ interface AgentStepsProps {
 }
 
 // ツール名の表示用マッピング
-const toolMeta: Record<string, { label: string; color: string; icon: typeof FaSearch }> = {
-  search_wiki: { label: 'Wiki検索', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', icon: FaSearch },
-  read_article: { label: '記事取得', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300', icon: FaBookOpen },
-  list_articles: { label: '記事一覧', color: 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300', icon: FaList },
-  web_search: { label: 'Web検索', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300', icon: FaGlobe },
-  read_url: { label: 'URL取得', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300', icon: FaGlobe },
+const toolMeta: Record<
+  string,
+  { label: string; color: string; icon: typeof FaSearch }
+> = {
+  search_wiki: {
+    label: 'Wiki検索',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    icon: FaSearch,
+  },
+  read_article: {
+    label: '記事取得',
+    color:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300',
+    icon: FaBookOpen,
+  },
+  list_articles: {
+    label: '記事一覧',
+    color: 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300',
+    icon: FaList,
+  },
+  web_search: {
+    label: 'Web検索',
+    color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+    icon: FaGlobe,
+  },
+  read_url: {
+    label: 'URL取得',
+    color:
+      'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    icon: FaGlobe,
+  },
 };
 
 export default function AgentSteps({ steps, sources }: AgentStepsProps) {
@@ -55,7 +87,9 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
                     #{i + 1}
                   </span>
                   {meta ? (
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${meta.color}`}>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${meta.color}`}
+                    >
                       <Icon size={10} />
                       {meta.label}
                     </span>
@@ -75,7 +109,7 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
 
                 {/* 入力 */}
                 {step.action_input && (
-                  <code className='block bg-stone-100 dark:bg-stone-700 rounded px-2 py-1 text-[11px] break-all text-stone-700 dark:text-stone-300'>
+                  <code className='block bg-emerald-100/50 dark:bg-emerald-900/30 rounded px-2 py-1 text-[11px] break-all text-stone-700 dark:text-stone-300'>
                     {step.action_input}
                   </code>
                 )}
@@ -90,7 +124,9 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
                         </div>
                         <button
                           type='button'
-                          onClick={() => setOpenObs((prev) => ({ ...prev, [i]: true }))}
+                          onClick={() =>
+                            setOpenObs((prev) => ({ ...prev, [i]: true }))
+                          }
                           className='text-blue-500 hover:text-blue-400 text-[10px]'
                         >
                           もっと見る
@@ -104,7 +140,9 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
                         {isObsLong && (
                           <button
                             type='button'
-                            onClick={() => setOpenObs((prev) => ({ ...prev, [i]: false }))}
+                            onClick={() =>
+                              setOpenObs((prev) => ({ ...prev, [i]: false }))
+                            }
                             className='text-blue-500 hover:text-blue-400 text-[10px]'
                           >
                             閉じる
@@ -129,16 +167,21 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
                     {s.article_id ? (
                       <a
                         href={`/wiki/${s.article_id}`}
-                        className='inline-block px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-300 transition-colors'
+                        className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-300 transition-colors'
                       >
                         {s.title || s.article_id}
+                        {s.relevance_score !== undefined && (
+                          <span className='text-[9px] opacity-60'>
+                            {Math.round(s.relevance_score * 100)}%
+                          </span>
+                        )}
                       </a>
                     ) : s.url ? (
                       <a
                         href={s.url}
                         target='_blank'
                         rel='noopener noreferrer'
-                        className='inline-block px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-amber-100 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-300 transition-colors'
+                        className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-amber-100 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-300 transition-colors'
                       >
                         {(() => {
                           try {
@@ -147,6 +190,11 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
                             return s.url;
                           }
                         })()}
+                        {s.relevance_score !== undefined && (
+                          <span className='text-[9px] opacity-60'>
+                            {Math.round(s.relevance_score * 100)}%
+                          </span>
+                        )}
                       </a>
                     ) : null}
                   </span>

@@ -1,3 +1,28 @@
+## 2026-05-08 Agent UI改善 + 補足情報制御 + 関連度スコア表示 + キャンセル機能
+- Frontend: AgentSteps に入力コードブロック背景に薄い緑色適用
+- Frontend: ChatInterface ヘルプ「利用可能ツール」→「内部ツール」に変更（AIエージェントが使用する内部ツールであることを明記）
+- Frontend: 内部ツールに左側の薄い緑色ボーダー追加（各ツールアイテム）
+- Frontend: 利用制限に黄色い下線追加（border-b-2 border-amber-400）
+- Frontend: AgentSource に relevance_score フィールド追加（関連度スコア表示）
+- Frontend: ソースリンクに関連度スコアをパーセンテージで表示（例: 85%）
+- Frontend: ChatInterface にキャンセルボタン追加（loading時に右上×アイコン表示）
+- Frontend: api.ts に AbortSignal パラメータ追加（askWithAgentStream）
+- Proto: AgentSource に relevance_score フィールド追加（double type）
+- Backend: AI handler で RelevanceScore をマッピング（AskQuestion/AskWithAgent/AskWithAgentStream）
+- Backend: agent.go AgentSourceResult に RelevanceScore フィールド追加
+- Backend: agent.go extractTitleFromObservation 関数追加（read_article の Observation からタイトル抽出）
+- Backend: agent.go search_wiki の observation からスコアを抽出（正規表現: スコア: [0-9.]+）
+- Backend: agent.go プロンプト修正（Web検索ONで補足あり、OFFで検索モード案内）
+- Backend: agent.go RunPipeline で記事なしの場合にLLMを呼ばずに直接回答（早期リターン）
+- Backend: agent.go pipelineプロンプト強化（【最重要ルール】で記事なし回答を強制）
+- Backend: tool_search_wiki.go に閾値フィルタ追加（ragSourceThreshold 関数）
+- Backend: tool_search_wiki.go で検索結果にスコアを含める（スコア: XX.XX% 形式）
+- Backend: ai.go filterRAGResults 関数追加（閾値フィルタで低スコア記事を除外）
+- Backend: ai.go ragSourceThreshold 関数追加（検索エンジンごとの閾値: vector 0.7, hybrid 0.5, bm25 0.5, tfidf 0.08, graph 1.0）
+- Backend: ai.go answerIndicatesNoRelevantContext 関数追加（LLM回答が「記事なし」か判定してソースを空にする）
+- Backend: ai.go RAGプロンプト修正（記事なしの場合は補足情報なしで「検索モードを使用してください」案内）
+- Backend: deepseek.go エラーハンドリング強化（デコード失敗時にボディプレビューをログ出力）
+
 ## 2026-05-07 GitHub Actions テスト通知とWorkflow整理
 - Workflow: test.yml の Docker Compose 検証を Git 管理対象の開発用 docker-compose.yml に変更
 - Workflow: CI用ダミー環境変数で compose config の変数展開だけを検証し、本番envファイルは参照しない設計に変更
@@ -266,3 +291,17 @@
 - サイドバー追加（カテゴリ一覧）
 - 記事検索バー
 - 戻るボタン（記事詳細ページ）
+
+## 2026-04-20 プロジェクト初期セットアップ + gRPCマイクロサービス構築
+- Proto: wiki.proto 定義追加（Article / Category / Create/Update/List/Get/Delete RPC）
+- Proto: auth.proto 定義追加（User / Register / Login / VerifyToken RPC）
+- Proto: Go コード生成（protoc-gen-go + protoc-gen-go-grpc）
+- Backend: wiki service 実装（CRUD handlers / gRPC server / Dockerfile）
+- Backend: auth service 実装（JWT RS256 / bcrypt / RSA鍵生成 / gRPC server）
+- Backend: gateway 実装（REST to gRPC routing / http.ServeMux / middleware）
+- Backend: CQRS 実装（wiki service に Redis read model / write model 分離）
+- Backend: repository パターン実装（SQLite / database package）
+- Backend: profile model / repository / service / gRPC handlers 実装
+- Backend: wiki service ユニットテスト（mock repository / model / handler）
+- Deploy: docker-compose.yml に全サービス追加（wiki / auth / profile / gateway / redis）
+- Deploy: Makefile に proto ターゲット追加（protoc コマンド）

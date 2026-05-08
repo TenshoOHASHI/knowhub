@@ -19,6 +19,7 @@ async function buildAIErrorMessage(
   // res.headers["Retry-After"] = "30" | "3600" | ...
   // res.body = "too many anonymous AI requests; please try again later"
   //         or "anonymous AI daily limit exceeded"
+  //         or APIプロバイダーからのJSONエラー
   //
   // 出力例:
   // "現在、未ログインユーザーのAI処理が混み合っています。30秒後に再度お試しください。"
@@ -30,6 +31,26 @@ async function buildAIErrorMessage(
     body = '';
   }
 
+  // APIプロバイダーからのJSONエラーを解析
+  if (body) {
+    try {
+      const jsonBody = JSON.parse(body);
+      // 配列形式のエラー（Geminiなど）
+      const errors = Array.isArray(jsonBody) ? jsonBody : [jsonBody];
+      for (const err of errors) {
+        if (err.error?.message) {
+          return `APIエラー: ${err.error.message}`;
+        }
+      }
+    } catch {
+      // JSON解析エラーは無視して続行
+    }
+  }
+
+  if (res.status === 401) {
+    return 'APIキーが無効です。確認してください。';
+  }
+
   if (res.status === 429) {
     const retryText = retryAfter
       ? `${formatRetryAfter(retryAfter)}後に再度お試しください。`
@@ -37,6 +58,10 @@ async function buildAIErrorMessage(
 
     if (body.toLowerCase().includes('daily limit')) {
       return `未ログイン状態での本日のAI利用上限に達しました。ログインするか、${retryText}`;
+    }
+
+    if (body.toLowerCase().includes('quota')) {
+      return `APIの利用上限に達しました。${retryText}`;
     }
 
     return `現在、未ログインユーザーのAI処理が混み合っています。${retryText}`;
@@ -246,6 +271,7 @@ export async function uploadImage(file: File): Promise<string> {
 export interface AskSource {
   article_id: string;
   title: string;
+  relevance_score?: number;
 }
 
 // model: バックエンドでプロバイダーを動的選択
@@ -282,6 +308,7 @@ export interface AgentSource {
   article_id?: string;
   title?: string;
   url?: string;
+  relevance_score?: number;
 }
 
 export interface ChatHistoryEntry {
@@ -393,6 +420,7 @@ export async function askWithAgentStream(
   enableWebSearch: boolean,
   history: ChatHistoryEntry[],
   callbacks: AgentStreamCallbacks,
+  signal?: AbortSignal,
 ): Promise<void> {
   // --- Step 1: HTTPリクエスト送信 ---
   // 通常のfetchと同じだが、サーバーは "text/event-stream" で応答するため
@@ -408,6 +436,7 @@ export async function askWithAgentStream(
       enable_web_search: enableWebSearch,
       history: JSON.stringify(history),
     }),
+    signal,
   });
 
   if (!res.ok) {

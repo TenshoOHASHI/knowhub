@@ -29,29 +29,34 @@ export default function EditorPreview({
 
   return (
     <>
-      <div className='flex'>
-        {/* エディタ + プレビュー */}
-        <div className='flex-1 grid grid-cols-2 gap-4'>
-          <div>
-            <label className='block text-sm font-medium mb-1'>
-              本文（Markdown）
-            </label>
+      {/* エディタ + プレビュー */}
+      <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm overflow-hidden'>
+        <div className='grid grid-cols-2 divide-x divide-stone-200 dark:divide-stone-700'>
+          {/* エディタ */}
+          <div className='p-4'>
+            <div className='flex items-center justify-between mb-2'>
+              <label className='block text-sm font-semibold text-stone-900 dark:text-stone-100'>
+                本文（Markdown）
+              </label>
+            </div>
             <textarea
               name='content'
               value={content}
               onChange={(e) => onContentChange(e.target.value)}
-              className='w-full border border-black dark:border-stone-600 rounded-lg p-2 h-80 bg-transparent font-mono text-sm thin-scrollbar'
+              className='w-full border border-stone-300 dark:border-stone-600 rounded-xl p-3 h-80 bg-stone-50 dark:bg-stone-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 thin-scrollbar resize-none'
               placeholder='Markdownで記事を書く...'
             />
           </div>
-          <div>
-            <div className='flex items-center justify-between mb-1'>
-              <label className='block text-sm font-medium'>プレビュー</label>
+
+          {/* プレビュー */}
+          <div className='p-4 bg-stone-50/50 dark:bg-stone-900/30'>
+            <div className='flex items-center justify-between mb-2'>
+              <label className='block text-sm font-semibold text-stone-900 dark:text-stone-100'>プレビュー</label>
               <div className='flex gap-1'>
                 <button
                   type='button'
-                  onClick={() => setShowHelp(!showHelp)}
-                  className='p-1 text-gray-400 hover:text-black dark:hover:text-stone-100'
+                  onClick={() => setShowHelp(true)}
+                  className='p-1.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-700 rounded transition-colors'
                   title='Markdownリファレンス'
                 >
                   <FiHelpCircle size={16} />
@@ -59,14 +64,14 @@ export default function EditorPreview({
                 <button
                   type='button'
                   onClick={() => setShowFullPreview(true)}
-                  className='p-1 text-gray-400 hover:text-black dark:hover:text-stone-100'
+                  className='p-1.5 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 hover:bg-stone-200 dark:hover:bg-stone-700 rounded transition-colors'
                   title='拡大表示'
                 >
                   <FiMaximize2 size={16} />
                 </button>
               </div>
             </div>
-            <div className='border border-black dark:border-stone-600 rounded-lg p-2 h-80 overflow-y-auto prose dark:prose-invert thin-scrollbar'>
+            <div className='border border-stone-200 dark:border-stone-700 rounded-xl p-3 h-80 overflow-y-auto prose prose-sm dark:prose-invert prose-li:marker:text-stone-600 dark:prose-li:marker:text-stone-300 prose-hr:border-stone-500 dark:prose-hr:border-stone-400 prose-code:text-stone-800 dark:prose-code:text-stone-200 max-w-none thin-scrollbar bg-white dark:bg-stone-800'>
               {processed ? (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkCallout]}
@@ -76,45 +81,35 @@ export default function EditorPreview({
                   {processed}
                 </ReactMarkdown>
               ) : (
-                <p className='text-gray-400'>
+                <p className='text-stone-400 text-sm'>
                   入力するとここにプレビューが表示されます
                 </p>
               )}
             </div>
           </div>
         </div>
-
-        {/* ヘルプパネル */}
-        {showHelp && (
-          <div className='w-64 shrink-0 h-84'>
-            <MarkdownHelp
-              isOpen={showHelp}
-              onClose={() => setShowHelp(false)}
-            />
-          </div>
-        )}
       </div>
 
       {/* 拡大プレビューモーダル */}
       {showFullPreview && (
         <div
-          className='fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-8'
+          className='fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-8'
           onClick={() => setShowFullPreview(false)}
         >
           <div
-            className='bg-white dark:bg-stone-900 rounded-lg w-full max-w-4xl max-h-[85vh] overflow-y-auto p-8 shadow-xl thin-scrollbar'
+            className='bg-white dark:bg-stone-900 rounded-xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl thin-scrollbar flex flex-col'
             onClick={(e) => e.stopPropagation()}
           >
-            <div className='flex justify-between items-center mb-4'>
-              <h2 className='text-xl font-bold'>プレビュー</h2>
+            <div className='flex justify-between items-center px-6 py-4 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50'>
+              <h2 className='text-lg font-bold text-stone-900 dark:text-stone-100'>プレビュー</h2>
               <button
                 onClick={() => setShowFullPreview(false)}
-                className='text-gray-400 hover:text-black dark:hover:text-stone-100'
+                className='text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1 rounded hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors'
               >
                 <FiX size={20} />
               </button>
             </div>
-            <div className='prose max-w-none dark:prose-invert'>
+            <div className='flex-1 overflow-y-auto p-6 prose max-w-none dark:prose-invert'>
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkCallout]}
                 rehypePlugins={[rehypeRaw, rehypeHighlight]}
@@ -126,6 +121,9 @@ export default function EditorPreview({
           </div>
         </div>
       )}
+
+      {/* Markdownヘルプモーダル */}
+      <MarkdownHelp isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </>
   );
 }

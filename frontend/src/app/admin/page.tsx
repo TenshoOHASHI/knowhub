@@ -9,6 +9,15 @@ import { PortfolioManager } from '@/components/PortfolioManager';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { FiFileText, FiArchive, FiUser, FiBriefcase, FiTrendingUp } from 'react-icons/fi';
+
+const tabs = [
+  { id: 'article' as const, label: '記事作成', icon: FiFileText, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+  { id: 'category' as const, label: 'カテゴリ', icon: FiArchive, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+  { id: 'profile' as const, label: 'プロフィール', icon: FiUser, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+  { id: 'portfolio' as const, label: 'ポートフォリオ', icon: FiBriefcase, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+  { id: 'analytics' as const, label: 'アナリティクス', icon: FiTrendingUp, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+];
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<
@@ -28,55 +37,65 @@ export default function AdminPage() {
 
   if (!isLoggedIn) return null;
 
+  const currentTab = tabs.find(t => t.id === activeTab)!;
+
   return (
-    <>
-      {/* タブ切り替えボタン */}
-      <div className='flex gap-2 mb-4'>
-        <button
-          onClick={() => setActiveTab('article')}
-          className={`px-3 py-1 rounded ${activeTab === 'article' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
-        >
-          記事作成
-        </button>
-        <button
-          onClick={() => setActiveTab('category')}
-          className={`px-3 py-1 rounded ${activeTab === 'category' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
-        >
-          カテゴリ管理
-        </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`px-3 py-1 rounded ${activeTab === 'profile' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
-        >
-          プロファイル
-        </button>
-        <button
-          onClick={() => setActiveTab('portfolio')}
-          className={`px-3 py-1 rounded ${activeTab === 'portfolio' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
-        >
-          ポートフォリオ
-        </button>
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`px-3 py-1 rounded ${activeTab === 'analytics' ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900' : 'text-gray-500'}`}
-        >
-          アナリティクス
-        </button>
+    <div className='max-w-7xl mx-auto p-6'>
+      {/* ヘッダー */}
+      <div className='mb-6'>
+        <div className='flex items-center gap-4 mb-6 pb-4 border-b border-stone-200 dark:border-stone-700'>
+          <div className={`w-11 h-11 rounded-lg ${currentTab.bg} flex items-center justify-center`}>
+            <currentTab.icon size={20} className={currentTab.text} />
+          </div>
+          <div>
+            <h1 className='text-xl font-semibold text-stone-900 dark:text-stone-100'>
+              管理画面
+            </h1>
+            <p className='text-xs text-stone-500 dark:text-stone-400 mt-0.5'>
+              {currentTab.label}の管理・編集
+            </p>
+          </div>
+        </div>
+
+        {/* タブ切り替え */}
+        <div className='flex flex-wrap gap-1'>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === tab.id
+                  ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800'
+              }`}
+            >
+              <tab.icon size={15} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      {/* コンテンツエリア */}
       {activeTab === 'article' ? (
         <Suspense fallback={null}>
-          <Editor />
+          <Editor embedded={true} />
         </Suspense>
       ) : activeTab === 'category' ? (
-        <CategoryManager />
+        <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm overflow-hidden'>
+          <CategoryManager />
+        </div>
       ) : activeTab === 'profile' ? (
-        <ProfileManager />
+        <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm overflow-hidden'>
+          <ProfileManager />
+        </div>
       ) : activeTab === 'analytics' ? (
         <AnalyticsDashboard />
       ) : (
-        <PortfolioManager />
+        <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm overflow-hidden'>
+          <PortfolioManager />
+        </div>
       )}
-    </>
+    </div>
   );
 }

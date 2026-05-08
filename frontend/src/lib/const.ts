@@ -6,23 +6,25 @@ export const MODELS = [
     defaultModel: 'gemma3:1b',
   },
   {
+    id: 'openai',
+    name: 'OpenAI(4o-mini)',
+    needsKey: true,
+    defaultModel: 'gpt-4o-mini',
+  },
+  {
     id: 'deepseek',
     name: 'DeepSeek(v4-pro)',
     needsKey: true,
     defaultModel: 'deepseek-v4-pro',
   },
+
+  { id: 'glm5', name: 'GLM-5.1', needsKey: true, defaultModel: 'glm-5.1' },
+
   {
     id: 'gemini',
     name: 'Gemini(2.0-flash)',
     needsKey: true,
-    defaultModel: 'gemini-2.0-flash',
-  },
-  { id: 'glm5', name: 'GLM-5.1', needsKey: true, defaultModel: 'glm-5.1' },
-  {
-    id: 'openai',
-    name: 'OpenAI(4o-mini)',
-    needsKey: true,
-    defaultModel: 'gpt-4o-mini',
+    defaultModel: 'gemini-3.0-flash',
   },
 ];
 

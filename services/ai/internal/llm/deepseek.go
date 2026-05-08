@@ -71,14 +71,29 @@ func (p *DeepSeekProvider) Chat(ctx context.Context, messages []Message) (string
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		slog.Error("DeepSeek error", "status", resp.StatusCode, "body", string(respBody))
-		return "", fmt.Errorf("DeepSeek returned status %d", resp.StatusCode)
+		return "", NewHTTPError(resp.StatusCode, string(respBody))
 	}
 
+	slog.Info("deepseek: starting to decode response")
+
+	// デコード失敗時にボディをログに出力するため、先に読み取る
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		slog.Error("deepseek: read body failed", "error", err)
+		return "", fmt.Errorf("read response body: %w", err)
+	}
+	slog.Info("deepseek: body read successfully", "body_len", len(respBody))
+
 	var result chatCompletionResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		slog.Error("deepseek: decode failed", "error", err)
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		preview := string(respBody)
+		if len(preview) > 1000 {
+			preview = preview[:1000]
+		}
+		slog.Error("deepseek: decode failed", "error", err, "body_preview", preview)
 		return "", fmt.Errorf("decode response: %w", err)
 	}
+	slog.Info("deepseek: decoded successfully", "choices", len(result.Choices))
 
 	if len(result.Choices) == 0 {
 		slog.Error("deepseek: no choices returned")

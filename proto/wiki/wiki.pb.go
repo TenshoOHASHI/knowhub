@@ -1856,11 +1856,12 @@ func (x *GetAnalyticsSummaryRequest) GetDays() int32 {
 }
 
 type DailyCount struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
-	Count         int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Date           string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	Count          int32                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	UniqueVisitors int32                  `protobuf:"varint,3,opt,name=unique_visitors,json=uniqueVisitors,proto3" json:"unique_visitors,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DailyCount) Reset() {
@@ -1907,14 +1908,24 @@ func (x *DailyCount) GetCount() int32 {
 	return 0
 }
 
+func (x *DailyCount) GetUniqueVisitors() int32 {
+	if x != nil {
+		return x.UniqueVisitors
+	}
+	return 0
+}
+
 type GetAnalyticsSummaryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TotalViews    int32                  `protobuf:"varint,1,opt,name=total_views,json=totalViews,proto3" json:"total_views,omitempty"`
-	TodayViews    int32                  `protobuf:"varint,2,opt,name=today_views,json=todayViews,proto3" json:"today_views,omitempty"`
-	DailyViews    []*DailyCount          `protobuf:"bytes,3,rep,name=daily_views,json=dailyViews,proto3" json:"daily_views,omitempty"`
-	PageRanking   []*PageRanking         `protobuf:"bytes,4,rep,name=page_ranking,json=pageRanking,proto3" json:"page_ranking,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TotalViews     int32                  `protobuf:"varint,1,opt,name=total_views,json=totalViews,proto3" json:"total_views,omitempty"`
+	UniqueVisitors int32                  `protobuf:"varint,2,opt,name=unique_visitors,json=uniqueVisitors,proto3" json:"unique_visitors,omitempty"`
+	TodayViews     int32                  `protobuf:"varint,3,opt,name=today_views,json=todayViews,proto3" json:"today_views,omitempty"`
+	DailyViews     []*DailyCount          `protobuf:"bytes,4,rep,name=daily_views,json=dailyViews,proto3" json:"daily_views,omitempty"`
+	PageRanking    []*PageRanking         `protobuf:"bytes,5,rep,name=page_ranking,json=pageRanking,proto3" json:"page_ranking,omitempty"`
+	ArticleRanking []*ArticleRanking      `protobuf:"bytes,6,rep,name=article_ranking,json=articleRanking,proto3" json:"article_ranking,omitempty"`
+	LikeRanking    []*LikeRanking         `protobuf:"bytes,7,rep,name=like_ranking,json=likeRanking,proto3" json:"like_ranking,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetAnalyticsSummaryResponse) Reset() {
@@ -1954,6 +1965,13 @@ func (x *GetAnalyticsSummaryResponse) GetTotalViews() int32 {
 	return 0
 }
 
+func (x *GetAnalyticsSummaryResponse) GetUniqueVisitors() int32 {
+	if x != nil {
+		return x.UniqueVisitors
+	}
+	return 0
+}
+
 func (x *GetAnalyticsSummaryResponse) GetTodayViews() int32 {
 	if x != nil {
 		return x.TodayViews
@@ -1971,6 +1989,20 @@ func (x *GetAnalyticsSummaryResponse) GetDailyViews() []*DailyCount {
 func (x *GetAnalyticsSummaryResponse) GetPageRanking() []*PageRanking {
 	if x != nil {
 		return x.PageRanking
+	}
+	return nil
+}
+
+func (x *GetAnalyticsSummaryResponse) GetArticleRanking() []*ArticleRanking {
+	if x != nil {
+		return x.ArticleRanking
+	}
+	return nil
+}
+
+func (x *GetAnalyticsSummaryResponse) GetLikeRanking() []*LikeRanking {
+	if x != nil {
+		return x.LikeRanking
 	}
 	return nil
 }
@@ -2021,6 +2053,134 @@ func (x *PageRanking) GetPath() string {
 }
 
 func (x *PageRanking) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type ArticleRanking struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Count         int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ArticleRanking) Reset() {
+	*x = ArticleRanking{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ArticleRanking) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ArticleRanking) ProtoMessage() {}
+
+func (x *ArticleRanking) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ArticleRanking.ProtoReflect.Descriptor instead.
+func (*ArticleRanking) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ArticleRanking) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ArticleRanking) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ArticleRanking) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *ArticleRanking) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
+type LikeRanking struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Count         int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LikeRanking) Reset() {
+	*x = LikeRanking{}
+	mi := &file_proto_wiki_wiki_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LikeRanking) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LikeRanking) ProtoMessage() {}
+
+func (x *LikeRanking) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_wiki_wiki_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LikeRanking.ProtoReflect.Descriptor instead.
+func (*LikeRanking) Descriptor() ([]byte, []int) {
+	return file_proto_wiki_wiki_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *LikeRanking) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *LikeRanking) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *LikeRanking) GetCount() int32 {
 	if x != nil {
 		return x.Count
 	}
@@ -2147,22 +2307,37 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\breferrer\x18\x04 \x01(\tR\breferrer\"\x18\n" +
 	"\x16RecordPageViewResponse\"0\n" +
 	"\x1aGetAnalyticsSummaryRequest\x12\x12\n" +
-	"\x04days\x18\x01 \x01(\x05R\x04days\"6\n" +
+	"\x04days\x18\x01 \x01(\x05R\x04days\"_\n" +
 	"\n" +
 	"DailyCount\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x05R\x05count\"\xc8\x01\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\x12'\n" +
+	"\x0funique_visitors\x18\x03 \x01(\x05R\x0euniqueVisitors\"\xe6\x02\n" +
 	"\x1bGetAnalyticsSummaryResponse\x12\x1f\n" +
 	"\vtotal_views\x18\x01 \x01(\x05R\n" +
-	"totalViews\x12\x1f\n" +
-	"\vtoday_views\x18\x02 \x01(\x05R\n" +
+	"totalViews\x12'\n" +
+	"\x0funique_visitors\x18\x02 \x01(\x05R\x0euniqueVisitors\x12\x1f\n" +
+	"\vtoday_views\x18\x03 \x01(\x05R\n" +
 	"todayViews\x121\n" +
-	"\vdaily_views\x18\x03 \x03(\v2\x10.wiki.DailyCountR\n" +
+	"\vdaily_views\x18\x04 \x03(\v2\x10.wiki.DailyCountR\n" +
 	"dailyViews\x124\n" +
-	"\fpage_ranking\x18\x04 \x03(\v2\x11.wiki.PageRankingR\vpageRanking\"7\n" +
+	"\fpage_ranking\x18\x05 \x03(\v2\x11.wiki.PageRankingR\vpageRanking\x12=\n" +
+	"\x0farticle_ranking\x18\x06 \x03(\v2\x14.wiki.ArticleRankingR\x0earticleRanking\x124\n" +
+	"\flike_ranking\x18\a \x03(\v2\x11.wiki.LikeRankingR\vlikeRanking\"7\n" +
 	"\vPageRanking\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x05R\x05count*\x84\x01\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count\"l\n" +
+	"\x0eArticleRanking\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\x05R\x05count\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\x04 \x01(\tR\n" +
+	"visibility\"I\n" +
+	"\vLikeRanking\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\x05R\x05count*\x84\x01\n" +
 	"\rArticleStatus\x12\x1e\n" +
 	"\x1aARTICLE_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ARTICLE_STATUS_DRAFT\x10\x01\x12\x1c\n" +
@@ -2206,7 +2381,7 @@ func file_proto_wiki_wiki_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_wiki_wiki_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
+var file_proto_wiki_wiki_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_proto_wiki_wiki_proto_goTypes = []any{
 	(ArticleStatus)(0),                  // 0: wiki.ArticleStatus
 	(Role)(0),                           // 1: wiki.Role
@@ -2248,12 +2423,14 @@ var file_proto_wiki_wiki_proto_goTypes = []any{
 	(*DailyCount)(nil),                  // 37: wiki.DailyCount
 	(*GetAnalyticsSummaryResponse)(nil), // 38: wiki.GetAnalyticsSummaryResponse
 	(*PageRanking)(nil),                 // 39: wiki.PageRanking
-	(*timestamppb.Timestamp)(nil),       // 40: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),               // 41: google.protobuf.Empty
+	(*ArticleRanking)(nil),              // 40: wiki.ArticleRanking
+	(*LikeRanking)(nil),                 // 41: wiki.LikeRanking
+	(*timestamppb.Timestamp)(nil),       // 42: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),               // 43: google.protobuf.Empty
 }
 var file_proto_wiki_wiki_proto_depIdxs = []int32{
-	40, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
-	40, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
+	42, // 0: wiki.Article.created_at:type_name -> google.protobuf.Timestamp
+	42, // 1: wiki.Article.updated_at:type_name -> google.protobuf.Timestamp
 	2,  // 2: wiki.CreateArticleResponse.article:type_name -> wiki.Article
 	2,  // 3: wiki.GetArticleResponse.Article:type_name -> wiki.Article
 	2,  // 4: wiki.ListArticleResponse.article:type_name -> wiki.Article
@@ -2264,45 +2441,47 @@ var file_proto_wiki_wiki_proto_depIdxs = []int32{
 	32, // 9: wiki.GetLikeCountsResponse.counts:type_name -> wiki.ArticleLikeCount
 	37, // 10: wiki.GetAnalyticsSummaryResponse.daily_views:type_name -> wiki.DailyCount
 	39, // 11: wiki.GetAnalyticsSummaryResponse.page_ranking:type_name -> wiki.PageRanking
-	3,  // 12: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
-	5,  // 13: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
-	7,  // 14: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
-	9,  // 15: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
-	11, // 16: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
-	14, // 17: wiki.WikiServices.ListCategories:input_type -> wiki.ListCategoriesRequest
-	16, // 18: wiki.WikiServices.CreateCategory:input_type -> wiki.CreateCategoryRequest
-	18, // 19: wiki.WikiServices.DeleteCategory:input_type -> wiki.DeleteCategoryRequest
-	19, // 20: wiki.WikiServices.ToggleLike:input_type -> wiki.ToggleLikeRequest
-	21, // 21: wiki.WikiServices.GetLikeCount:input_type -> wiki.GetLikeCountRequest
-	31, // 22: wiki.WikiServices.GetLikeCounts:input_type -> wiki.GetLikeCountsRequest
-	23, // 23: wiki.WikiServices.SaveArticle:input_type -> wiki.SaveArticleRequest
-	25, // 24: wiki.WikiServices.UnsaveArticle:input_type -> wiki.UnsaveArticleRequest
-	27, // 25: wiki.WikiServices.ListSavedArticles:input_type -> wiki.ListSavedArticlesRequest
-	29, // 26: wiki.WikiServices.IsArticleSaved:input_type -> wiki.IsArticleSavedRequest
-	34, // 27: wiki.WikiServices.RecordPageView:input_type -> wiki.RecordPageViewRequest
-	36, // 28: wiki.WikiServices.GetAnalyticsSummary:input_type -> wiki.GetAnalyticsSummaryRequest
-	4,  // 29: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
-	6,  // 30: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
-	8,  // 31: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
-	10, // 32: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
-	41, // 33: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
-	15, // 34: wiki.WikiServices.ListCategories:output_type -> wiki.ListCategoriesResponse
-	17, // 35: wiki.WikiServices.CreateCategory:output_type -> wiki.CreateCategoryResponse
-	41, // 36: wiki.WikiServices.DeleteCategory:output_type -> google.protobuf.Empty
-	20, // 37: wiki.WikiServices.ToggleLike:output_type -> wiki.ToggleLikeResponse
-	22, // 38: wiki.WikiServices.GetLikeCount:output_type -> wiki.GetLikeCountResponse
-	33, // 39: wiki.WikiServices.GetLikeCounts:output_type -> wiki.GetLikeCountsResponse
-	24, // 40: wiki.WikiServices.SaveArticle:output_type -> wiki.SaveArticleResponse
-	26, // 41: wiki.WikiServices.UnsaveArticle:output_type -> wiki.UnsaveArticleResponse
-	28, // 42: wiki.WikiServices.ListSavedArticles:output_type -> wiki.ListSavedArticlesResponse
-	30, // 43: wiki.WikiServices.IsArticleSaved:output_type -> wiki.IsArticleSavedResponse
-	35, // 44: wiki.WikiServices.RecordPageView:output_type -> wiki.RecordPageViewResponse
-	38, // 45: wiki.WikiServices.GetAnalyticsSummary:output_type -> wiki.GetAnalyticsSummaryResponse
-	29, // [29:46] is the sub-list for method output_type
-	12, // [12:29] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	40, // 12: wiki.GetAnalyticsSummaryResponse.article_ranking:type_name -> wiki.ArticleRanking
+	41, // 13: wiki.GetAnalyticsSummaryResponse.like_ranking:type_name -> wiki.LikeRanking
+	3,  // 14: wiki.WikiServices.Create:input_type -> wiki.CreateArticleRequest
+	5,  // 15: wiki.WikiServices.Get:input_type -> wiki.GetArticleRequest
+	7,  // 16: wiki.WikiServices.List:input_type -> wiki.ListArticleRequest
+	9,  // 17: wiki.WikiServices.Update:input_type -> wiki.UpdateArticleRequest
+	11, // 18: wiki.WikiServices.Delete:input_type -> wiki.DeleteArticleRequest
+	14, // 19: wiki.WikiServices.ListCategories:input_type -> wiki.ListCategoriesRequest
+	16, // 20: wiki.WikiServices.CreateCategory:input_type -> wiki.CreateCategoryRequest
+	18, // 21: wiki.WikiServices.DeleteCategory:input_type -> wiki.DeleteCategoryRequest
+	19, // 22: wiki.WikiServices.ToggleLike:input_type -> wiki.ToggleLikeRequest
+	21, // 23: wiki.WikiServices.GetLikeCount:input_type -> wiki.GetLikeCountRequest
+	31, // 24: wiki.WikiServices.GetLikeCounts:input_type -> wiki.GetLikeCountsRequest
+	23, // 25: wiki.WikiServices.SaveArticle:input_type -> wiki.SaveArticleRequest
+	25, // 26: wiki.WikiServices.UnsaveArticle:input_type -> wiki.UnsaveArticleRequest
+	27, // 27: wiki.WikiServices.ListSavedArticles:input_type -> wiki.ListSavedArticlesRequest
+	29, // 28: wiki.WikiServices.IsArticleSaved:input_type -> wiki.IsArticleSavedRequest
+	34, // 29: wiki.WikiServices.RecordPageView:input_type -> wiki.RecordPageViewRequest
+	36, // 30: wiki.WikiServices.GetAnalyticsSummary:input_type -> wiki.GetAnalyticsSummaryRequest
+	4,  // 31: wiki.WikiServices.Create:output_type -> wiki.CreateArticleResponse
+	6,  // 32: wiki.WikiServices.Get:output_type -> wiki.GetArticleResponse
+	8,  // 33: wiki.WikiServices.List:output_type -> wiki.ListArticleResponse
+	10, // 34: wiki.WikiServices.Update:output_type -> wiki.UpdateArticleResponse
+	43, // 35: wiki.WikiServices.Delete:output_type -> google.protobuf.Empty
+	15, // 36: wiki.WikiServices.ListCategories:output_type -> wiki.ListCategoriesResponse
+	17, // 37: wiki.WikiServices.CreateCategory:output_type -> wiki.CreateCategoryResponse
+	43, // 38: wiki.WikiServices.DeleteCategory:output_type -> google.protobuf.Empty
+	20, // 39: wiki.WikiServices.ToggleLike:output_type -> wiki.ToggleLikeResponse
+	22, // 40: wiki.WikiServices.GetLikeCount:output_type -> wiki.GetLikeCountResponse
+	33, // 41: wiki.WikiServices.GetLikeCounts:output_type -> wiki.GetLikeCountsResponse
+	24, // 42: wiki.WikiServices.SaveArticle:output_type -> wiki.SaveArticleResponse
+	26, // 43: wiki.WikiServices.UnsaveArticle:output_type -> wiki.UnsaveArticleResponse
+	28, // 44: wiki.WikiServices.ListSavedArticles:output_type -> wiki.ListSavedArticlesResponse
+	30, // 45: wiki.WikiServices.IsArticleSaved:output_type -> wiki.IsArticleSavedResponse
+	35, // 46: wiki.WikiServices.RecordPageView:output_type -> wiki.RecordPageViewResponse
+	38, // 47: wiki.WikiServices.GetAnalyticsSummary:output_type -> wiki.GetAnalyticsSummaryResponse
+	31, // [31:48] is the sub-list for method output_type
+	14, // [14:31] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_proto_wiki_wiki_proto_init() }
@@ -2317,7 +2496,7 @@ func file_proto_wiki_wiki_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_wiki_wiki_proto_rawDesc), len(file_proto_wiki_wiki_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   38,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
