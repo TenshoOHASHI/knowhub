@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"log/slog"
 	"math"
 	"sort"
 )
@@ -63,8 +64,18 @@ func computeBM25IDF(tokenizedDocs [][]string) map[string]float64 {
 }
 
 func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
-	// 1. 元データを保存
-	e.documents = docs
+	// 非公開記事を除外
+	publicDocs := make([]Document, 0, len(docs))
+	for _, doc := range docs {
+		if doc.Visibility == "public" {
+			publicDocs = append(publicDocs, doc)
+		}
+	}
+
+	// 1. 元データを保存（公開記事のみ）
+	e.documents = publicDocs
+
+	slog.Info("BM25 index start", "num_docs", len(docs), "public_docs", len(publicDocs))
 
 	// 2. 各文書をトークン化 + 文書長を記録
 	e.tokenized = make([][]string, len(docs))
@@ -75,6 +86,13 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 		e.tokenized[i] = tokenize(text)    // e.tokened: [][]string
 		e.docLens[i] = len(e.tokenized[i]) // e.docLens: []string
 		totalTokens += e.docLens[i]        // total = [1, 4, 4] => 9
+
+		slog.Debug("BM25 document tokenized",
+			"doc_id", doc.ID,
+			"title", doc.Title,
+			"token_count", e.docLens[i],
+			"tokens", e.tokenized[i],
+		)
 	}
 
 	// 3. 平均トークン数
@@ -84,11 +102,22 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 		e.avgDl = float64(totalTokens) / float64(len(docs))
 	}
 
+	slog.Info("BM25 index stats",
+		"num_docs", len(docs),
+		"total_tokens", totalTokens,
+		"avg_doc_len", e.avgDl,
+	)
+
 	// 4. 語彙を構築（tfidf.go の関数を再利用）
 	e.vocabulary = buildVocabulary(e.tokenized)
 
 	// 5. BM25版 IDF を計算
 	e.idf = computeBM25IDF(e.tokenized)
+
+	slog.Info("BM25 index complete",
+		"vocab_size", len(e.vocabulary),
+		"idf_size", len(e.idf),
+	)
 
 	return nil
 }
@@ -96,7 +125,13 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {
 	// ① クエリをトークン化
 	queryTokens := tokenize(query)
+	slog.Info("BM25 search query",
+		"query", query,
+		"query_tokens", queryTokens,
+		"num_documents", len(e.documents),
+	)
 	if len(queryTokens) == 0 {
+		slog.Warn("BM25 query produced no tokens", "query", query)
 		return []SearchResult{}, nil
 	}
 
@@ -113,11 +148,27 @@ func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]Sea
 			idfVal := e.idf[qToken]       // BM25版 IDF
 			dl := float64(e.docLens[i])   // 文書のトークン数
 
+			slog.Info("BM25 score calculation",
+				"query_token", qToken,
+				"doc_id", doc.ID,
+				"doc_title", doc.Title,
+				"term_freq", f,
+				"idf", idfVal,
+				"doc_len", dl,
+				"avg_dl", e.avgDl,
+			)
+
 			// 長い文章 => Lが大きい -> 分母が大きい -> スコア下がる
 			numerator := f * (e.k1 + 1)                      // k1はどれくらい効かせるか
 			denominator := f + e.k1*(1-e.b+e.b*(dl/e.avgDl)) // 「平均より長い？短い？」、長いペナルティ（bが長さを考慮し補正）
 			score += idfVal * numerator / denominator
 		}
+
+		slog.Info("BM25 document score",
+			"doc_id", doc.ID,
+			"doc_title", doc.Title,
+			"total_score", score,
+		)
 
 		// ③-c スコアが 0 より大きければ結果に追加
 		if score > 0 {
@@ -134,8 +185,18 @@ func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]Sea
 				Context:        snippet,
 				RelevanceScore: score,
 			})
+			slog.Info("BM25 found match",
+				"article_id", doc.ID,
+				"title", doc.Title,
+				"score", score,
+			)
 		}
 	}
+
+	slog.Info("BM25 search complete",
+		"query", query,
+		"results_count", len(results),
+	)
 
 	// ④ ソート
 	sort.Slice(results, func(i, j int) bool {

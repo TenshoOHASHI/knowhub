@@ -155,53 +155,6 @@ export default function AgentSteps({ steps, sources }: AgentStepsProps) {
               </div>
             );
           })}
-
-          {sources.length > 0 && (
-            <div className='pt-2 border-t border-stone-200 dark:border-stone-600'>
-              <span className='text-stone-400 text-[10px] font-medium uppercase tracking-wider'>
-                Sources
-              </span>
-              <div className='flex flex-wrap gap-1.5 mt-1'>
-                {sources.map((s, i) => (
-                  <span key={i}>
-                    {s.article_id ? (
-                      <a
-                        href={`/wiki/${s.article_id}`}
-                        className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-300 transition-colors'
-                      >
-                        {s.title || s.article_id}
-                        {s.relevance_score !== undefined && (
-                          <span className='text-[9px] opacity-60'>
-                            {Math.round(s.relevance_score * 100)}%
-                          </span>
-                        )}
-                      </a>
-                    ) : s.url ? (
-                      <a
-                        href={s.url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-amber-100 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-300 transition-colors'
-                      >
-                        {(() => {
-                          try {
-                            return new URL(s.url).hostname;
-                          } catch {
-                            return s.url;
-                          }
-                        })()}
-                        {s.relevance_score !== undefined && (
-                          <span className='text-[9px] opacity-60'>
-                            {Math.round(s.relevance_score * 100)}%
-                          </span>
-                        )}
-                      </a>
-                    ) : null}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

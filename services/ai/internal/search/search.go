@@ -9,9 +9,10 @@ import (
 
 // Document は検索対象の文書を表す
 type Document struct {
-	ID      string
-	Title   string
-	Content string
+	ID         string
+	Title      string
+	Content    string
+	Visibility string // "public" または "locked"
 }
 
 // SearchResult は検索結果の1件を表す

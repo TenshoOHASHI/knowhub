@@ -591,6 +591,26 @@ export async function getKnowledgeGraph(): Promise<{
   return data;
 }
 
+// 関連記事取得（Graph RAG用）
+export interface RelatedArticle {
+  article_id: string;
+  title: string;
+  content: string;
+  relevance_score: number;
+}
+
+export async function getRelatedArticles(
+  articleId: string,
+  maxHops: number = 2,
+  limit: number = 10,
+): Promise<{ results: RelatedArticle[] }> {
+  const res = await fetch(
+    `${API_BASE}/ai/articles/${articleId}/related?max_hops=${maxHops}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error('Failed to get related articles');
+  return res.json();
+}
+
 // -- Like / Save --
 export async function toggleLike(articleId: string, fingerprint: string): Promise<{ count: number; liked: boolean }> {
   const res = await fetch(`${API_BASE}/articles/${articleId}/like`, {

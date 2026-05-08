@@ -107,6 +107,7 @@ func main() {
 	mux.HandleFunc("POST /api/ai/agent", aiHandler.AskWithAgent)
 	mux.HandleFunc("POST /api/ai/agent/stream", aiHandler.AskWithAgentStream)
 	mux.HandleFunc("GET /api/ai/graph", aiHandler.GetKnowledgeGraph)
+	mux.HandleFunc("GET /api/ai/articles/{id}/related", aiHandler.GetRelatedArticles)
 
 	// upload
 	mux.HandleFunc("POST /api/upload", uploadHandler.Upload)

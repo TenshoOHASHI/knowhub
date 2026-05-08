@@ -42,10 +42,10 @@ const getKeyStorageKey = (modelId: string) => `ai_key_${modelId}`;
  * スコアをパーセンテージに正規化して表示
  * 検索エンジンごとにスコアの尺度が違うため、統一感のある表示にする
  *
- * - BM25:    0〜3  程度 → 0-100%
+ * - BM25:    0〜10 程度 → 0-100%（最大10として正規化）
  * - Vector:  0〜1  （コサイン類似度） → 0-100%
  * - Hybrid:  0〜1  （正規化済み） → 0-100%
- * - Graph:   0〜N  （スコアベース） → 閾値1.0以上で参考値として表示
+ * - Graph:   0〜N  （スコアベース） → 0-100%（最大50として正規化）
  * - TF-IDF: 0〜0.5程度 → 0-100%
  */
 function formatSourceScore(score?: number): string | null {
@@ -58,18 +58,24 @@ function formatSourceScore(score?: number): string | null {
     return `${Math.round(score * 100)}%`;
   }
 
-  // 1-3の範囲: BM25（最大3として正規化）
-  if (score > 1 && score <= 3) {
-    return `${Math.round((score / 3.0) * 100)}%`;
+  // 1-10の範囲: BM25（最大10として正規化）
+  if (score > 1 && score <= 10) {
+    return `${Math.round((score / 10.0) * 100)}%`;
   }
 
-  // 0-0.5の範囲: TF-IDF（最大0.5として正規化）
+  // 10より大きい: Graph RAG など（最大50として正規化）
+  if (score > 10) {
+    const normalized = Math.min((score / 50.0) * 100, 100);
+    return `${Math.round(normalized)}%`;
+  }
+
+  // 0-1の範囲（小数）: TF-IDF など（最大0.5として正規化）
   if (score > 0 && score < 1) {
     return `${Math.round((score / 0.5) * 100)}%`;
   }
 
-  // その他: そのまま表示（Graph RAGなど）
-  return score.toFixed(2);
+  // フォールバック
+  return `${Math.round(Math.min(score * 10, 100))}%`;
 }
 
 function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
@@ -702,7 +708,7 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    文章の中で単語が出現する頻度とレア度（希少性）を算出して検索します。
+                    文章の中で単語が出現する頻度とレア度（希少性）を算出して検索します。<br />
                     専門用語や固有名詞など、 exact match が重要な検索に適しています。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -726,7 +732,7 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事をベクトル（数値）に変換し、「意味の近さ」で検索します。
+                    記事をベクトル（数値）に変換し、「意味の近さ」で検索します。<br />
                     同じ単語を使わなくても似た概念や関連する記事を見つけられます。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -750,7 +756,7 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    <span className='font-medium'>BM25（単語のレア度）</span>と<span className='font-medium'> Vector（意味の近さ）</span>のスコアを正規化して統合します。
+                    <span className='font-medium'>BM25（単語のレア度）</span>と<span className='font-medium'> Vector（意味の近さ）</span>のスコアを正規化して統合します。<br />
                     キーワード一致とセマンティック理解の両方をカバーするため、どの検索エンジンにするか迷ったらこれを選んでください。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -774,7 +780,7 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事から<strong>エンティティ（重要単語）</strong>と<strong>関係性</strong>を抽出してナレッジグラフを構築し、関連する記事をたどって検索します。
+                    記事から<strong>エンティティ（重要単語）</strong>と<strong>関係性</strong>を抽出してナレッジグラフを構築し、関連する記事をたどって検索します。<br />
                     複数のトピックにまたがる質問や、学習ロードマップのような広範な質問に強いです。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -845,15 +851,17 @@ export default function ChatInterface() {
               ) : (
                 <p>{msg.content}</p>
               )}
-              {msg.sources && msg.sources.length > 0 && (
+              {/* 参照記事: RAG (sources) または Agent (agentSources) */}
+              {((msg.sources && msg.sources.length > 0) || (msg.agentSources && msg.agentSources.length > 0)) && (
                 <div className='text-xs text-stone-500 dark:text-stone-400 mt-2 pt-2 border-t border-stone-300 dark:border-stone-500'>
                   <div className='mb-1 font-medium'>参照記事</div>
                   <div className='flex flex-wrap gap-1.5'>
-                    {msg.sources.map((s) => {
+                    {/* RAG sources */}
+                    {msg.sources?.map((s) => {
                       const score = formatSourceScore(s.relevance_score);
                       return (
                         <a
-                          key={s.article_id}
+                          key={`rag-${s.article_id}`}
                           href={`/wiki/${s.article_id}`}
                           className='inline-flex max-w-full items-center gap-1 rounded border border-stone-300 px-2 py-1 hover:border-blue-400 hover:text-blue-500 dark:border-stone-500 dark:hover:border-blue-400 dark:hover:text-blue-300'
                         >
@@ -866,14 +874,57 @@ export default function ChatInterface() {
                         </a>
                       );
                     })}
+                    {/* Agent sources */}
+                    {msg.agentSources?.map((s, idx) => {
+                      if (s.article_id) {
+                        const score = formatSourceScore(s.relevance_score);
+                        return (
+                          <a
+                            key={`agent-${s.article_id}-${idx}`}
+                            href={`/wiki/${s.article_id}`}
+                            className='inline-flex max-w-full items-center gap-1 rounded border border-stone-300 px-2 py-1 hover:border-blue-400 hover:text-blue-500 dark:border-stone-500 dark:hover:border-blue-400 dark:hover:text-blue-300'
+                          >
+                            <span className='truncate'>{s.title || s.article_id}</span>
+                            {score && (
+                              <span className='shrink-0 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] text-stone-700 dark:bg-stone-700 dark:text-stone-200'>
+                                score {score}
+                              </span>
+                            )}
+                          </a>
+                        );
+                      } else if (s.url) {
+                        return (
+                          <a
+                            key={`agent-url-${idx}`}
+                            href={s.url}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='inline-flex max-w-full items-center gap-1 rounded border border-amber-300 px-2 py-1 hover:border-amber-400 hover:text-amber-600 dark:border-amber-700 dark:hover:border-amber-500 dark:hover:text-amber-300'
+                          >
+                            <span className='truncate'>
+                              {(() => {
+                                try {
+                                  return new URL(s.url).hostname;
+                                } catch {
+                                  return s.url;
+                                }
+                              })()}
+                            </span>
+                            {s.relevance_score !== undefined && (
+                              <span className='shrink-0 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] text-stone-700 dark:bg-stone-700 dark:text-stone-200'>
+                                {Math.round(s.relevance_score * 100)}%
+                              </span>
+                            )}
+                          </a>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                 </div>
               )}
               {msg.agentSteps && msg.agentSteps.length > 0 && (
-                <AgentSteps
-                  steps={msg.agentSteps}
-                  sources={msg.agentSources || []}
-                />
+                <AgentSteps steps={msg.agentSteps} />
               )}
             </div>
             {msg.role === 'user' && (

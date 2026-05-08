@@ -209,12 +209,20 @@ func NewTFIDFEngine() *TFIDFEngine {
 }
 
 func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
-	// 1. 元データを保存
-	e.documents = docs
+	// 非公開記事を除外
+	publicDocs := make([]Document, 0, len(docs))
+	for _, doc := range docs {
+		if doc.Visibility == "public" {
+			publicDocs = append(publicDocs, doc)
+		}
+	}
+
+	// 1. 元データを保存（公開記事のみ）
+	e.documents = publicDocs
 
 	// 2. 各文書をトークン化([["ai", "python", "go"], ["python", "react", "go"],])
-	e.tokenized = make([][]string, len(docs))
-	for i, doc := range docs {
+	e.tokenized = make([][]string, len(publicDocs))
+	for i, doc := range publicDocs {
 		// タイトル + 内容 を両方検索対象にする
 		text := doc.Title + " " + doc.Content
 		e.tokenized[i] = tokenize(text)
@@ -227,7 +235,7 @@ func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
 	e.idf = computeIDF(e.tokenized)
 
 	// 5. 各文書の TF-IDF ベクトルを構築
-	e.tfidfVecs = make([][]float64, len(docs))
+	e.tfidfVecs = make([][]float64, len(publicDocs))
 	for i, tokens := range e.tokenized {
 		// 単語の頻度
 		tf := computeTF(tokens)
