@@ -470,21 +470,21 @@ export default function KnowledgeGraph() {
         highlighted.size === 0 || highlighted.has(d.id);
 
       node.selectAll('.node-circle').transition().duration(200)
-        .attr('fill', (d) => isHighlighted(d) ? nodeColor(d.type) : '#374151')
-        .attr('opacity', (d) => isHighlighted(d) ? 1 : 0.3)
-        .attr('r', (d) => isHighlighted(d) ? nodeRadius(d) : nodeRadius(d) * 0.8);
+        .attr('fill', (d: unknown) => isHighlighted(d as SimNode) ? nodeColor((d as SimNode).type) : '#374151')
+        .attr('opacity', (d: unknown) => isHighlighted(d as SimNode) ? 1 : 0.3)
+        .attr('r', (d: unknown) => isHighlighted(d as SimNode) ? nodeRadius(d as SimNode) : nodeRadius(d as SimNode) * 0.8);
 
       node.selectAll('text').transition().duration(200)
-        .attr('opacity', (d) => isHighlighted(d) ? 1 : 0.2);
+        .attr('opacity', (d: unknown) => isHighlighted(d as SimNode) ? 1 : 0.2);
 
       link.transition().duration(200)
-        .attr('stroke-opacity', (d) => {
+        .attr('stroke-opacity', (d: unknown) => {
           const sourceId = (d.source as SimNode).id;
           const targetId = (d.target as SimNode).id;
           if (highlighted.size === 0) return 0.4;
           return highlighted.has(sourceId) && highlighted.has(targetId) ? 0.8 : 0.1;
         })
-        .attr('stroke', (d) => {
+        .attr('stroke', (d: unknown) => {
           const sourceId = (d.source as SimNode).id;
           const targetId = (d.target as SimNode).id;
           if (highlighted.size === 0) return '#64748b';

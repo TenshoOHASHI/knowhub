@@ -1091,7 +1091,6 @@ export default function ChatInterface() {
                       action_input: s.action_input || '',
                       observation: s.observation || '',
                     }))}
-                    sources={[]}
                   />
                 </div>
               )}
