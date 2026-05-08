@@ -109,9 +109,9 @@ func TestBM25Engine_Search(t *testing.T) {
 	t.Run("search Japanese katakana テスト returns correct result", func(t *testing.T) {
 		engine := NewBM25Engine()
 		docs := []Document{
-			{ID: "1", Title: "テスト", Content: "これはテスト記事です"},
-			{ID: "2", Title: "MCPサーバー", Content: "MCPサーバーについての説明"},
-			{ID: "3", Title: "gRPC入門", Content: "gRPCの使い方"},
+			{ID: "1", Title: "テスト", Content: "これはテスト記事です", Visibility: "public"},
+			{ID: "2", Title: "MCPサーバー", Content: "MCPサーバーについての説明", Visibility: "public"},
+			{ID: "3", Title: "gRPC入門", Content: "gRPCの使い方", Visibility: "public"},
 		}
 
 		err := engine.Index(context.Background(), docs)

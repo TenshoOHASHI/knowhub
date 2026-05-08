@@ -56,8 +56,8 @@ func TestCosineSimilarity(t *testing.T) {
 func TestTFIDFEngine_Search(t *testing.T) {
 	engine := NewTFIDFEngine()
 	engine.Index(context.Background(), []Document{
-		{ID: "1", Title: "Go gRPC", Content: "Go gRPC Go"},
-		{ID: "2", Title: "Python AI", Content: "Python AI Python"},
+		{ID: "1", Title: "Go gRPC", Content: "Go gRPC Go", Visibility: "public"},
+		{ID: "2", Title: "Python AI", Content: "Python AI Python", Visibility: "public"},
 	})
 
 	results, _ := engine.Search(context.Background(), "gRPC", 10)

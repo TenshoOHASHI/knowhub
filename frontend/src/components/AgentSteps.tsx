@@ -10,11 +10,10 @@ import {
   FaList,
 } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
-import type { AgentStep, AgentSource } from '@/lib/api';
+import type { AgentStep } from '@/lib/api';
 
 interface AgentStepsProps {
   steps: AgentStep[];
-  sources: AgentSource[];
 }
 
 // ツール名の表示用マッピング
@@ -51,11 +50,11 @@ const toolMeta: Record<
   },
 };
 
-export default function AgentSteps({ steps, sources }: AgentStepsProps) {
+export default function AgentSteps({ steps }: AgentStepsProps) {
   const [open, setOpen] = useState(false);
   const [openObs, setOpenObs] = useState<Record<number, boolean>>({});
 
-  if (steps.length === 0 && sources.length === 0) return null;
+  if (steps.length === 0) return null;
 
   return (
     <div className='mt-2'>
