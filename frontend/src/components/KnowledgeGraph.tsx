@@ -479,14 +479,16 @@ export default function KnowledgeGraph() {
 
       link.transition().duration(200)
         .attr('stroke-opacity', (d: unknown) => {
-          const sourceId = (d.source as SimNode).id;
-          const targetId = (d.target as SimNode).id;
+          const link = d as SimLink;
+          const sourceId = (link.source as SimNode).id;
+          const targetId = (link.target as SimNode).id;
           if (highlighted.size === 0) return 0.4;
           return highlighted.has(sourceId) && highlighted.has(targetId) ? 0.8 : 0.1;
         })
         .attr('stroke', (d: unknown) => {
-          const sourceId = (d.source as SimNode).id;
-          const targetId = (d.target as SimNode).id;
+          const link = d as SimLink;
+          const sourceId = (link.source as SimNode).id;
+          const targetId = (link.target as SimNode).id;
           if (highlighted.size === 0) return '#64748b';
           return highlighted.has(sourceId) && highlighted.has(targetId) ? '#fbbf24' : '#64748b';
         });
