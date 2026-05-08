@@ -323,7 +323,7 @@ func (h *WikiCQRSHandler) GetAnalyticsSummary(ctx context.Context, req *pb.GetAn
 	if days <= 0 {
 		days = 30
 	}
-	totalViews, todayViews, dailyViews, pageRanking, err := h.analyticsRepo.GetSummary(ctx, days)
+	totalViews, uniqueVisitors, todayViews, dailyViews, pageRanking, articleRanking, likeRanking, err := h.analyticsRepo.GetSummary(ctx, days)
 	if err != nil {
 		slog.Error("failed to get analytics summary", "error", err)
 		return nil, status.Error(codes.Internal, "failed to get analytics summary")
@@ -332,8 +332,9 @@ func (h *WikiCQRSHandler) GetAnalyticsSummary(ctx context.Context, req *pb.GetAn
 	var pbDailyViews []*pb.DailyCount
 	for _, dc := range dailyViews {
 		pbDailyViews = append(pbDailyViews, &pb.DailyCount{
-			Date:  dc.Date,
-			Count: dc.Count,
+			Date:           dc.Date,
+			Count:          dc.Count,
+			UniqueVisitors: dc.UniqueVisitors,
 		})
 	}
 
@@ -345,10 +346,33 @@ func (h *WikiCQRSHandler) GetAnalyticsSummary(ctx context.Context, req *pb.GetAn
 		})
 	}
 
+	var pbArticleRanking []*pb.ArticleRanking
+	for _, ar := range articleRanking {
+		pbArticleRanking = append(pbArticleRanking, &pb.ArticleRanking{
+			Id:         ar.ID,
+			Title:      ar.Title,
+			Count:      ar.Count,
+			Visibility: ar.Visibility,
+		})
+	}
+
+	var pbLikeRanking []*pb.LikeRanking
+	for _, lr := range likeRanking {
+		pbLikeRanking = append(pbLikeRanking, &pb.LikeRanking{
+			Id:    lr.ID,
+			Title: lr.Title,
+			Count: lr.Count,
+		})
+	}
+	slog.Info("likeRanking result", "count", len(pbLikeRanking))
+
 	return &pb.GetAnalyticsSummaryResponse{
-		TotalViews:  totalViews,
-		TodayViews:  todayViews,
-		DailyViews:  pbDailyViews,
-		PageRanking: pbPageRanking,
+		TotalViews:     totalViews,
+		UniqueVisitors: uniqueVisitors,
+		TodayViews:     todayViews,
+		DailyViews:     pbDailyViews,
+		PageRanking:    pbPageRanking,
+		ArticleRanking: pbArticleRanking,
+		LikeRanking:    pbLikeRanking,
 	}, nil
 }

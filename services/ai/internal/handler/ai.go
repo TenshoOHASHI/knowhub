@@ -239,17 +239,18 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	}
 
 	if len(results) == 0 {
-		return &pb.QuestionResponse{
-			Answer:  "関連する記事が見つかりませんでした。",
-			Sources: []*pb.Source{},
-		}, nil
+		// 検索で何も見つからない場合もLLMには回答させる。
+		// ただし参照元は空にし、「参考:」として一般知識で補足する流れにする。
+		results = []search.SearchResult{}
 	}
+
+	relevantResults := filterRAGResults(req.SearchEngine, results)
 
 	// Step 2: コンテキストを構築
 	var contextBuilder strings.Builder
-	sources := make([]*pb.Source, 0, len(results))
+	sources := make([]*pb.Source, 0, len(relevantResults))
 
-	for _, r := range results {
+	for _, r := range relevantResults {
 		articleResp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: r.ArticleID})
 		if err != nil {
 			slog.Error("failed to get article for RAG", "error", err, "article_id", r.ArticleID)
@@ -257,9 +258,15 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		}
 		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
 		sources = append(sources, &pb.Source{
-			ArticleId: r.ArticleID,
-			Title:     articleResp.Article.Title,
+			ArticleId:      r.ArticleID,
+			Title:          articleResp.Article.Title,
+			RelevanceScore: r.RelevanceScore,
 		})
+	}
+
+	contextText := contextBuilder.String()
+	if strings.TrimSpace(contextText) == "" {
+		contextText = "関連する記事は見つかりませんでした。"
 	}
 
 	// Step 3: RAG プロンプトで LLM に回答生成
@@ -268,30 +275,113 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			Role: "system",
 			Content: "あなたは技術ナレッジベースのアシスタントです。" +
 				"以下のコンテキストを参考にして回答してください。" +
-				"コンテキストに情報がある場合はそれを優先し、" +
-				"もしその情報に追加した方がいい情報があれば、あなたの知識で補足してください。" +
-				"ただし、あなたの知識で補足する場合は「参考:」と明記してください。",
+				"コンテキストに情報がある場合はそれを優先して回答してください。" +
+				"コンテキストに「関連する記事は見つかりませんでした」と含まれる場合、" +
+				"あるいはコンテキストに質問に関連する情報がない場合は、" +
+				"「ナレッジベースには関連する情報がありません。別の質問をお願いします。」とだけ回答してください。" +
+				"この場合、あなたの知識で補足したり回答したりしないでください。",
 		},
 		{
 			Role: "user",
 			Content: fmt.Sprintf(
 				"コンテキスト:\n%s\n\n質問: %s",
-				contextBuilder.String(),
+				contextText,
 				req.Question,
 			),
 		},
 	}
 
+	// LLMに回答する
 	answer, err := provider.Chat(ctx, messages)
 	if err != nil {
 		slog.Error("LLM chat failed", "error", err)
+		// HTTPErrorの場合は詳細なエラー情報を返す
+		if httpErr, ok := err.(*llm.HTTPError); ok {
+			// レートリミットエラー
+			if httpErr.IsRateLimit() {
+				return nil, status.Error(codes.ResourceExhausted, httpErr.Body)
+			}
+			// 認証エラー
+			if httpErr.IsUnauthorized() {
+				return nil, status.Error(codes.Unauthenticated, httpErr.Body)
+			}
+			// その他のHTTPエラー
+			return nil, status.Error(codes.Internal, httpErr.Body)
+		}
 		return nil, status.Error(codes.Internal, "failed to generate answer")
+	}
+
+	// 保険として、関連性がない記事は、参照リンクを空にする
+	if answerIndicatesNoRelevantContext(answer) {
+		sources = []*pb.Source{}
 	}
 
 	return &pb.QuestionResponse{
 		Answer:  answer,
 		Sources: sources,
 	}, nil
+}
+
+// 閾値を用意し、関連性が低いスコアは参照先から取り除く
+func filterRAGResults(engineName string, results []search.SearchResult) []search.SearchResult {
+	threshold := ragSourceThreshold(engineName)
+	filtered := make([]search.SearchResult, 0, len(results))
+	for _, r := range results {
+		if r.RelevanceScore >= threshold {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered
+}
+
+// ragSourceThreshold は「RAGの根拠として表示してよい最低スコア」を返す。
+// 検索エンジンごとにスコアの尺度が違うため、同じ閾値にはしない。
+//
+// スコアの範囲（目安）:
+//   - BM25:    0〜3程度    （キーワード一致度）
+//   - Vector:  0〜1        （コサイン類似度）
+//   - Hybrid:  0〜1        （正規化済みスコア）
+//   - Graph:   0〜N        （グラフに基づく関連スコア）
+//   - TF-IDF:  0〜0.5程度  （TF-IDF重み）
+//
+// フロントエンドでの表示:
+//
+//	スコアの尺度がエンジンごとに異なるため、フロントエンド側で
+//	パーセンテージに正規化して表示している（ChatInterface.tsx参照）。
+func ragSourceThreshold(engineName string) float64 {
+	switch engineName {
+	case "vector":
+		return 0.70 // コサイン類似度が70%以上の記事のみを参照
+	case "hybrid":
+		return 0.50 // ハイブリッドスコアが50%以上の記事のみを参照
+	case "graph":
+		return 1.0
+	case "tfidf":
+		return 0.08
+	case "bm25", "":
+		return 0.5
+	default:
+		return 0.0
+	}
+}
+
+// answerIndicatesNoRelevantContext は、LLM自身が「コンテキストに関連情報がない」と
+// 判断した回答かを見て、無関係な参照リンクを出さないための最終ガード。
+func answerIndicatesNoRelevantContext(answer string) bool {
+	phrases := []string{
+		"コンテキストには関連情報がありません",
+		"提供されたコンテキストには関連情報がありません",
+		"関連情報がありません",
+		"関連する情報はありません",
+		"関連する記事は見つかりません",
+		"ナレッジベースには関連する情報がありません。別の質問をお願いします。",
+	}
+	for _, phrase := range phrases {
+		if strings.Contains(answer, phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 // GetKnowledgeGraph はナレッジグラフの全データ（エンティティ・リレーション）を返す
@@ -459,6 +549,16 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	}
 	if err != nil {
 		slog.Error("agent run failed", "error", err, "model", req.Model)
+		// HTTPErrorの場合は詳細なエラー情報を返す
+		if httpErr, ok := err.(*llm.HTTPError); ok {
+			if httpErr.IsRateLimit() {
+				return nil, status.Error(codes.ResourceExhausted, httpErr.Body)
+			}
+			if httpErr.IsUnauthorized() {
+				return nil, status.Error(codes.Unauthenticated, httpErr.Body)
+			}
+			return nil, status.Error(codes.Internal, httpErr.Body)
+		}
 		return nil, status.Error(codes.Internal, "agent execution failed")
 	}
 
@@ -476,10 +576,16 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	pbSources := make([]*pb.AgentSource, 0, len(result.Sources))
 	for _, s := range result.Sources {
 		pbSources = append(pbSources, &pb.AgentSource{
-			ArticleId: s.ArticleID,
-			Title:     s.Title,
-			Url:       s.URL,
+			ArticleId:      s.ArticleID,
+			Title:          s.Title,
+			Url:            s.URL,
+			RelevanceScore: s.RelevanceScore,
 		})
+	}
+
+	// 関連性がない記事は、参照リンクを空にする
+	if answerIndicatesNoRelevantContext(result.Answer) {
+		pbSources = []*pb.AgentSource{}
 	}
 
 	return &pb.AgentQuestionResponse{
@@ -560,10 +666,27 @@ func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc
 	}
 	if err != nil {
 		slog.Error("agent run failed (streaming)", "error", err, "model", req.Model)
+		// HTTPErrorの場合は詳細なエラー情報を返す
+		var errMsg string
+		if httpErr, ok := err.(*llm.HTTPError); ok {
+			errMsg = httpErr.Body
+		} else {
+			errMsg = err.Error()
+		}
 		_ = stream.Send(&pb.AgentStreamEvent{
 			EventType: "error",
-			Error:     &pb.AgentErrorEvent{Message: err.Error()},
+			Error:     &pb.AgentErrorEvent{Message: errMsg},
 		})
+		// gRPCステータスコードを適切に返す
+		if httpErr, ok := err.(*llm.HTTPError); ok {
+			if httpErr.IsRateLimit() {
+				return status.Error(codes.ResourceExhausted, httpErr.Body)
+			}
+			if httpErr.IsUnauthorized() {
+				return status.Error(codes.Unauthenticated, httpErr.Body)
+			}
+			return status.Error(codes.Internal, httpErr.Body)
+		}
 		return status.Error(codes.Internal, "agent execution failed")
 	}
 
@@ -581,10 +704,16 @@ func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc
 	pbSources := make([]*pb.AgentSource, 0, len(result.Sources))
 	for _, s := range result.Sources {
 		pbSources = append(pbSources, &pb.AgentSource{
-			ArticleId: s.ArticleID,
-			Title:     s.Title,
-			Url:       s.URL,
+			ArticleId:      s.ArticleID,
+			Title:          s.Title,
+			Url:            s.URL,
+			RelevanceScore: s.RelevanceScore,
 		})
+	}
+
+	// 関連性がない記事は、参照リンクを空にする
+	if answerIndicatesNoRelevantContext(result.Answer) {
+		pbSources = []*pb.AgentSource{}
 	}
 
 	// final_answer イベントを送信

@@ -22,11 +22,12 @@ const (
 )
 
 type Source struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId      string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	RelevanceScore float64                `protobuf:"fixed64,3,opt,name=relevance_score,json=relevanceScore,proto3" json:"relevance_score,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Source) Reset() {
@@ -71,6 +72,13 @@ func (x *Source) GetTitle() string {
 		return x.Title
 	}
 	return ""
+}
+
+func (x *Source) GetRelevanceScore() float64 {
+	if x != nil {
+		return x.RelevanceScore
+	}
+	return 0
 }
 
 type SearchRequest struct {
@@ -992,12 +1000,13 @@ func (x *AgentStep) GetObservation() string {
 }
 
 type AgentSource struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ArticleId     string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Url           string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ArticleId      string                 `protobuf:"bytes,1,opt,name=article_id,json=articleId,proto3" json:"article_id,omitempty"`
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Url            string                 `protobuf:"bytes,3,opt,name=url,proto3" json:"url,omitempty"`
+	RelevanceScore float64                `protobuf:"fixed64,4,opt,name=relevance_score,json=relevanceScore,proto3" json:"relevance_score,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *AgentSource) Reset() {
@@ -1049,6 +1058,13 @@ func (x *AgentSource) GetUrl() string {
 		return x.Url
 	}
 	return ""
+}
+
+func (x *AgentSource) GetRelevanceScore() float64 {
+	if x != nil {
+		return x.RelevanceScore
+	}
+	return 0
 }
 
 type AgentQuestionResponse struct {
@@ -1372,11 +1388,12 @@ var File_proto_ai_ai_proto protoreflect.FileDescriptor
 
 const file_proto_ai_ai_proto_rawDesc = "" +
 	"\n" +
-	"\x11proto/ai/ai.proto\x12\x02ai\"=\n" +
+	"\x11proto/ai/ai.proto\x12\x02ai\"f\n" +
 	"\x06Source\x12\x1d\n" +
 	"\n" +
 	"article_id\x18\x01 \x01(\tR\tarticleId\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\";\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12'\n" +
+	"\x0frelevance_score\x18\x03 \x01(\x01R\x0erelevanceScore\";\n" +
 	"\rSearchRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"\x86\x01\n" +
@@ -1437,12 +1454,13 @@ const file_proto_ai_ai_proto_rawDesc = "" +
 	"\athought\x18\x01 \x01(\tR\athought\x12\x16\n" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12!\n" +
 	"\faction_input\x18\x03 \x01(\tR\vactionInput\x12 \n" +
-	"\vobservation\x18\x04 \x01(\tR\vobservation\"T\n" +
+	"\vobservation\x18\x04 \x01(\tR\vobservation\"}\n" +
 	"\vAgentSource\x12\x1d\n" +
 	"\n" +
 	"article_id\x18\x01 \x01(\tR\tarticleId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\"\x7f\n" +
+	"\x03url\x18\x03 \x01(\tR\x03url\x12'\n" +
+	"\x0frelevance_score\x18\x04 \x01(\x01R\x0erelevanceScore\"\x7f\n" +
 	"\x15AgentQuestionResponse\x12\x16\n" +
 	"\x06answer\x18\x01 \x01(\tR\x06answer\x12#\n" +
 	"\x05steps\x18\x02 \x03(\v2\r.ai.AgentStepR\x05steps\x12)\n" +

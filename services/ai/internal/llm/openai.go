@@ -62,7 +62,7 @@ func (p *OpenAIProvider) Chat(ctx context.Context, messages []Message) (string, 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
 		slog.Error("OpenAI error", "status", resp.StatusCode, "body", string(respBody))
-		return "", fmt.Errorf("OpenAI returned status %d", resp.StatusCode)
+		return "", NewHTTPError(resp.StatusCode, string(respBody))
 	}
 
 	var result chatCompletionResponse

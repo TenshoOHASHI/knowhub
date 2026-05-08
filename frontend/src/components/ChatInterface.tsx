@@ -25,6 +25,7 @@ import { MODELS, SEARCH_ENGINES, CHAT_MODES } from '@/lib/const';
 import ConfirmModal from './ConfirmModal';
 import AgentSteps from './AgentSteps';
 import { AiOutlineGlobal } from 'react-icons/ai';
+import { MdOutlineSupportAgent } from 'react-icons/md';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -36,6 +37,40 @@ interface ChatMessage {
 
 const STORAGE_KEY_MESSAGES = 'chat_history';
 const getKeyStorageKey = (modelId: string) => `ai_key_${modelId}`;
+
+/**
+ * スコアをパーセンテージに正規化して表示
+ * 検索エンジンごとにスコアの尺度が違うため、統一感のある表示にする
+ *
+ * - BM25:    0〜3  程度 → 0-100%
+ * - Vector:  0〜1  （コサイン類似度） → 0-100%
+ * - Hybrid:  0〜1  （正規化済み） → 0-100%
+ * - Graph:   0〜N  （スコアベース） → 閾値1.0以上で参考値として表示
+ * - TF-IDF: 0〜0.5程度 → 0-100%
+ */
+function formatSourceScore(score?: number): string | null {
+  if (typeof score !== 'number' || !Number.isFinite(score)) {
+    return null;
+  }
+
+  // 0-1の範囲: Vector, Hybrid（そのままパーセンテージ）
+  if (score >= 0 && score <= 1) {
+    return `${Math.round(score * 100)}%`;
+  }
+
+  // 1-3の範囲: BM25（最大3として正規化）
+  if (score > 1 && score <= 3) {
+    return `${Math.round((score / 3.0) * 100)}%`;
+  }
+
+  // 0-0.5の範囲: TF-IDF（最大0.5として正規化）
+  if (score > 0 && score < 1) {
+    return `${Math.round((score / 0.5) * 100)}%`;
+  }
+
+  // その他: そのまま表示（Graph RAGなど）
+  return score.toFixed(2);
+}
 
 function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
   const ref = useRef<HTMLPreElement>(null);
@@ -138,6 +173,11 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [liveSteps, setLiveSteps] = useState<AgentStreamStepEvent[]>([]);
   const [currentPhase, setCurrentPhase] = useState<string>('');
+  const [currentAction, setCurrentAction] = useState<string>('');
+  const [ragPhase, setRagPhase] = useState<
+    'idle' | 'searching' | 'reading' | 'generating'
+  >('idle');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const [model, setModel] = useState('ollama');
   const [apiKey, setApiKey] = useState('');
@@ -192,16 +232,28 @@ export default function ChatInterface() {
       return;
     }
 
+    // 前のリクエストをキャンセル
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 新しいAbortControllerを作成
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     updateMessages((prev) => [...prev, { role: 'user', content: input }]);
     setInput('');
     setLoading(true);
     setLiveSteps([]);
     setCurrentPhase('');
+    setCurrentAction('');
+    setRagPhase('searching');
 
     try {
       const modelToSend = currentModel?.defaultModel || model;
 
       if (chatMode === 'agent') {
+        setRagPhase('idle');
         // 直近6件の会話履歴を構築
         const recentHistory: ChatHistoryEntry[] = messages
           .slice(-6)
@@ -221,6 +273,7 @@ export default function ChatInterface() {
             onStep: (step) => {
               setLiveSteps((prev) => [...prev, step]);
               setCurrentPhase(step.phase);
+              setCurrentAction(step.action || '');
             },
             onFinal: (final) => {
               updateMessages((prev) => [
@@ -234,8 +287,12 @@ export default function ChatInterface() {
               ]);
               setLiveSteps([]);
               setCurrentPhase('');
+              setCurrentAction('');
             },
             onError: (error) => {
+              // キャンセルによるエラーは無視
+              if (error.includes('AbortError') || error.includes('キャンセル'))
+                return;
               updateMessages((prev) => [
                 ...prev,
                 {
@@ -245,20 +302,50 @@ export default function ChatInterface() {
               ]);
               setLiveSteps([]);
               setCurrentPhase('');
+              setCurrentAction('');
+              setRagPhase('idle');
             },
           },
+          abortController.signal,
         );
       } else {
-        const { answer, sources } = await askQuestion(
-          input,
-          modelToSend,
-          apiKey,
-          searchEngine,
-        );
-        updateMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: answer, sources },
-        ]);
+        // RAGモード: 各フェーズを表示
+        setRagPhase('searching');
+
+        // 少し遅延して「読み込み中」を表示（検索シミュレーション）
+        const readingTimeout = setTimeout(() => {
+          setRagPhase('reading');
+        }, 800);
+
+        // さらに遅延して「生成中」を表示（記事読み込みシミュレーション）
+        const generatingTimeout = setTimeout(() => {
+          setRagPhase('generating');
+        }, 1600);
+
+        try {
+          const { answer, sources } = await askQuestion(
+            input,
+            modelToSend,
+            apiKey,
+            searchEngine,
+          );
+
+          // タイムアウトをクリア
+          clearTimeout(readingTimeout);
+          clearTimeout(generatingTimeout);
+
+          setRagPhase('idle');
+          updateMessages((prev) => [
+            ...prev,
+            { role: 'assistant', content: answer, sources },
+          ]);
+        } catch (err) {
+          // エラー時もタイムアウトをクリア
+          clearTimeout(readingTimeout);
+          clearTimeout(generatingTimeout);
+          setRagPhase('idle');
+          throw err;
+        }
       }
     } catch (error) {
       updateMessages((prev) => [
@@ -271,13 +358,53 @@ export default function ChatInterface() {
       ]);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setLiveSteps([]);
+    setCurrentPhase('');
+    setCurrentAction('');
+    setRagPhase('idle');
+  };
+
   return (
-    <div className='flex flex-col h-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800'>
+    <div className='flex flex-col h-full rounded-xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950 shadow-lg overflow-hidden'>
+      {/* タイトルヘッダー */}
+      <div className='flex items-center justify-between px-5 py-4 border-b border-stone-200 dark:border-stone-700 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm'>
+        <div className='flex items-center gap-3'>
+          <div className='relative w-10 h-10'>
+            {/* パルスアニメーション背景 */}
+            <div className='absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl animate-pulse' />
+            {/* 内側のアイコン */}
+            <div className='absolute inset-1 bg-white/20 rounded-lg flex items-center justify-center'>
+              <MdOutlineSupportAgent
+                size={18}
+                className='text-white relative z-10'
+              />
+            </div>
+            {/* 外側の波紋エフェクト */}
+            <div className='absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl animate-ping opacity-20' />
+          </div>
+          <div>
+            <h1 className='text-lg font-bold text-stone-900 dark:text-stone-100'>
+              Wiki AI
+            </h1>
+            <p className='text-xs text-stone-500 dark:text-stone-400'>
+              Wiki の内容に基づいて AI が回答します
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* モデル選択 + モード切替 + 検索エンジン選択 + API Key 入力 + 履歴削除 */}
-      <div className='flex flex-wrap items-center gap-2 border-b border-stone-300 p-3 dark:border-stone-600 sm:gap-3'>
+      <div className='flex flex-wrap items-center gap-2 border-b border-stone-200 p-3 dark:border-stone-700 sm:gap-3 sm:flex-nowrap sm:overflow-x-auto bg-white/30 dark:bg-stone-800/30'>
         <select
           value={chatMode}
           onChange={(e) => {
@@ -345,7 +472,7 @@ export default function ChatInterface() {
           type='button'
           onClick={() => setShowHelp((prev) => !prev)}
           title='使い方を確認'
-          className={`shrink-0 p-1.5 rounded-lg transition-colors ${showHelp ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-200'}`}
+          className={`shrink-0 sm:flex sm:shrink-0 p-1.5 rounded-lg transition-colors ${showHelp ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'text-stone-400 hover:text-stone-600 dark:hover:text-stone-200'}`}
         >
           <FiHelpCircle size={18} />
         </button>
@@ -356,7 +483,7 @@ export default function ChatInterface() {
             type='button'
             onClick={() => setShowClearModal(true)}
             title='会話履歴を削除'
-            className='shrink-0 p-1.5 text-stone-400 hover:text-red-500 transition-colors'
+            className='shrink-0 sm:flex sm:shrink-0 p-1.5 text-stone-400 hover:text-red-500 transition-colors'
           >
             <FiTrash2 size={18} />
           </button>
@@ -366,8 +493,8 @@ export default function ChatInterface() {
       {/* ヘルプパネル（モード別に内容を切り替え） */}
       {showHelp && (
         <div className='thin-scrollbar max-h-[42dvh] overflow-y-auto overscroll-contain border-b border-stone-300 bg-stone-50 p-3 text-sm text-stone-700 dark:border-stone-600 dark:bg-stone-800/50 dark:text-stone-300 sm:max-h-[50vh] sm:p-4'>
-          <div className='flex items-center justify-between mb-2'>
-            <h3 className='font-semibold text-stone-900 dark:text-stone-100'>
+          <div className='flex items-center justify-between mb-3'>
+            <h3 className='font-semibold text-base text-stone-900 dark:text-stone-100 border-l-4 border-red-400 dark:border-red-600 pl-3 bg-gradient-to-r from-red-100 via-red-50 via-red-50 to-stone-50 dark:from-red-900/30 dark:via-red-950/20 dark:via-red-950/20 dark:to-stone-800/50 py-1.5 -ml-3 pr-4 w-full'>
               {chatMode === 'agent' ? 'Agent モード' : 'RAG モード'}の使い方
             </h3>
             <button
@@ -379,18 +506,17 @@ export default function ChatInterface() {
             </button>
           </div>
           {chatMode === 'agent' ? (
-            <div className='space-y-2'>
+            <div className='space-y-3'>
               <p>AIが自律的にツールを選択・実行して回答を導きます。</p>
-              <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2'>
-                <p className='font-medium text-amber-800 dark:text-amber-300'>
-                  利用制限:
+
+              {/* 利用制限 */}
+              <div className='rounded border border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-700/30 px-3 py-2'>
+                <p className='font-medium text-stone-900 dark:text-stone-200 border-b-2 border-amber-400 inline-block pb-0.5'>
+                  利用制限
                 </p>
-                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-amber-800 dark:text-amber-200'>
+                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-stone-700 dark:text-stone-300 text-xs'>
                   <li>
                     未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
-                  </li>
-                  <li>
-                    混雑時や利用上限に達した場合は、画面に再試行目安を表示します。
                   </li>
                   <li>
                     外部モデルは入力した API Key
@@ -402,120 +528,264 @@ export default function ChatInterface() {
                   </li>
                 </ul>
               </div>
+
+              {/* 実行モード */}
               <div>
-                <p className='font-medium'>
-                  実行モード（モデルにより自動切替）:
+                <p className='font-medium text-stone-900 dark:text-stone-100 mb-2'>
+                  実行モード（モデルにより自動切替）
                 </p>
-                <ul className='list-disc ml-4 mt-1 space-y-1'>
-                  <li>
-                    <span className='font-medium text-blue-600 dark:text-blue-400'>
-                      外部モデル
+
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 mb-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      外部モデル（自律 ReAct）
                     </span>
-                    （Gemini / DeepSeek / OpenAI / GLM-5）→{' '}
-                    <span className='font-medium'>自律 ReAct</span>: LLMが
-                    Thought → Action → Observation を自分で判断・反復
-                  </li>
-                  <li>
-                    <span className='font-medium text-orange-600 dark:text-orange-400'>
-                      Ollama
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      Gemini / DeepSeek / OpenAI / GLM-5
                     </span>
-                    （ローカル）→{' '}
-                    <span className='font-medium'>固定パイプライン</span>:
-                    search → read → 回答の順序で確実に実行
-                  </li>
-                </ul>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
+                    LLMが自分で思考（Thought）→ 行動（Action）→
+                    観察（Observation）を判断・反復します。
+                    複雑な質問に対して柔軟に対応できます。
+                  </p>
+                  <div className='text-xs text-blue-700 dark:text-blue-300 mt-1'>
+                    <span className='font-medium'>おすすめ質問例:</span>
+                    <ul className='list-disc ml-4 mt-0.5'>
+                      <li>
+                        「Goのcontextパッケージと、それに関連する記事をまとめて教えて」
+                      </li>
+                      <li>
+                        「gRPCの実装手順をステップバイステップで説明して」
+                      </li>
+                      <li>「このWikiに載っている技術の全体像を整理して」</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      Ollama（固定パイプライン）
+                    </span>
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      ローカルモデル（gemma3:1b）
+                    </span>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200'>
+                    search → read → 回答 の順序で確実に実行します。
+                    シンプルで高速な回答が得られます。
+                  </p>
+                </div>
               </div>
+
+              {/* 内部ツール */}
               <div>
-                <p className='font-medium'>利用可能ツール:</p>
-                <ul className='list-disc ml-4 mt-1 space-y-0.5'>
-                  <li>
-                    <code className='bg-stone-200 dark:bg-stone-700 px-1 rounded text-xs'>
+                <p className='font-medium text-stone-900 dark:text-stone-100 mb-1'>
+                  内部ツール
+                </p>
+                <p className='text-xs text-stone-600 dark:text-stone-400 mb-2'>
+                  AI
+                  エージェントが回答生成に使用する内部ツールです（一般公開はしていません）
+                </p>
+                <div className='grid grid-cols-1 gap-2 text-xs'>
+                  <div className='flex items-center gap-3 px-3 py-2 border-l-2 border-emerald-200 dark:border-emerald-700'>
+                    <code className='font-bold text-stone-900 dark:text-white text-xs'>
                       search_wiki
-                    </code>{' '}
-                    Wiki内を検索
-                  </li>
-                  <li>
-                    <code className='bg-stone-200 dark:bg-stone-700 px-1 rounded text-xs'>
+                    </code>
+                    <span className='ml-2 text-stone-700 dark:text-stone-300'>
+                      Wiki内を検索
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-3 px-3 py-2 border-l-2 border-emerald-200 dark:border-emerald-700'>
+                    <code className='font-bold text-stone-900 dark:text-white text-xs'>
                       read_article
-                    </code>{' '}
-                    記事全文を取得
-                  </li>
-                  <li>
-                    <code className='bg-stone-200 dark:bg-stone-700 px-1 rounded text-xs'>
+                    </code>
+                    <span className='ml-2 text-stone-700 dark:text-stone-300'>
+                      記事全文を取得
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-3 px-3 py-2 border-l-2 border-emerald-200 dark:border-emerald-700'>
+                    <code className='font-bold text-stone-900 dark:text-white text-xs'>
                       list_articles
-                    </code>{' '}
-                    記事一覧を取得
-                  </li>
-                  <li>
-                    <code className='bg-stone-200 dark:bg-stone-700 px-1 rounded text-xs'>
+                    </code>
+                    <span className='ml-2 text-stone-700 dark:text-stone-300'>
+                      記事一覧を取得
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-3 px-3 py-2 border-l-2 border-emerald-200 dark:border-emerald-700'>
+                    <code className='font-bold text-stone-900 dark:text-white text-xs'>
                       web_search
-                    </code>{' '}
-                    外部サイトを検索（Web検索ON時）
+                    </code>
+                    <span className='ml-2 text-stone-700 dark:text-stone-300'>
+                      外部サイトを検索（Web検索ON時）
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-3 px-3 py-2 border-l-2 border-emerald-200 dark:border-emerald-700'>
+                    <code className='font-bold text-stone-900 dark:text-white text-xs'>
+                      read_url
+                    </code>
+                    <span className='ml-2 text-stone-700 dark:text-stone-300'>
+                      Webページ本文を取得（Web検索ON時）
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RAG と Agent の違い */}
+              <div className='rounded border border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-700/30 px-3 py-2'>
+                <p className='font-medium text-stone-900 dark:text-stone-200 mb-1'>
+                  RAG と Agent の違い
+                </p>
+                <ul className='space-y-1 text-xs text-stone-700 dark:text-stone-300'>
+                  <li>
+                    <span className='font-medium'>RAG:</span>{' '}
+                    質問→検索→回答のワンステップ。 シンプルな質問に最適です。
                   </li>
                   <li>
-                    <code className='bg-stone-200 dark:bg-stone-700 px-1 rounded text-xs'>
-                      read_url
-                    </code>{' '}
-                    Webページ本文を取得（Web検索ON時）
+                    <span className='font-medium'>Agent:</span>{' '}
+                    質問を分析しながら必要な情報を収集・調査します。
+                    複数の記事を比較する質問や、調査が必要な複雑な質問に最適です。
                   </li>
                 </ul>
               </div>
             </div>
           ) : (
-            <div className='space-y-2'>
+            <div className='space-y-3'>
               <p>
                 質問に対して Wiki 内の関連記事を検索し、その内容をもとに LLM
                 が回答します。
               </p>
-              <div className='rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2'>
-                <p className='font-medium text-amber-800 dark:text-amber-300'>
-                  利用制限:
+
+              {/* 利用制限 */}
+              <div className='rounded border border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-700/30 px-3 py-2'>
+                <p className='font-medium text-stone-900 dark:text-stone-200 border-b-2 border-amber-400 inline-block pb-0.5'>
+                  利用制限
                 </p>
-                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-amber-800 dark:text-amber-200'>
+                <ul className='list-disc ml-4 mt-1 space-y-0.5 text-stone-700 dark:text-stone-300 text-xs'>
                   <li>
                     未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
-                  </li>
-                  <li>
-                    混雑時や利用上限に達した場合は、画面に再試行目安を表示します。
                   </li>
                   <li>
                     Vector / Hybrid / Graph RAG は Embedding や LLM API
                     を使うため、外部モデル利用時は API Key が必要です。
                   </li>
-                  <li>
-                    外部 API
-                    の利用料金・上限は各モデル提供元の設定に依存します。
-                  </li>
                 </ul>
               </div>
+
+              {/* 処理フロー */}
               <div>
-                <p className='font-medium'>処理フロー:</p>
-                <ol className='list-decimal ml-4 mt-1 space-y-0.5'>
+                <p className='font-medium text-stone-900 dark:text-stone-100 mb-2'>
+                  処理フロー
+                </p>
+                <ol className='list-decimal ml-4 mt-1 space-y-0.5 text-xs text-stone-700 dark:text-stone-300'>
                   <li>選択した検索エンジンで質問に関連する記事を検索</li>
                   <li>上位記事の全文をコンテキストとして LLM に渡す</li>
                   <li>コンテキストに基づいて回答を生成</li>
                 </ol>
               </div>
+
+              {/* 検索エンジン選び方ガイド */}
               <div>
-                <p className='font-medium'>検索エンジン:</p>
-                <ul className='list-disc ml-4 mt-1 space-y-0.5'>
-                  <li>
-                    <span className='font-medium'>BM25</span>{' '}
-                    キーワード一致（API Key不要）
-                  </li>
-                  <li>
-                    <span className='font-medium'>Vector</span>{' '}
-                    意味的類似度（Embedding API必要）
-                  </li>
-                  <li>
-                    <span className='font-medium'>Hybrid</span> BM25 + Vector
-                    の統合
-                  </li>
-                  <li>
-                    <span className='font-medium'>Graph RAG</span>{' '}
-                    ナレッジグラフで関連記事を横断検索
-                  </li>
-                </ul>
+                <p className='font-medium text-stone-900 dark:text-stone-100 mb-2'>
+                  検索エンジン選び方ガイド
+                </p>
+
+                {/* BM25 */}
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 mb-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      BM25（キーワード検索）
+                    </span>
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      API Key不要
+                    </span>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
+                    入力された単語が記事に含まれているかを検索します。
+                    専門用語や固有名詞の検索に適しています。
+                  </p>
+                  <div className='text-xs text-blue-700 dark:text-blue-300'>
+                    <span className='font-medium'>おすすめ質問例:</span>
+                    <ul className='list-disc ml-4 mt-0.5'>
+                      <li>「Go言語のcontextパッケージについて」</li>
+                      <li>「gRPCの使い方を教えて」</li>
+                      <li>「Docker Composeの書き方は？」</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Vector */}
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 mb-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      Vector（意味検索）
+                    </span>
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      API Key必要
+                    </span>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
+                    記事の「意味」を理解して検索します。
+                    同じ単語を使わなくても似た概念の記事を見つけられます。
+                  </p>
+                  <div className='text-xs text-blue-700 dark:text-blue-300'>
+                    <span className='font-medium'>おすすめ質問例:</span>
+                    <ul className='list-disc ml-4 mt-0.5'>
+                      <li>「非同期処理の実装方法」</li>
+                      <li>「マイクロサービス間の通信手段」</li>
+                      <li>「データベースのパフォーマンス改善」</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Hybrid */}
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 mb-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      Hybrid（複合検索）
+                    </span>
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      API Key必要
+                    </span>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
+                    BM25とVectorを組み合わせた最もバランスの良い検索です。
+                    どの検索エンジンにするか迷ったらこれを選んでください。
+                  </p>
+                  <div className='text-xs text-blue-700 dark:text-blue-300'>
+                    <span className='font-medium'>おすすめ質問例:</span>
+                    <ul className='list-disc ml-4 mt-0.5'>
+                      <li>「GoでAPIサーバーを立てたい」</li>
+                      <li>「Reactの状態管理ベストプラクティス」</li>
+                      <li>「JWT認証の実装手順」</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Graph RAG */}
+                <div className='rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 px-3 py-2'>
+                  <div className='flex items-center gap-2 mb-1'>
+                    <span className='font-semibold text-blue-900 dark:text-blue-100'>
+                      Graph RAG（ナレッジグラフ）
+                    </span>
+                    <span className='text-xs bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-1.5 py-0.5 rounded'>
+                      API Key必要
+                    </span>
+                  </div>
+                  <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
+                    記事同士の関連性を分析したナレッジグラフを使って検索します。
+                    複数のトピックにまたがる質問に強いです。
+                  </p>
+                  <div className='text-xs text-blue-700 dark:text-blue-300'>
+                    <span className='font-medium'>おすすめ質問例:</span>
+                    <ul className='list-disc ml-4 mt-0.5'>
+                      <li>「Goの学習ロードマップを組みたい」</li>
+                      <li>「Web開発全体の流れを知りたい」</li>
+                      <li>「バックエンドエンジニアになるには？」</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -523,11 +793,13 @@ export default function ChatInterface() {
       )}
 
       {/* メッセージ一覧 */}
-      <div className='flex-1 overflow-y-auto space-y-4 p-4'>
+      <div className='flex-1 overflow-y-auto space-y-4 p-4 bg-gradient-to-b from-transparent to-stone-50/50 dark:to-stone-900/30'>
         {messages.length === 0 && (
-          <div className='flex flex-col items-center justify-center h-full text-stone-400 gap-2'>
-            <FaRobot size={40} />
-            <p className='text-sm'>Wikiについて質問してください</p>
+          <div className='flex flex-col items-center justify-center h-full text-stone-400 gap-3'>
+            <div className='w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-600/20 dark:from-blue-500/10 dark:to-indigo-600/10 flex items-center justify-center'>
+              <FaRobot size={32} className='text-blue-500 dark:text-blue-400' />
+            </div>
+            <p className='text-sm font-medium'>Wikiについて質問してください</p>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -536,18 +808,15 @@ export default function ChatInterface() {
             className={`flex min-w-0 gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {msg.role === 'assistant' && (
-              <div className='shrink-0 w-8 h-8 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center'>
-                <FaRobot
-                  size={16}
-                  className='text-stone-600 dark:text-stone-300'
-                />
+              <div className='shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md'>
+                <FaRobot size={14} className='text-white' />
               </div>
             )}
             <div
-              className={`min-w-0 max-w-[85%] rounded-lg px-4 py-2 text-sm sm:max-w-[80%] ${
+              className={`min-w-0 max-w-[85%] rounded-2xl px-4 py-2.5 text-sm sm:max-w-[80%] ${
                 msg.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-stone-200 dark:bg-stone-700 text-stone-900 dark:text-stone-100'
+                  ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md'
+                  : 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 shadow-sm'
               }`}
             >
               {msg.role === 'assistant' ? (
@@ -578,16 +847,26 @@ export default function ChatInterface() {
               )}
               {msg.sources && msg.sources.length > 0 && (
                 <div className='text-xs text-stone-500 dark:text-stone-400 mt-2 pt-2 border-t border-stone-300 dark:border-stone-500'>
-                  参照:{' '}
-                  {msg.sources.map((s) => (
-                    <a
-                      key={s.article_id}
-                      href={`/wiki/${s.article_id}`}
-                      className='underline hover:text-blue-400 ml-1'
-                    >
-                      {s.title}
-                    </a>
-                  ))}
+                  <div className='mb-1 font-medium'>参照記事</div>
+                  <div className='flex flex-wrap gap-1.5'>
+                    {msg.sources.map((s) => {
+                      const score = formatSourceScore(s.relevance_score);
+                      return (
+                        <a
+                          key={s.article_id}
+                          href={`/wiki/${s.article_id}`}
+                          className='inline-flex max-w-full items-center gap-1 rounded border border-stone-300 px-2 py-1 hover:border-blue-400 hover:text-blue-500 dark:border-stone-500 dark:hover:border-blue-400 dark:hover:text-blue-300'
+                        >
+                          <span className='truncate'>{s.title}</span>
+                          {score && (
+                            <span className='shrink-0 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] text-stone-700 dark:bg-stone-700 dark:text-stone-200'>
+                              score {score}
+                            </span>
+                          )}
+                        </a>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               {msg.agentSteps && msg.agentSteps.length > 0 && (
@@ -606,24 +885,149 @@ export default function ChatInterface() {
         ))}
         {loading && (
           <div className='flex gap-2 justify-start'>
-            <div className='shrink-0 w-8 h-8 rounded-full bg-stone-300 dark:bg-stone-600 flex items-center justify-center'>
-              <FaRobot
-                size={16}
-                className='text-stone-600 dark:text-stone-300'
-              />
+            <div className='shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md'>
+              <FaRobot size={14} className='text-white' />
             </div>
-            <div className='bg-stone-200 dark:bg-stone-700 rounded-lg px-4 py-2 text-sm text-stone-400'>
-              {chatMode === 'agent' && currentPhase ? (
-                <span>
-                  {currentPhase === 'llm_thinking' && '思考中...'}
-                  {currentPhase === 'tool_executing' && 'ツール実行中...'}
-                  {currentPhase === 'tool_complete' && 'ツール完了'}
-                  {![
-                    'llm_thinking',
-                    'tool_executing',
-                    'tool_complete',
-                  ].includes(currentPhase) && '回答中...'}
-                </span>
+            <div className='bg-white dark:bg-stone-800 rounded-2xl px-4 py-2.5 text-sm text-stone-400 relative pr-10 min-w-[200px] border border-stone-200 dark:border-stone-700 shadow-sm'>
+              {chatMode === 'agent' ? (
+                <div className='flex flex-col gap-1'>
+                  {/* Wiki内を検索中 */}
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${currentAction === 'search_wiki' && currentPhase === 'tool_executing' ? 'bg-blue-500 animate-pulse' : currentPhase === 'tool_complete' && liveSteps.some((s) => s.action === 'search_wiki') ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        (currentAction === 'search_wiki' &&
+                          currentPhase === 'tool_executing') ||
+                        (currentPhase === 'tool_complete' &&
+                          liveSteps.some((s) => s.action === 'search_wiki'))
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      Wiki内を検索中...
+                    </span>
+                  </div>
+                  {/* 記事を読み込んでいます */}
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${currentAction === 'read_article' && currentPhase === 'tool_executing' ? 'bg-blue-500 animate-pulse' : currentPhase === 'tool_complete' && liveSteps.some((s) => s.action === 'read_article') ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        (currentAction === 'read_article' &&
+                          currentPhase === 'tool_executing') ||
+                        (currentPhase === 'tool_complete' &&
+                          liveSteps.some((s) => s.action === 'read_article'))
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      関連記事を読み込んでいます...
+                    </span>
+                  </div>
+                  {/* Web検索中（有効時のみ表示） */}
+                  {enableWebSearch && (
+                    <div className='flex items-center gap-2'>
+                      <div
+                        className={`w-2 h-2 rounded-full ${currentAction === 'web_search' && currentPhase === 'tool_executing' ? 'bg-amber-500 animate-pulse' : currentPhase === 'tool_complete' && liveSteps.some((s) => s.action === 'web_search') ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                      />
+                      <span
+                        className={
+                          (currentAction === 'web_search' &&
+                            currentPhase === 'tool_executing') ||
+                          (currentPhase === 'tool_complete' &&
+                            liveSteps.some((s) => s.action === 'web_search'))
+                            ? 'text-stone-600 dark:text-stone-300'
+                            : ''
+                        }
+                      >
+                        Webを検索中...
+                      </span>
+                    </div>
+                  )}
+                  {/* URLを読み込んでいます（有効時のみ表示） */}
+                  {enableWebSearch && (
+                    <div className='flex items-center gap-2'>
+                      <div
+                        className={`w-2 h-2 rounded-full ${currentAction === 'read_url' && currentPhase === 'tool_executing' ? 'bg-amber-500 animate-pulse' : currentPhase === 'tool_complete' && liveSteps.some((s) => s.action === 'read_url') ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                      />
+                      <span
+                        className={
+                          (currentAction === 'read_url' &&
+                            currentPhase === 'tool_executing') ||
+                          (currentPhase === 'tool_complete' &&
+                            liveSteps.some((s) => s.action === 'read_url'))
+                            ? 'text-stone-600 dark:text-stone-300'
+                            : ''
+                        }
+                      >
+                        ページを読み込んでいます...
+                      </span>
+                    </div>
+                  )}
+                  {/* 回答を生成しています */}
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${currentPhase === 'llm_thinking' && liveSteps.length > 0 ? 'bg-blue-500 animate-pulse' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        currentPhase === 'llm_thinking' && liveSteps.length > 0
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      回答を生成しています...
+                    </span>
+                  </div>
+                </div>
+              ) : chatMode === 'rag' && ragPhase !== 'idle' ? (
+                <div className='flex flex-col gap-1'>
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${ragPhase === 'searching' ? 'bg-blue-500 animate-pulse' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        ragPhase === 'searching'
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      Wiki内を検索中...
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${ragPhase === 'reading' ? 'bg-blue-500 animate-pulse' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        ragPhase === 'reading'
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      関連記事を読み込んでいます...
+                    </span>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <div
+                      className={`w-2 h-2 rounded-full ${ragPhase === 'generating' ? 'bg-blue-500 animate-pulse' : 'bg-stone-400'}`}
+                    />
+                    <span
+                      className={
+                        ragPhase === 'generating'
+                          ? 'text-stone-600 dark:text-stone-300'
+                          : ''
+                      }
+                    >
+                      回答を生成しています...
+                    </span>
+                  </div>
+                </div>
               ) : (
                 '回答中...'
               )}
@@ -640,6 +1044,14 @@ export default function ChatInterface() {
                   />
                 </div>
               )}
+              <button
+                type='button'
+                onClick={handleCancel}
+                className='absolute top-2 right-2 shrink-0 rounded p-1 text-stone-500 hover:text-stone-700 hover:bg-stone-300 dark:text-stone-400 dark:hover:text-stone-200 dark:hover:bg-stone-600 transition-colors'
+                title='キャンセル'
+              >
+                <FiX size={14} />
+              </button>
             </div>
           </div>
         )}
@@ -649,19 +1061,19 @@ export default function ChatInterface() {
       {/* 入力フォーム */}
       <form
         onSubmit={handleSubmit}
-        className='flex gap-2 border-t border-stone-300 p-3 dark:border-stone-600 sm:p-4'
+        className='flex gap-2 border-t border-stone-200 dark:border-stone-700 p-3 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm sm:p-4'
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder='Wikiについて質問してください...'
           disabled={loading}
-          className='min-w-0 flex-1 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 dark:border-stone-500 dark:bg-stone-700 dark:text-stone-100 dark:placeholder-stone-500'
+          className='min-w-0 flex-1 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 dark:text-stone-100 dark:placeholder-stone-500 shadow-sm'
         />
         <button
           type='submit'
           disabled={loading}
-          className='shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50'
+          className='shrink-0 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-medium text-white hover:from-blue-700 hover:to-blue-800 disabled:cursor-not-allowed disabled:opacity-50 shadow-md transition-all'
         >
           送信
         </button>

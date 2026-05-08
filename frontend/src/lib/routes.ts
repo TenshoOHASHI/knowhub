@@ -1,4 +1,10 @@
-import { FiBook, FiUser, FiBriefcase, FiEdit, FiBookmark } from 'react-icons/fi';
+import {
+  FiBook,
+  FiUser,
+  FiBriefcase,
+  FiEdit,
+  FiBookmark,
+} from 'react-icons/fi';
 import { IconType } from 'react-icons';
 import { VscVersions } from 'react-icons/vsc';
 import { FiLogOut } from 'react-icons/fi';

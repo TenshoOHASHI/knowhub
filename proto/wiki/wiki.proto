@@ -221,18 +221,35 @@ message GetAnalyticsSummaryRequest {
 message DailyCount {
   string date = 1;
   int32 count = 2;
+  int32 unique_visitors = 3;
 }
 
 message GetAnalyticsSummaryResponse {
   int32 total_views = 1;
-  int32 today_views = 2;
-  repeated DailyCount daily_views = 3;
-  repeated PageRanking page_ranking = 4;
+  int32 unique_visitors = 2;
+  int32 today_views = 3;
+  repeated DailyCount daily_views = 4;
+  repeated PageRanking page_ranking = 5;
+  repeated ArticleRanking article_ranking = 6;
+  repeated LikeRanking like_ranking = 7;
 }
 
 message PageRanking {
   string path = 1;
   int32 count = 2;
+}
+
+message ArticleRanking {
+  string id = 1;
+  string title = 2;
+  int32 count = 3;
+  string visibility = 4;
+}
+
+message LikeRanking {
+  string id = 1;
+  string title = 2;
+  int32 count = 3;
 }
 
 service WikiServices {

@@ -19,6 +19,7 @@ service AIService {
 message Source {
   string article_id = 1;
   string title = 2;
+  double relevance_score = 3;
 }
 message SearchRequest {
   string query = 1;
@@ -113,6 +114,7 @@ message AgentSource {
   string article_id = 1;
   string title = 2;
   string url = 3;
+  double relevance_score = 4;
 }
 
 message AgentQuestionResponse {

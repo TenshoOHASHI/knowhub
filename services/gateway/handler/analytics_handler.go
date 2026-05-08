@@ -77,6 +77,8 @@ func (h *AnalyticsHandler) GetAnalyticsSummary(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	slog.Info("gateway response", "likeRanking", len(resp.LikeRanking))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

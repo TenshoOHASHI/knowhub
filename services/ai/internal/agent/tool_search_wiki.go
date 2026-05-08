@@ -95,9 +95,41 @@ func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) 
 		return "該当する記事は見つかりませんでした。", nil
 	}
 
+	// 閾値フィルタ: 関連性が低い記事を除外（ai.go の ragSourceThreshold と同じ閾値）
+	filtered := make([]search.SearchResult, 0, len(results))
+	threshold := ragSourceThreshold(t.engineName)
+	for _, r := range results {
+		if r.RelevanceScore >= threshold {
+			filtered = append(filtered, r)
+		}
+	}
+
+	if len(filtered) == 0 {
+		return "該当する記事は見つかりませんでした。", nil
+	}
+
 	var out string
-	for i, r := range results {
+	for i, r := range filtered {
 		out += fmt.Sprintf("%d. [%s] (ID: %s, スコア: %.2f)\n%s\n\n", i+1, r.Title, r.ArticleID, r.RelevanceScore, r.Context)
 	}
 	return truncate(out, 3000), nil
+}
+
+// ragSourceThreshold は「RAGの根拠として表示してよい最低スコア」を返す
+// ai.go の ragSourceThreshold と同じ値を維持する
+func ragSourceThreshold(engineName string) float64 {
+	switch engineName {
+	case "vector":
+		return 0.70
+	case "hybrid":
+		return 0.50
+	case "graph":
+		return 1.0
+	case "tfidf":
+		return 0.08
+	case "bm25", "":
+		return 0.5
+	default:
+		return 0.0
+	}
 }

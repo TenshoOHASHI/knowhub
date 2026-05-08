@@ -12,6 +12,10 @@ set -euo pipefail
 
 # Usage:
 #   sudo DEPLOY_PATH=/opt/tenhub ./certbot-setup.sh example.com admin@example.com
+#
+# 注意:
+#   このスクリプトは証明書取得後に .env.production を HTTPS 用へ切り替えます。
+#   HTTP 検証中は COOKIE_SECURE=false ですが、HTTPS 化後は COOKIE_SECURE=true にします。
 
 # $1:
 #   証明書を取得したいドメインです。
@@ -35,13 +39,13 @@ if [ -z "$DOMAIN" ]; then
     exit 1
 fi
 
-echo "[1/5] Stop nginx container"
+echo "[1/6] Stop nginx container"
 # certbot --standalone は80番ポートを一時的に使います。
 # nginxが80番を使っているため、証明書取得中だけnginxコンテナを止めます。
 # `|| true` は、nginxが未起動でもスクリプトを止めないためです。
 docker compose -f "$COMPOSE_FILE" stop nginx 2>/dev/null || true
 
-echo "[2/5] Issue Let's Encrypt certificate"
+echo "[2/6] Issue Let's Encrypt certificate"
 # certbot certonly --standalone:
 #   nginxとは別にcertbot自身が一時Webサーバーを立てて認証します。
 # --non-interactive:
@@ -57,7 +61,7 @@ certbot certonly --standalone \
     -d "$DOMAIN" \
     --http-01-port=80
 
-echo "[3/5] Ensure DH params"
+echo "[3/6] Ensure DH params"
 # ssl-dhparams.pem:
 #   TLSの安全性を高めるためのDHパラメータです。
 #   既に存在する場合は作り直しません。
@@ -65,7 +69,7 @@ if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
     openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
 fi
 
-echo "[4/5] Update .env.production"
+echo "[4/6] Update .env.production"
 touch "$ENV_FILE"
 
 # grep -q:
@@ -87,7 +91,38 @@ grep -q '^PUBLIC_ORIGIN=' "$ENV_FILE" && sed -i "s#^PUBLIC_ORIGIN=.*#PUBLIC_ORIG
 #   nginx templateでHTTPS設定を有効化するためのフラグです。
 grep -q '^SSL_ENABLED=' "$ENV_FILE" && sed -i 's/^SSL_ENABLED=.*/SSL_ENABLED=true/' "$ENV_FILE" || echo "SSL_ENABLED=true" >> "$ENV_FILE"
 
-echo "[5/5] Start nginx"
+# COOKIE_SECURE:
+#   Next.js Route Handler が Set-Cookie する時の Secure 属性です。
+#   HTTPS化後は true にして、CookieをHTTPSでだけ送信します。
+grep -q '^COOKIE_SECURE=' "$ENV_FILE" && sed -i 's/^COOKIE_SECURE=.*/COOKIE_SECURE=true/' "$ENV_FILE" || echo "COOKIE_SECURE=true" >> "$ENV_FILE"
+
+# SEARXNG_PUBLIC_URL:
+#   SearXNG自身が知る公開URLです。
+#   HTTPS化後は http:// ではなく https:// に揃えます。
+grep -q '^SEARXNG_PUBLIC_URL=' "$ENV_FILE" && sed -i "s#^SEARXNG_PUBLIC_URL=.*#SEARXNG_PUBLIC_URL=https://$DOMAIN/search/#" "$ENV_FILE" || echo "SEARXNG_PUBLIC_URL=https://$DOMAIN/search/" >> "$ENV_FILE"
+
+echo "[5/6] Install certbot renewal hooks"
+# standalone方式では、証明書更新時にも80番ポートが必要です。
+# 通常はnginxコンテナが80番を使っているため、
+# certbot renew の前にnginxを止め、更新後にnginxを戻すhookを配置します。
+mkdir -p /etc/letsencrypt/renewal-hooks/pre /etc/letsencrypt/renewal-hooks/post
+
+cat > /etc/letsencrypt/renewal-hooks/pre/tenhub-stop-nginx.sh <<EOF
+#!/bin/sh
+cd "$DEPLOY_PATH" || exit 0
+docker compose -f docker-compose.prod.yml --env-file .env.production stop nginx || true
+EOF
+
+cat > /etc/letsencrypt/renewal-hooks/post/tenhub-start-nginx.sh <<EOF
+#!/bin/sh
+cd "$DEPLOY_PATH" || exit 0
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d nginx || true
+EOF
+
+chmod +x /etc/letsencrypt/renewal-hooks/pre/tenhub-stop-nginx.sh
+chmod +x /etc/letsencrypt/renewal-hooks/post/tenhub-start-nginx.sh
+
+echo "[6/6] Start nginx"
 docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d nginx
 
 echo "Done: https://$DOMAIN"

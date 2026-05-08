@@ -99,7 +99,7 @@ func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, er
 		// ディスク（メモリ？）からバイド列を全て読み込む
 		respBody, _ := io.ReadAll(resp.Body)
 		slog.Error("GLM-5 error", "status", resp.StatusCode, "body", string(respBody))
-		return "", fmt.Errorf("GLM-5 returned status %d", resp.StatusCode)
+		return "", NewHTTPError(resp.StatusCode, string(respBody))
 	}
 
 	// 結果用の構造体を用意

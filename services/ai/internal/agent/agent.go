@@ -29,9 +29,10 @@ type AgentStepResult struct {
 
 // AgentSourceResult は参照元情報
 type AgentSourceResult struct {
-	ArticleID string
-	Title     string
-	URL       string
+	ArticleID      string
+	Title          string
+	URL            string
+	RelevanceScore float64
 }
 
 // Agent は ReAct パターンのエージェント
@@ -69,11 +70,18 @@ func (a *Agent) Run(ctx context.Context, question string) (*AgentResult, error) 
 - 同じツールを同じクエリで2回以上呼び出してはいけません
 - read_article を使わずに Final Answer を出力してはいけません`
 
+	var noAnswerGuidance string
 	if _, hasWeb := a.tools["web_search"]; hasWeb {
 		toolGuidance += `
 - search_wiki の後、必ず web_search でも検索してください。両方の結果を比較して回答すること
 - web_search を使った後は、必ず read_url で上位の検索結果URLの本文を取得してください
 - read_url を使わずに Final Answer を出力してはいけません`
+		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、以下の手順で回答してください：
+  1. まず「Wiki内には関連する記事が見つかりませんでした。」と明示してください
+  2. その後、「補足情報として」と明記した上で、あなたの一般的な知識から情報を提供してください
+  3. 提供する情報がWikiの情報ではないことを必ず区別してください`
+	} else {
+		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、「Wiki内には関連する記事が見つかりませんでした。詳細や最新の情報が必要な場合は、検索モード（Web検索ON）を使用してください。」と回答してください。この場合、あなたの知識で補足情報を提供しないでください。`
 	}
 
 	jst := time.FixedZone("JST", 9*60*60)
@@ -106,7 +114,8 @@ Final Answer: ユーザーへの回答文（日本語）
 - 回答を直接書いてはいけない。必ずツールを1回以上呼び出してから Final Answer を出力すること
 - Action Input は {"key":"value"} のJSON形式にすること
 - ツールは一度に1つだけ呼び出すこと
-- Thought, Action, Action Input を1行ずつ出力すること`, currentTime, toolDescriptions, toolGuidance)
+- Thought, Action, Action Input を1行ずつ出力すること
+%s`, currentTime, toolDescriptions, toolGuidance, noAnswerGuidance)
 
 	// 会話履歴を構築
 	var conversation []llm.Message
@@ -323,7 +332,12 @@ func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
 			ArticleID string `json:"article_id"`
 		}
 		if err := json.Unmarshal([]byte(step.ActionInput), &in); err == nil && in.ArticleID != "" {
-			*sources = append(*sources, AgentSourceResult{ArticleID: in.ArticleID})
+			// Observation からタイトルを抽出
+			title := extractTitleFromObservation(step.Observation)
+			*sources = append(*sources, AgentSourceResult{
+				ArticleID: in.ArticleID,
+				Title:     title,
+			})
 		}
 	}
 
@@ -340,15 +354,18 @@ func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
 		return false
 	}
 
-	// search_wiki の observation から記事IDとタイトルを抽出
+	// search_wiki の observation から記事IDとタイトルとスコアを抽出
 	if step.Action == "search_wiki" {
-		re := regexp.MustCompile(`\[\s*([^\]]+)\s*\]\s*\(ID:\s*([a-f0-9-]+)`)
+		re := regexp.MustCompile(`\[\s*([^\]]+)\s*\]\s*\(ID:\s*([a-f0-9-]+),\s*スコア:\s*([0-9.]+)\)`)
 		matches := re.FindAllStringSubmatch(step.Observation, -1)
 		for _, m := range matches {
-			if len(m) > 2 && !exists(m[2], "") {
+			if len(m) > 3 && !exists(m[2], "") {
+				score := 0.0
+				fmt.Sscanf(m[3], "%f", &score)
 				*sources = append(*sources, AgentSourceResult{
-					ArticleID: m[2],
-					Title:     strings.TrimSpace(m[1]),
+					ArticleID:      m[2],
+					Title:          strings.TrimSpace(m[1]),
+					RelevanceScore: score,
 				})
 			}
 		}
@@ -374,6 +391,17 @@ func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
 			*sources = append(*sources, AgentSourceResult{URL: in.URL})
 		}
 	}
+}
+
+// extractTitleFromObservation は read_article の Observation からタイトルを抽出する
+// 形式: "# タイトル (ID: xxx)" からタイトル部分を抽出
+func extractTitleFromObservation(obs string) string {
+	re := regexp.MustCompile(`^#\s+([^\(]+)\s*\(ID:`)
+	m := re.FindStringSubmatch(obs)
+	if len(m) > 1 {
+		return strings.TrimSpace(m[1])
+	}
+	return ""
 }
 
 // truncate は文字列を maxRunes まで切り詰める
@@ -518,13 +546,37 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	jst := time.FixedZone("JST", 9*60*60)
 	currentTime := time.Now().In(jst).Format("2006年1月2日 15:04 MST")
 
+	// コンテキストが空の場合は「関連情報なし」テキストを設定
+	contextText := contextBuilder.String()
+	if strings.TrimSpace(contextText) == "" {
+		contextText = "関連する記事は見つかりませんでした。"
+	}
+
+	// コンテキストに「関連する記事は見つかりませんでした」が含まれる場合、LLMを呼ばずに直接回答
+	if strings.Contains(contextText, "関連する記事は見つかりませんでした") {
+		return &AgentResult{
+			Answer:  "Wiki内には関連する記事が見つかりませんでした。別の質問をお願いします。\n\n詳細や最新の情報が必要な場合は、検索モード（Web検索ON）を使用してください。",
+			Steps:   steps,
+			Sources: sources,
+		}, nil
+	}
+
 	messages := []llm.Message{
 		{
 			Role: "system",
 			Content: fmt.Sprintf(
 				"あなたは技術ナレッジベースのアシスタントです。\n現在の時刻: %s\n"+
 					"以下の情報を参考に、ユーザーの質問に日本語で丁寧に回答してください。"+
-					"情報源の文体や一人称を真似してはいけません。独自の丁寧な口調で回答してください。",
+					"情報源の文体や一人称を真似してはいけません。独自の丁寧な口調で回答してください。\n\n"+
+					"【最重要ルール】\n"+
+					"コンテキストに「関連する記事は見つかりませんでした」と含まれる場合、"+
+					"必ず以下の文だけを回答してください:\n"+
+					"「Wiki内には関連する記事が見つかりませんでした。別の質問をお願いします。詳細や最新の情報が必要な場合は、検索モード（Web検索ON）を使用してください。」\n\n"+
+					"絶対に守ってください:\n"+
+					"- この場合、あなたの知識で補足情報を提供しないでください\n"+
+					"- 会話を続けようとしないでください\n"+
+					"- 質問し返さないでください\n"+
+					"- 上記の文だけを回答してください",
 				currentTime,
 			),
 		},
@@ -534,7 +586,7 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	// 収集した情報 + 質問
 	messages = append(messages, llm.Message{
 		Role:    "user",
-		Content: fmt.Sprintf("収集した情報:\n%s\n\n質問: %s", contextBuilder.String(), question),
+		Content: fmt.Sprintf("収集した情報:\n%s\n\n質問: %s", contextText, question),
 	})
 
 	a.callbacks.OnLLMStart(ctx, -1)

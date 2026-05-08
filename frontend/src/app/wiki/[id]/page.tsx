@@ -1,6 +1,7 @@
 import { getArticle } from '@/lib/api';
 import Link from 'next/link';
 import { FiArrowLeft, FiLock, FiUnlock } from 'react-icons/fi';
+import { MdOutlineSupportAgent } from 'react-icons/md';
 import ArticleContent from '@/components/ArticleContent';
 import ArticleActions from '@/components/ArticleActions';
 import { extractToc } from '@/lib/toc';
@@ -53,20 +54,29 @@ export default async function ArticleDetailPage({ params }: Props) {
   return (
     <div className='max-w-6xl mx-auto px-6 py-6'>
       {/* Navigation */}
-      <div className='flex gap-2'>
+      <div className='flex flex-col gap-1 mb-6'>
         <Link
           href='/wiki'
-          className='inline-flex items-center text-md text-gray-600 dark:text-stone-400 hover:text-black dark:hover:text-stone-100 mb-6'
+          className='inline-flex items-center text-md text-gray-600 dark:text-stone-400 hover:text-black dark:hover:text-stone-100 w-fit'
         >
           <FiArrowLeft className='mr-1' />
           Wikiに戻る
         </Link>
-        <Link
-          href={`/admin?id=${article.id}`}
-          className='text-md text-gray-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100'
-        >
-          編集
-        </Link>
+        <div className='flex gap-4'>
+          <Link
+            href={`/admin?id=${article.id}`}
+            className='text-md text-gray-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100'
+          >
+            編集
+          </Link>
+          <Link
+            href='/chat'
+            className='inline-flex items-center gap-1 text-md text-gray-600 hover:text-black dark:text-stone-400 dark:hover:text-stone-100'
+          >
+            <MdOutlineSupportAgent size={16} />
+            Chat
+          </Link>
+        </div>
       </div>
 
       <div className='flex items-start justify-between gap-4 mb-2'>
