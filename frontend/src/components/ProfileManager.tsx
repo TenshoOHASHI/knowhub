@@ -7,7 +7,7 @@ import { Profile } from '@/lib/types';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import ImageUploader from './ImageUploader';
-import { FiUser, FiCheck } from 'react-icons/fi';
+import { FiCheck } from 'react-icons/fi';
 
 export default function ProfileManager() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -113,8 +113,12 @@ export default function ProfileManager() {
     <div className='p-6 space-y-6'>
       {/* ヘッダー */}
       <div>
-        <h2 className='text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1'>プロフィール設定</h2>
-        <p className='text-sm text-stone-500 dark:text-stone-400'>あなたのプロフィール情報を管理します</p>
+        <h2 className='text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1'>
+          プロフィール設定
+        </h2>
+        <p className='text-sm text-stone-500 dark:text-stone-400'>
+          あなたのプロフィール情報を管理します
+        </p>
       </div>
 
       {/* フォーム */}
@@ -124,7 +128,9 @@ export default function ProfileManager() {
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
           {/* タイトル */}
           <div>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>タイトル</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              タイトル
+            </label>
             <input
               type='text'
               name='title'
@@ -137,7 +143,9 @@ export default function ProfileManager() {
 
           {/* 紹介 */}
           <div className='md:col-span-2'>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>自己紹介</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              自己紹介
+            </label>
             <textarea
               name='bio'
               value={bio}
@@ -150,7 +158,9 @@ export default function ProfileManager() {
 
           {/* GitHub URL */}
           <div>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>GitHub</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              GitHub
+            </label>
             <input
               type='text'
               name='github_url'
@@ -163,7 +173,9 @@ export default function ProfileManager() {
 
           {/* Twitter URL */}
           <div>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>Twitter</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              Twitter
+            </label>
             <input
               type='text'
               name='twitter_url'
@@ -176,7 +188,9 @@ export default function ProfileManager() {
 
           {/* LinkedIn URL */}
           <div>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>LinkedIn</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              LinkedIn
+            </label>
             <input
               type='text'
               name='linkedin_url'
@@ -189,7 +203,9 @@ export default function ProfileManager() {
 
           {/* Wantedly URL */}
           <div>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>Wantedly</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              Wantedly
+            </label>
             <input
               type='text'
               name='wantedly_url'
@@ -212,7 +228,9 @@ export default function ProfileManager() {
 
           {/* Skills */}
           <div className='md:col-span-2'>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>スキル（カンマ区切り）</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              スキル（カンマ区切り）
+            </label>
             <input
               type='text'
               name='skills'
@@ -225,7 +243,9 @@ export default function ProfileManager() {
 
           {/* Languages */}
           <div className='md:col-span-2'>
-            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>言語（名前: レベル、カンマ区切り）</label>
+            <label className='block text-sm font-medium mb-1.5 text-stone-700 dark:text-stone-300'>
+              言語（名前: レベル、カンマ区切り）
+            </label>
             <input
               type='text'
               name='languages'

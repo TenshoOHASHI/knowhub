@@ -10,10 +10,8 @@ import {
 import {
   FiPlus,
   FiTrash2,
-  FiEdit2,
   FiX,
   FiCheck,
-  FiBriefcase,
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi';
@@ -153,8 +151,12 @@ export function PortfolioManager() {
     <div className='p-6 space-y-6'>
       {/* ヘッダー */}
       <div>
-        <h2 className='text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1'>ポートフォリオ管理</h2>
-        <p className='text-sm text-stone-500 dark:text-stone-400'>プロジェクトや実績を管理します</p>
+        <h2 className='text-lg font-semibold text-stone-900 dark:text-stone-100 mb-1'>
+          ポートフォリオ管理
+        </h2>
+        <p className='text-sm text-stone-500 dark:text-stone-400'>
+          プロジェクトや実績を管理します
+        </p>
       </div>
 
       {/* フォーム + 一覧の2カラムレイアウト */}
@@ -167,7 +169,9 @@ export function PortfolioManager() {
 
           <form onSubmit={handleSubmit} className='space-y-3'>
             <div>
-              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>タイトル</label>
+              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                タイトル
+              </label>
               <input
                 type='text'
                 value={title}
@@ -178,7 +182,9 @@ export function PortfolioManager() {
             </div>
 
             <div>
-              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>説明</label>
+              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                説明
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -189,7 +195,9 @@ export function PortfolioManager() {
             </div>
 
             <div>
-              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>URL</label>
+              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                URL
+              </label>
               <input
                 type='text'
                 value={url}
@@ -201,10 +209,14 @@ export function PortfolioManager() {
 
             <div className='grid grid-cols-2 gap-3'>
               <div>
-                <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>ステータス</label>
+                <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                  ステータス
+                </label>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as 'developing' | 'completed')}
+                  onChange={(e) =>
+                    setStatus(e.target.value as 'developing' | 'completed')
+                  }
                   className='w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-stone-500 transition'
                 >
                   <option value='developing'>開発中</option>
@@ -213,7 +225,9 @@ export function PortfolioManager() {
               </div>
 
               <div>
-                <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>カテゴリ</label>
+                <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                  カテゴリ
+                </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
@@ -227,7 +241,9 @@ export function PortfolioManager() {
             </div>
 
             <div>
-              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>Tech Stack（カンマ区切り）</label>
+              <label className='block text-xs font-medium mb-1 text-stone-600 dark:text-stone-400'>
+                Tech Stack（カンマ区切り）
+              </label>
               <input
                 type='text'
                 value={techStackInput}
@@ -285,7 +301,9 @@ export function PortfolioManager() {
           </div>
 
           {items.length === 0 ? (
-            <p className='text-stone-400 text-sm text-center py-8'>アイテムがありません</p>
+            <p className='text-stone-400 text-sm text-center py-8'>
+              アイテムがありません
+            </p>
           ) : (
             <>
               <div className='space-y-2'>
@@ -305,11 +323,13 @@ export function PortfolioManager() {
                           {item.title}
                         </p>
                         <div className='flex items-center gap-2 mt-1'>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            item.status === 'completed'
-                              ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
-                              : 'bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-300'
-                          }`}>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full ${
+                              item.status === 'completed'
+                                ? 'bg-stone-800 text-white dark:bg-stone-200 dark:text-stone-900'
+                                : 'bg-stone-200 text-stone-700 dark:bg-stone-700 dark:text-stone-300'
+                            }`}
+                          >
                             {item.status === 'completed' ? '完了' : '開発中'}
                           </span>
                           {item.category && (
@@ -360,7 +380,9 @@ export function PortfolioManager() {
                     ))}
                   </div>
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    onClick={() =>
+                      setPage((p) => Math.min(totalPages - 1, p + 1))
+                    }
                     disabled={page === totalPages - 1}
                     className='p-2 rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
                   >
@@ -377,7 +399,7 @@ export function PortfolioManager() {
         <ConfirmModal
           isOpen={true}
           title='ポートフォリオ削除'
-          message={`${items.find(i => i.id === deleteTarget)?.title || 'このアイテム'}を削除しますか？`}
+          message={`${items.find((i) => i.id === deleteTarget)?.title || 'このアイテム'}を削除しますか？`}
           onConfirm={async () => {
             await handleDelete(deleteTarget);
           }}

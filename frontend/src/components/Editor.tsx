@@ -15,7 +15,7 @@ import {
 import EditorPreview from './EditorPreview';
 import { useRouter } from 'next/navigation';
 import ConfirmModal from './ConfirmModal';
-import { FiFileText, FiArchive, FiUser, FiBriefcase, FiTrendingUp, FiEdit3 } from 'react-icons/fi';
+import { FiEdit3 } from 'react-icons/fi';
 
 interface EditorProps {
   embedded?: boolean;
@@ -145,14 +145,19 @@ export default function Editor({ embedded = false }: EditorProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className={embedded ? 'space-y-6 p-6' : 'space-y-6'}>
+      <form
+        onSubmit={handleSubmit}
+        className={embedded ? 'space-y-6 p-6' : 'space-y-6'}
+      >
         {/* 更新モード時のみhidden inputでIDを送信 */}
         {editId && <input type='hidden' name='id' value={editId} />}
 
         {/* 入力エリア */}
         <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm p-6 space-y-5'>
           <div>
-            <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>タイトル</label>
+            <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>
+              タイトル
+            </label>
             <input
               name='title'
               type='text'
@@ -165,7 +170,9 @@ export default function Editor({ embedded = false }: EditorProps) {
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
             <div>
-              <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>カテゴリ</label>
+              <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>
+                カテゴリ
+              </label>
               <select
                 name='category_id'
                 value={categoryId}
@@ -182,7 +189,9 @@ export default function Editor({ embedded = false }: EditorProps) {
             </div>
 
             <div>
-              <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>公開設定</label>
+              <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>
+                公開設定
+              </label>
               <select
                 name='visibility'
                 value={visibility}
@@ -208,8 +217,18 @@ export default function Editor({ embedded = false }: EditorProps) {
           onClick={handleImageUpload}
           className='inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-600 hover:bg-stone-50 dark:hover:bg-stone-800 text-sm font-medium text-stone-700 dark:text-stone-300 transition-colors'
         >
-          <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
+          <svg
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
+            />
           </svg>
           画像をアップロード
         </button>
@@ -251,11 +270,25 @@ export default function Editor({ embedded = false }: EditorProps) {
       {message &&
         (message.includes('記事を更新しました') ||
           message?.includes('記事を作成しました')) && (
-          <div className={`p-4 bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center gap-3 shadow-sm ${!embedded ? 'mt-6' : 'mt-4 mx-6'}`}>
-            <svg className='w-5 h-5 text-stone-600 dark:text-stone-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-              <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
+          <div
+            className={`p-4 bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 rounded-lg flex items-center gap-3 shadow-sm ${!embedded ? 'mt-6' : 'mt-4 mx-6'}`}
+          >
+            <svg
+              className='w-5 h-5 text-stone-600 dark:text-stone-400'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+              />
             </svg>
-            <span className='text-stone-800 dark:text-stone-200 font-medium'>{message}</span>
+            <span className='text-stone-800 dark:text-stone-200 font-medium'>
+              {message}
+            </span>
             <Link
               href='/wiki'
               className='ml-auto text-sm text-stone-600 dark:text-stone-400 underline hover:text-stone-900 dark:hover:text-stone-200 transition-colors'
