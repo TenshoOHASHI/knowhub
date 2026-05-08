@@ -35,6 +35,7 @@ type Relation struct {
 
 // KnowledgeGraph はエンティティとリレーションを保持するグラフ構造
 type KnowledgeGraph struct {
+	mu        sync.RWMutex
 	entities  map[string]*Entity  // entityID → Entity
 	relations []Relation          // 全リレーション
 	adjacency map[string][]string // entityID → 隣接エンティティID一覧（BFS用）
@@ -49,6 +50,9 @@ func NewKnowledgeGraph() *KnowledgeGraph {
 
 // addEntity はエンティティをグラフに追加（既存ならArticleIDを追記）
 func (kg *KnowledgeGraph) addEntity(name, entityType, articleID string) {
+	kg.mu.Lock()
+	defer kg.mu.Unlock()
+
 	id := normalizeEntityID(name)
 	if existing, ok := kg.entities[id]; ok {
 		// 既存エンティティに記事IDを追加（重複防止）
@@ -70,6 +74,9 @@ func (kg *KnowledgeGraph) addEntity(name, entityType, articleID string) {
 
 // addRelation はリレーションをグラフに追加（隣接リストも更新）
 func (kg *KnowledgeGraph) addRelation(source, target, label string) {
+	kg.mu.Lock()
+	defer kg.mu.Unlock()
+
 	// 重複チェック
 	for _, r := range kg.relations {
 		if r.Source == source && r.Target == target && r.Label == label {
@@ -90,6 +97,9 @@ func (kg *KnowledgeGraph) addRelation(source, target, label string) {
 // getRelatedArticles は指定エンティティから maxHops ホップ以内の
 // 全関連エンティティが含まれる記事IDを収集する（BFS）
 func (kg *KnowledgeGraph) getRelatedArticles(entityID string, maxHops int) map[string]int {
+	kg.mu.RLock()
+	defer kg.mu.RUnlock()
+
 	visited := make(map[string]bool)
 	articleScores := make(map[string]int) // articleID → その記事に含まれる関連エンティティ数
 
@@ -117,7 +127,7 @@ func (kg *KnowledgeGraph) getRelatedArticles(entityID string, maxHops int) map[s
 			continue
 		}
 
-		// 隣接ノードをキューに追加
+			// 隣接ノードをキューに追加
 		for _, neighbor := range kg.adjacency[current.id] {
 			if !visited[neighbor] {
 				visited[neighbor] = true
@@ -134,6 +144,9 @@ func (kg *KnowledgeGraph) getRelatedArticles(entityID string, maxHops int) map[s
 
 // GetEntities は全エンティティをスライスで返す
 func (kg *KnowledgeGraph) GetEntities() []*Entity {
+	kg.mu.RLock()
+	defer kg.mu.RUnlock()
+
 	entities := make([]*Entity, 0, len(kg.entities))
 	for _, e := range kg.entities {
 		entities = append(entities, e)
@@ -143,6 +156,9 @@ func (kg *KnowledgeGraph) GetEntities() []*Entity {
 
 // GetRelations は全リレーションを返す
 func (kg *KnowledgeGraph) GetRelations() []Relation {
+	kg.mu.RLock()
+	defer kg.mu.RUnlock()
+
 	return kg.relations
 }
 
