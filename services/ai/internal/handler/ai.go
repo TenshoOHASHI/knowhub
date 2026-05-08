@@ -244,7 +244,29 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		results = []search.SearchResult{}
 	}
 
+	// デバッグログ: 検索結果とフィルタリング
+	slog.Info("RAG search results",
+		"query", req.Question,
+		"search_engine", req.SearchEngine,
+		"total_results", len(results),
+	)
+	for i, r := range results {
+		slog.Info("RAG search result",
+			"rank", i+1,
+			"article_id", r.ArticleID,
+			"title", r.Title,
+			"score", r.RelevanceScore,
+		)
+	}
+
 	relevantResults := filterRAGResults(req.SearchEngine, results)
+
+	slog.Info("RAG filtered results",
+		"query", req.Question,
+		"search_engine", req.SearchEngine,
+		"filtered_count", len(relevantResults),
+		"threshold", ragSourceThreshold(req.SearchEngine),
+	)
 
 	// Step 2: コンテキストを構築
 	var contextBuilder strings.Builder
@@ -262,11 +284,23 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			Title:          articleResp.Article.Title,
 			RelevanceScore: r.RelevanceScore,
 		})
+		slog.Info("RAG article added to context",
+			"article_id", r.ArticleID,
+			"title", articleResp.Article.Title,
+			"content_length", len(articleResp.Article.Content),
+		)
 	}
 
 	contextText := contextBuilder.String()
+	slog.Info("RAG context built",
+		"context_length", len(contextText),
+		"sources_count", len(sources),
+		"context_is_empty", strings.TrimSpace(contextText) == "",
+		"context_preview", string([]rune(contextText)[:min(500, len([]rune(contextText)))]),
+	)
 	if strings.TrimSpace(contextText) == "" {
 		contextText = "関連する記事は見つかりませんでした。"
+		slog.Warn("RAG context is empty, using fallback message")
 	}
 
 	// Step 3: RAG プロンプトで LLM に回答生成
@@ -275,11 +309,11 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			Role: "system",
 			Content: "あなたは技術ナレッジベースのアシスタントです。" +
 				"以下のコンテキストを参考にして回答してください。" +
-				"コンテキストに情報がある場合はそれを優先して回答してください。" +
-				"コンテキストに「関連する記事は見つかりませんでした」と含まれる場合、" +
-				"あるいはコンテキストに質問に関連する情報がない場合は、" +
-				"「ナレッジベースには関連する情報がありません。別の質問をお願いします。」とだけ回答してください。" +
-				"この場合、あなたの知識で補足したり回答したりしないでください。",
+				"コンテキストに記載されている記事の内容を、質問に対する回答として説明してください。" +
+				"提供されたコンテキストを使って質問に答えてください。" +
+				"コンテキストに「関連する記事は見つかりませんでした」と明示的に含まれる場合のみ、" +
+				"「ナレッジベースには関連する情報がありません。別の質問をお願いします。」と回答してください。" +
+				"それ以外の場合は、コンテキストにある情報を使って回答してください。",
 		},
 		{
 			Role: "user",
@@ -311,15 +345,36 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		return nil, status.Error(codes.Internal, "failed to generate answer")
 	}
 
+	slog.Info("RAG LLM answer generated",
+		"query", req.Question,
+		"answer_length", len(answer),
+		"answer_preview", string([]rune(answer)[:min(100, len([]rune(answer)))]),
+		"sources_count_before_filter", len(sources),
+	)
+
 	// 保険として、関連性がない記事は、参照リンクを空にする
 	if answerIndicatesNoRelevantContext(answer) {
+		slog.Warn("RAG LLM indicated no relevant context, clearing sources",
+			"answer", answer,
+		)
 		sources = []*pb.Source{}
 	}
+
+	slog.Info("RAG final response",
+		"sources_count", len(sources),
+	)
 
 	return &pb.QuestionResponse{
 		Answer:  answer,
 		Sources: sources,
 	}, nil
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // 閾値を用意し、関連性が低いスコアは参照先から取り除く
@@ -351,7 +406,7 @@ func filterRAGResults(engineName string, results []search.SearchResult) []search
 func ragSourceThreshold(engineName string) float64 {
 	switch engineName {
 	case "vector":
-		return 0.70 // コサイン類似度が70%以上の記事のみを参照
+		return 0.30 // Vector検索は閾値を下げる（一般的な単語でもマッチさせる）
 	case "hybrid":
 		return 0.50 // ハイブリッドスコアが50%以上の記事のみを参照
 	case "graph":
@@ -359,7 +414,7 @@ func ragSourceThreshold(engineName string) float64 {
 	case "tfidf":
 		return 0.08
 	case "bm25", "":
-		return 0.5
+		return 0.01 // BM25はキーワード一致なので、閾値をほぼ0にする
 	default:
 		return 0.0
 	}

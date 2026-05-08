@@ -702,8 +702,8 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    入力された単語が記事に含まれているかを検索します。
-                    専門用語や固有名詞の検索に適しています。
+                    文章の中で単語が出現する頻度とレア度（希少性）を算出して検索します。
+                    専門用語や固有名詞など、 exact match が重要な検索に適しています。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
                     <span className='font-medium'>おすすめ質問例:</span>
@@ -726,8 +726,8 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事の「意味」を理解して検索します。
-                    同じ単語を使わなくても似た概念の記事を見つけられます。
+                    記事をベクトル（数値）に変換し、「意味の近さ」で検索します。
+                    同じ単語を使わなくても似た概念や関連する記事を見つけられます。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
                     <span className='font-medium'>おすすめ質問例:</span>
@@ -750,8 +750,8 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    BM25とVectorを組み合わせた最もバランスの良い検索です。
-                    どの検索エンジンにするか迷ったらこれを選んでください。
+                    <span className='font-medium'>BM25（単語のレア度）</span>と<span className='font-medium'> Vector（意味の近さ）</span>のスコアを正規化して統合します。
+                    キーワード一致とセマンティック理解の両方をカバーするため、どの検索エンジンにするか迷ったらこれを選んでください。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
                     <span className='font-medium'>おすすめ質問例:</span>
@@ -774,8 +774,8 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事同士の関連性を分析したナレッジグラフを使って検索します。
-                    複数のトピックにまたがる質問に強いです。
+                    記事から<strong>エンティティ（重要単語）</strong>と<strong>関係性</strong>を抽出してナレッジグラフを構築し、関連する記事をたどって検索します。
+                    複数のトピックにまたがる質問や、学習ロードマップのような広範な質問に強いです。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
                     <span className='font-medium'>おすすめ質問例:</span>

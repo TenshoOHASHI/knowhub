@@ -105,4 +105,32 @@ func TestBM25Engine_Search(t *testing.T) {
 			t.Errorf("expected 0 results, got %d", len(results))
 		}
 	})
+
+	t.Run("search Japanese katakana テスト returns correct result", func(t *testing.T) {
+		engine := NewBM25Engine()
+		docs := []Document{
+			{ID: "1", Title: "テスト", Content: "これはテスト記事です"},
+			{ID: "2", Title: "MCPサーバー", Content: "MCPサーバーについての説明"},
+			{ID: "3", Title: "gRPC入門", Content: "gRPCの使い方"},
+		}
+
+		err := engine.Index(context.Background(), docs)
+		if err != nil {
+			t.Fatalf("Index failed: %v", err)
+		}
+
+		results, err := engine.Search(context.Background(), "テスト", 10)
+		if err != nil {
+			t.Fatalf("Search failed: %v", err)
+		}
+		if len(results) == 0 {
+			t.Fatal("expected results for 'テスト', got empty")
+		}
+		if results[0].ArticleID != "1" {
+			t.Errorf("top result ID = %s, want 1", results[0].ArticleID)
+		}
+		if results[0].RelevanceScore <= 0 {
+			t.Errorf("score = %f, want > 0", results[0].RelevanceScore)
+		}
+	})
 }

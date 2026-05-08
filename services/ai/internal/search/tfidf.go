@@ -14,7 +14,7 @@ func charType(r rune) int {
 		return 0
 	case unicode.Is(unicode.Hiragana, r): // ひらがな
 		return 1
-	case unicode.Is(unicode.Katakana, r): // カタカナ
+	case r == 'ー' || unicode.Is(unicode.Katakana, r): // 長音記号またはカタカナ
 		return 2
 	case unicode.Is(unicode.Latin, r): // アルファベット
 		return 3
