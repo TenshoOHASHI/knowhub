@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import {
   getKnowledgeGraph,
@@ -30,13 +30,6 @@ interface GraphStats {
   maxConnections: number;
   topHub: { name: string; connections: number };
   typeDistribution: Record<string, number>;
-}
-
-interface ArticlePath {
-  fromEntity: string;
-  toArticle: string;
-  path: string[];
-  score: number;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -91,6 +84,7 @@ export default function KnowledgeGraph() {
   // 関連記事を取得
   useEffect(() => {
     if (!selected) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRelatedArticles([]);
       return;
     }
@@ -108,35 +102,7 @@ export default function KnowledgeGraph() {
       });
   }, [selected]);
 
-  const fetchGraph = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    setGraphData(null);
-
-    let cancelled = false;
-
-    getKnowledgeGraph()
-      .then((data) => {
-        if (cancelled) return;
-        setLoading(false);
-        setGraphData(data);
-
-        // グラフ統計を計算
-        const stats = calculateStats(data.entities, data.relations);
-        setGraphStats(stats);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err.message);
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // 統計計算
+  // 統計計算（fetchGraphの前に宣言）
   const calculateStats = useCallback((entities: EntityNode[], relations: RelationEdge[]): GraphStats => {
     const nodeCount = entities.length;
     const edgeCount = relations.length;
@@ -175,9 +141,38 @@ export default function KnowledgeGraph() {
     };
   }, []);
 
+  const fetchGraph = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    setGraphData(null);
+
+    let cancelled = false;
+
+    getKnowledgeGraph()
+      .then((data) => {
+        if (cancelled) return;
+        setLoading(false);
+        setGraphData(data);
+
+        // グラフ統計を計算
+        const stats = calculateStats(data.entities, data.relations);
+        setGraphStats(stats);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err.message);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calculateStats]);
+
   // 検索
   useEffect(() => {
     if (!searchQuery || !graphData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchResults([]);
       return;
     }
@@ -418,7 +413,7 @@ export default function KnowledgeGraph() {
           article_ids: d.articleIds,
         });
       })
-      .on('dblclick', (event, d) => {
+      .on('dblclick', (event, _d) => {
         event.stopPropagation();
         // ダブルクリックでハイライト解除
         setHighlighted(new Set());
@@ -504,11 +499,6 @@ export default function KnowledgeGraph() {
           return highlighted.has(sourceId) && highlighted.has(targetId) ? 1 : 0.1;
         });
     };
-
-    // ハイライト状態が変わったら更新
-    const highlightObserver = new MutationObserver(() => {
-      // 簡易的なハイライト更新（実際はselectedの変更を監視）
-    });
 
     // SVGクリックでハイライト解除
     svg.on('click', () => {

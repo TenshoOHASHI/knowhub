@@ -40,9 +40,9 @@ func TestComputeBM25IDF(t *testing.T) {
 func TestBM25Engine_Search(t *testing.T) {
 	engine := NewBM25Engine()
 	docs := []Document{
-		{ID: "1", Title: "Go gRPC", Content: "Go gRPC Go"},
-		{ID: "2", Title: "Python AI", Content: "Python AI Python"},
-		{ID: "3", Title: "Go Docker", Content: "Go Docker"},
+		{ID: "1", Title: "Go gRPC", Content: "Go gRPC Go", Visibility: "public"},
+		{ID: "2", Title: "Python AI", Content: "Python AI Python", Visibility: "public"},
+		{ID: "3", Title: "Go Docker", Content: "Go Docker", Visibility: "public"},
 	}
 
 	err := engine.Index(context.Background(), docs)
