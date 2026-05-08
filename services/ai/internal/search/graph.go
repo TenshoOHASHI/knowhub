@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/TenshoOHASHI/knowhub/services/ai/internal/llm"
 )
@@ -181,6 +182,16 @@ func normalizeEntityID(name string) string {
 	return strings.ToLower(strings.TrimSpace(name))
 }
 
+// getArticleTitle は記事IDからタイトルを取得する
+func getArticleTitle(docs []Document, articleID string) string {
+	for _, doc := range docs {
+		if doc.ID == articleID {
+			return doc.Title
+		}
+	}
+	return ""
+}
+
 // ============================================================
 // LLM によるエンティティ・リレーション抽出
 // ============================================================
@@ -287,39 +298,89 @@ func NewGraphEngine(provider llm.LLMProvider) *GraphEngine {
 
 // Index は全ドキュメントを LLM で解析し、ナレッジグラフを構築する
 func (e *GraphEngine) Index(ctx context.Context, docs []Document) error {
-	e.docs = docs
+	// 非公開記事を除外
+	publicDocs := make([]Document, 0, len(docs))
+	for _, doc := range docs {
+		if doc.Visibility == "public" {
+			publicDocs = append(publicDocs, doc)
+		}
+	}
+
+	e.docs = publicDocs
+
+	slog.Info("graph: building knowledge graph", "total_articles", len(docs), "public_articles", len(publicDocs))
+
+	// 進捗表示用
+	type extractionResult struct {
+		doc       Document
+		entities  int
+		relations int
+		err       error
+	}
+	resultChan := make(chan extractionResult, len(docs))
+
+	// 並列でエンティティ抽出（並列数を制限してAPI負荷を分散）
+	semaphore := make(chan struct{}, 5) // 最大5並列
+	var wg sync.WaitGroup
 
 	for _, doc := range docs {
-		result, err := extractEntities(ctx, e.provider, doc.Title, doc.Content)
-		if err != nil {
-			slog.Warn("skipping entity extraction for article",
-				"id", doc.ID, "title", doc.Title, "error", err)
+		wg.Add(1)
+		go func(d Document) {
+			defer wg.Done()
+			semaphore <- struct{}{}        // 取得
+			defer func() { <-semaphore }() // 解放
+
+			var entities, relations int
+			result, err := extractEntities(ctx, e.provider, d.Title, d.Content)
+			if err != nil {
+				slog.Warn("skipping entity extraction for article",
+					"id", d.ID, "title", d.Title, "error", err)
+				resultChan <- extractionResult{doc: d, err: err}
+				return
+			}
+
+			// エンティティをグラフに追加
+			for _, ent := range result.Entities {
+				if ent.Name == "" {
+					continue
+				}
+				e.graph.addEntity(ent.Name, ent.Type, d.ID)
+			}
+
+			// リレーションをグラフに追加
+			for _, rel := range result.Relations {
+				if rel.Source == "" || rel.Target == "" {
+					continue
+				}
+				sourceID := normalizeEntityID(rel.Source)
+				targetID := normalizeEntityID(rel.Target)
+				e.graph.addRelation(sourceID, targetID, rel.Label)
+			}
+
+			entities = len(result.Entities)
+			relations = len(result.Relations)
+			resultChan <- extractionResult{doc: d, entities: entities, relations: relations}
+		}(doc)
+	}
+
+	// 結果を収集
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	completed := 0
+	for result := range resultChan {
+		completed++
+		if result.err != nil {
 			continue
 		}
-
-		// エンティティをグラフに追加
-		for _, ent := range result.Entities {
-			if ent.Name == "" {
-				continue
-			}
-			e.graph.addEntity(ent.Name, ent.Type, doc.ID)
-		}
-
-		// リレーションをグラフに追加
-		for _, rel := range result.Relations {
-			if rel.Source == "" || rel.Target == "" {
-				continue
-			}
-			sourceID := normalizeEntityID(rel.Source)
-			targetID := normalizeEntityID(rel.Target)
-			e.graph.addRelation(sourceID, targetID, rel.Label)
-		}
-
 		slog.Info("graph: extracted entities from article",
-			"id", doc.ID,
-			"title", doc.Title,
-			"entities", len(result.Entities),
-			"relations", len(result.Relations))
+			"progress", fmt.Sprintf("%d/%d", completed, len(docs)),
+			"id", result.doc.ID,
+			"title", result.doc.Title,
+			"entities", result.entities,
+			"relations", result.relations)
 	}
 
 	slog.Info("graph: knowledge graph built",
@@ -358,7 +419,33 @@ func (e *GraphEngine) Search(ctx context.Context, query string, limit int) ([]Se
 
 	// ③ 各エンティティから BFS（2-hop）で関連記事を収集
 	articleScores := make(map[string]int)
+	titleMatchBonus := 10  // タイトル一致ボーナス
+	partialMatchBonus := 5 // 部分一致ボーナス
+
+	queryLower := normalizeEntityID(query)
+
 	for _, eid := range queryEntityIDs {
+		// クエリエンティティを含む記事にはボーナスを与える
+		if entity, ok := e.graph.entities[eid]; ok {
+			for _, aid := range entity.ArticleIDs {
+				title := getArticleTitle(e.docs, aid)
+				titleLower := normalizeEntityID(title)
+
+				// 完全一致ボーナス
+				if queryLower == titleLower {
+					articleScores[aid] += titleMatchBonus
+				} else if strings.Contains(titleLower, queryLower) || strings.Contains(queryLower, titleLower) {
+					// 部分一致ボーナス（クエリがタイトルに含まれる、またはその逆）
+					articleScores[aid] += partialMatchBonus
+				}
+
+				// エンティティ名との一致もチェック
+				if strings.Contains(titleLower, eid) {
+					articleScores[aid] += partialMatchBonus
+				}
+			}
+		}
+
 		related := e.graph.getRelatedArticles(eid, 2)
 		for aid, score := range related {
 			articleScores[aid] += score

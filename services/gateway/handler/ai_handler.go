@@ -106,7 +106,8 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 
 // GetKnowledgeGraph — GET /api/ai/graph
 func (h *AIHandler) GetKnowledgeGraph(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+	// Graph RAGの構築には時間がかかるため、タイムアウトを延長（10分）
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
 	defer cancel()
 
 	resp, err := h.client.GetKnowledgeGraph(ctx, &pb.GetKnowledgeGraphRequest{})
@@ -118,6 +119,45 @@ func (h *AIHandler) GetKnowledgeGraph(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+// GetRelatedArticles — GET /api/ai/articles/:id/related
+func (h *AIHandler) GetRelatedArticles(w http.ResponseWriter, r *http.Request) {
+	articleID := r.PathValue("id")
+	if articleID == "" {
+		http.Error(w, "article_id is required", http.StatusBadRequest)
+		return
+	}
+
+	// クエリパラメータ
+	maxHops := int32(2)
+	limit := int32(10)
+
+	if mh := r.URL.Query().Get("max_hops"); mh != "" {
+		fmt.Sscanf(mh, "%d", &maxHops)
+	}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		fmt.Sscanf(l, "%d", &limit)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	resp, err := h.client.GetRelatedArticles(ctx, &pb.GetRelatedArticlesRequest{
+		ArticleId: articleID,
+		MaxHops:   maxHops,
+		Limit:     limit,
+	})
+	if err != nil {
+		slog.Error("failed to get related articles", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"results": resp.Results,
+	})
 }
 
 // AskWithAgent — POST /api/ai/agent

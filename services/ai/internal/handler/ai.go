@@ -114,9 +114,10 @@ func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
 	docs := make([]search.Document, 0, len(articles.Article))
 	for _, a := range articles.Article {
 		docs = append(docs, search.Document{
-			ID:      a.Id,
-			Title:   a.Title,
-			Content: a.Content,
+			ID:         a.Id,
+			Title:      a.Title,
+			Content:    a.Content,
+			Visibility: a.Visibility,
 		})
 	}
 	return docs, nil
@@ -124,20 +125,33 @@ func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
 
 // searchWithEngine は指定エンジンでインデックス構築 → 検索を実行する
 func (h *AIHandler) searchWithEngine(ctx context.Context, se search.SearchEngine, query string, limit int) ([]search.SearchResult, error) {
+	slog.Info("searchWithEngine called",
+		"engine_type", fmt.Sprintf("%T", se),
+		"query", query,
+		"limit", limit,
+	)
+
 	docs, err := h.fetchDocs(ctx)
 	if err != nil {
 		slog.Error("failed to fetch articles from wiki service", "error", err)
 		return nil, status.Error(codes.Internal, "failed to fetch articles from wiki service")
 	}
+
+	slog.Info("fetched articles for search", "num_docs", len(docs))
+
 	if err := se.Index(ctx, docs); err != nil {
 		slog.Error("failed to build search index", "error", err)
 		return nil, status.Error(codes.Internal, "failed to build search index")
 	}
+
 	results, err := se.Search(ctx, query, limit)
 	if err != nil {
 		slog.Error("search failed", "error", err)
 		return nil, status.Error(codes.Internal, "search failed")
 	}
+
+	slog.Info("search completed", "results_count", len(results))
+
 	return results, nil
 }
 
@@ -204,6 +218,13 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		return nil, status.Error(codes.InvalidArgument, "question is required")
 	}
 
+	slog.Info("RAG AskQuestion called",
+		"question", req.Question,
+		"model", req.Model,
+		"search_engine", req.SearchEngine,
+		"api_key_provided", req.ApiKey != "",
+	)
+
 	// LLM プロバイダー選択（リクエストで動的切替）
 	provider := h.llmProvider
 	if req.Model != "" {
@@ -215,6 +236,10 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 
 	// 検索エンジン選択（search.SelectEngine ファクトリで動的切替）
 	engine := search.SelectEngine(req.SearchEngine, provider, embedder)
+	slog.Info("RAG search engine selected",
+		"requested_engine", req.SearchEngine,
+		"engine_type", fmt.Sprintf("%T", engine),
+	)
 
 	// Step 1: 関連記事を検索
 	var results []search.SearchResult
@@ -304,16 +329,29 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	}
 
 	// Step 3: RAG プロンプトで LLM に回答生成
+	systemPrompt := "あなたは技術ナレッジベースのアシスタントです。" +
+		"以下のコンテキストを参考にして回答してください。" +
+		"コンテキストに記載されている記事の内容を、質問に対する回答として説明してください。" +
+		"提供されたコンテキストを使って質問に答えてください。" +
+		"【重要ルール】" +
+		"- コンテキストに「## 」で始まる記事タイトルが含まれている場合は、必ずその記事の内容に基づいて回答してください。" +
+		"- 記事が提供されているのに「関連する情報がありません」と答えるのはやめてください。" +
+		"- コンテキストに「関連する記事は見つかりませんでした」としか書かれていない場合のみ、同じ内容を答えてください。" +
+		"【重要】外部リンクやURLを含む回答はしないでください。Wiki内の記事のみを参照してください。"
+
+	// Graph RAGの場合: 質問に直接関連する記事のみを使用
+	if req.SearchEngine == "graph" {
+		systemPrompt += " " +
+			"【重要】今回はGraph RAG（ナレッジグラフ）を使った検索です。" +
+			"コンテキストに含まれる記事のうち、質問に直接関連するもののみを使用して回答を構築してください。" +
+			"質問と明らかに関係のないトピック（例：質問が「gRPC」なのに「MCPサーバ」や「認証」など）については、言及しないでください。" +
+			"回答は简潔に、質問に対する直接的な回答に集中してください。"
+	}
+
 	messages := []llm.Message{
 		{
-			Role: "system",
-			Content: "あなたは技術ナレッジベースのアシスタントです。" +
-				"以下のコンテキストを参考にして回答してください。" +
-				"コンテキストに記載されている記事の内容を、質問に対する回答として説明してください。" +
-				"提供されたコンテキストを使って質問に答えてください。" +
-				"コンテキストに「関連する記事は見つかりませんでした」と明示的に含まれる場合のみ、" +
-				"「ナレッジベースには関連する情報がありません。別の質問をお願いします。」と回答してください。" +
-				"それ以外の場合は、コンテキストにある情報を使って回答してください。",
+			Role:    "system",
+			Content: systemPrompt,
 		},
 		{
 			Role: "user",
@@ -353,19 +391,26 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	)
 
 	// 保険として、関連性がない記事は、参照リンクを空にする
-	if answerIndicatesNoRelevantContext(answer) {
-		slog.Warn("RAG LLM indicated no relevant context, clearing sources",
-			"answer", answer,
-		)
-		sources = []*pb.Source{}
-	}
+	// TODO: 一時的に無効化してデバッグ
+	/*
+		if answerIndicatesNoRelevantContext(answer) {
+			slog.Warn("RAG LLM indicated no relevant context, clearing sources",
+				"answer", answer,
+			)
+			sources = []*pb.Source{}
+		}
+	*/
 
 	slog.Info("RAG final response",
 		"sources_count", len(sources),
 	)
 
+	// 後処理: 回答フォーマットを統一（LLMモデルに依存しないように）
+	hasContext := len(sources) > 0
+	formattedAnswer := formatRAGAnswer(answer, hasContext)
+
 	return &pb.QuestionResponse{
-		Answer:  answer,
+		Answer:  formattedAnswer,
 		Sources: sources,
 	}, nil
 }
@@ -375,6 +420,21 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// formatRAGAnswer はRAG回答のフォーマットを統一する（LLMモデルに依存しない）
+func formatRAGAnswer(answer string, hasContext bool) string {
+	if hasContext {
+		// コンテキストがある場合：先頭に「Wikiの情報を参考に回答します。」を追加
+		// ただし、既に含まれている場合は重複を避ける
+		prefix := "### Wikiの情報を参考に回答します。"
+		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "Wikiの情報を参考に回答します。") {
+			return prefix + "\n\n" + answer
+		}
+		return answer
+	}
+	// コンテキストがない場合：回答をそのまま返す
+	return answer
 }
 
 // 閾値を用意し、関連性が低いスコアは参照先から取り除く
@@ -410,7 +470,7 @@ func ragSourceThreshold(engineName string) float64 {
 	case "hybrid":
 		return 0.50 // ハイブリッドスコアが50%以上の記事のみを参照
 	case "graph":
-		return 1.0
+		return 15.0 // Graph RAGは閾値を上げて、強く関連する記事のみを参照
 	case "tfidf":
 		return 0.08
 	case "bm25", "":

@@ -183,40 +183,41 @@ export default function AnalyticsDashboard() {
         {summary && summary.dailyViews && summary.dailyViews.length > 0 ? (
           <div>
             <div
-              className='flex items-end justify-between gap-1'
-              style={{ height: '120px' }}
+              className='flex items-end justify-between gap-0.5'
+              style={{ height: '180px' }}
             >
               {summary.dailyViews.map((d, i) => {
+                const height = (d.count / maxDaily) * 100;
                 return (
-                  <div key={i} className='flex-1 flex flex-col items-center'>
-                    <div className='text-xs text-stone-700 dark:text-stone-300 mb-1'>
-                      {d.count}
-                    </div>
+                  <div key={i} className='flex-1 flex flex-col items-center group justify-end h-full relative'>
                     <div
-                      className='w-full bg-stone-200 dark:bg-stone-800 rounded-t'
-                      style={{ height: '100px' }}
-                    >
-                      <div
-                        className='w-full bg-stone-700 dark:bg-stone-500 rounded-t hover:bg-stone-800 dark:hover:bg-stone-400 transition-colors'
-                        style={{
-                          height: `${(d.count / maxDaily) * 100}%`,
-                          minHeight: '2px',
-                        }}
-                      />
+                      className='w-full bg-blue-300 dark:bg-blue-400 rounded-t hover:bg-blue-400 dark:hover:bg-blue-300 transition-all duration-150 opacity-70 hover:opacity-90'
+                      style={{
+                        height: `${Math.max(height, 1)}%`,
+                        minHeight: '2px',
+                      }}
+                    />
+                    {/* ホバーで数値表示 */}
+                    <div className='absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10'>
+                      <span className='text-[10px] font-medium text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-700 px-1.5 py-0.5 rounded shadow text-xs'>
+                        {d.count}
+                      </span>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className='flex justify-between gap-1 mt-1'>
-              {summary.dailyViews.map((d, i) => (
-                <div
-                  key={i}
-                  className='flex-1 text-center text-[10px] text-stone-400'
-                >
-                  {d.date.slice(5).replace('-', '/')}
-                </div>
-              ))}
+            <div className='flex justify-between gap-0.5 mt-1'>
+              {summary.dailyViews
+                .filter((_, i) => i % Math.ceil(summary.dailyViews.length / 10) === 0)
+                .map((d, i) => (
+                  <div
+                    key={i}
+                    className='flex-1 text-center text-[9px] text-stone-400'
+                  >
+                    {d.date.slice(5).replace('-', '/')}
+                  </div>
+                ))}
             </div>
           </div>
         ) : (
@@ -252,17 +253,12 @@ export default function AnalyticsDashboard() {
                   {i + 1}
                 </span>
                 <div className='flex-1 min-w-0'>
-                  <div className='flex items-center gap-2'>
-                    <Link
-                      href={`/wiki/${a.id}`}
-                      className='text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 block truncate'
-                    >
-                      {a.title}
-                    </Link>
-                    <span className='text-[10px] px-1.5 py-0.5 rounded bg-stone-200 dark:bg-stone-700 text-stone-500 dark:text-stone-400'>
-                      {a.visibility || '?'}
-                    </span>
-                  </div>
+                  <Link
+                    href={`/wiki/${a.id}`}
+                    className='text-sm text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 block truncate'
+                  >
+                    {a.title}
+                  </Link>
                   <div className='h-1.5 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden mt-1'>
                     <div
                       className='h-full bg-stone-600 dark:bg-stone-400 rounded-full transition-all duration-500'

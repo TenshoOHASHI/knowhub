@@ -76,12 +76,10 @@ func (a *Agent) Run(ctx context.Context, question string) (*AgentResult, error) 
 - search_wiki の後、必ず web_search でも検索してください。両方の結果を比較して回答すること
 - web_search を使った後は、必ず read_url で上位の検索結果URLの本文を取得してください
 - read_url を使わずに Final Answer を出力してはいけません`
-		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、以下の手順で回答してください：
-  1. まず「Wiki内には関連する記事が見つかりませんでした。」と明示してください
-  2. その後、「補足情報として」と明記した上で、あなたの一般的な知識から情報を提供してください
-  3. 提供する情報がWikiの情報ではないことを必ず区別してください`
+		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、「Wiki内には関連する記事が見つかりませんでした。」と回答してください。`
 	} else {
-		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、「Wiki内には関連する記事が見つかりませんでした。詳細や最新の情報が必要な場合は、検索モード（Web検索ON）を使用してください。」と回答してください。この場合、あなたの知識で補足情報を提供しないでください。`
+		noAnswerGuidance = `- ツールの結果に「## 」で始まる記事タイトルが含まれている場合は、必ずその記事の内容に基づいて回答してください。
+- 記事が提供されているのに「関連する情報がありません」と答えるのはやめてください。`
 	}
 
 	jst := time.FixedZone("JST", 9*60*60)
@@ -170,8 +168,12 @@ Final Answer: ユーザーへの回答文（日本語）
 				continue
 			}
 
+			// 後処理: 回答フォーマットを統一（LLMモデルに依存しないように）
+			hasContext := len(sources) > 0
+			formattedAnswer := formatAgentAnswer(finalAnswer, hasContext)
+
 			return &AgentResult{
-				Answer:  finalAnswer,
+				Answer:  formattedAnswer,
 				Steps:   steps,
 				Sources: sources,
 			}, nil
@@ -326,22 +328,7 @@ func parseStep(text string) AgentStepResult {
 }
 
 func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
-	// read_article の action_input から article_id を収集
-	if step.Action == "read_article" {
-		var in struct {
-			ArticleID string `json:"article_id"`
-		}
-		if err := json.Unmarshal([]byte(step.ActionInput), &in); err == nil && in.ArticleID != "" {
-			// Observation からタイトルを抽出
-			title := extractTitleFromObservation(step.Observation)
-			*sources = append(*sources, AgentSourceResult{
-				ArticleID: in.ArticleID,
-				Title:     title,
-			})
-		}
-	}
-
-	// 重複チェック用ヘルパー
+	// 重複チェック用ヘルパー（最初に定義）
 	exists := func(articleID, url string) bool {
 		for _, s := range *sources {
 			if articleID != "" && s.ArticleID == articleID {
@@ -352,6 +339,21 @@ func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
 			}
 		}
 		return false
+	}
+
+	// read_article の action_input から article_id を収集
+	if step.Action == "read_article" {
+		var in struct {
+			ArticleID string `json:"article_id"`
+		}
+		if err := json.Unmarshal([]byte(step.ActionInput), &in); err == nil && in.ArticleID != "" && !exists(in.ArticleID, "") {
+			// Observation からタイトルを抽出
+			title := extractTitleFromObservation(step.Observation)
+			*sources = append(*sources, AgentSourceResult{
+				ArticleID: in.ArticleID,
+				Title:     title,
+			})
+		}
 	}
 
 	// search_wiki の observation から記事IDとタイトルとスコアを抽出
@@ -568,6 +570,8 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 				"あなたは技術ナレッジベースのアシスタントです。\n現在の時刻: %s\n"+
 					"以下の情報を参考に、ユーザーの質問に日本語で丁寧に回答してください。"+
 					"情報源の文体や一人称を真似してはいけません。独自の丁寧な口調で回答してください。\n\n"+
+					"【回答の形式】\n"+
+					"収集した情報（Wiki記事）が見つかった場合は、**「Wikiの情報を参考に回答します。」**と太字で書いてから、改行を入れずにそのまま回答本文を続けてください。\n\n"+
 					"【最重要ルール】\n"+
 					"コンテキストに「関連する記事は見つかりませんでした」と含まれる場合、"+
 					"必ず以下の文だけを回答してください:\n"+
@@ -611,6 +615,20 @@ func extractFirstArticleID(obs string) string {
 		return m[1]
 	}
 	return ""
+}
+
+// formatAgentAnswer はAgent回答のフォーマットを統一する（LLMモデルに依存しない）
+func formatAgentAnswer(answer string, hasContext bool) string {
+	if hasContext {
+		// コンテキストがある場合：先頭に「Wikiの情報を参考に回答します。」を追加
+		prefix := "### Wikiの情報を参考に回答します。"
+		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "Wikiの情報を参考に回答します。") {
+			return prefix + "\n\n" + answer
+		}
+		return answer
+	}
+	// コンテキストがない場合：回答をそのまま返す
+	return answer
 }
 
 // extractFirstURL は observation から最初のURLを抽出する

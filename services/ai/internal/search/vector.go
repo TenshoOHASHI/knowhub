@@ -26,11 +26,19 @@ func NewVectorEngine(embedder embedding.EmbeddingProvider) *VectorEngine {
 
 // documents -> texts -> GetEmbeddings -> api(POST /api/embed) -> embed -> caches
 func (e *VectorEngine) Index(ctx context.Context, docs []Document) error {
-	e.documents = docs // 元の記事
+	// 非公開記事を除外
+	publicDocs := make([]Document, 0, len(docs))
+	for _, doc := range docs {
+		if doc.Visibility == "public" {
+			publicDocs = append(publicDocs, doc)
+		}
+	}
+
+	e.documents = publicDocs // 元の記事（公開記事のみ）
 
 	// バッファを確保
-	texts := make([]string, len(docs))
-	for i, doc := range docs {
+	texts := make([]string, len(publicDocs))
+	for i, doc := range publicDocs {
 		// 各文章のタイトルと内容をスペース区切りで格納する(トークン化する際に必要)
 		texts[i] = doc.Title + " " + doc.Content
 	}
