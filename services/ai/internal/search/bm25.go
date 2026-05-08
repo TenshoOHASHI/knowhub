@@ -78,10 +78,10 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 	slog.Info("BM25 index start", "num_docs", len(docs), "public_docs", len(publicDocs))
 
 	// 2. 各文書をトークン化 + 文書長を記録
-	e.tokenized = make([][]string, len(docs))
-	e.docLens = make([]int, len(docs))
+	e.tokenized = make([][]string, len(publicDocs))
+	e.docLens = make([]int, len(publicDocs))
 	var totalTokens int
-	for i, doc := range docs {
+	for i, doc := range publicDocs {
 		text := doc.Title + " " + doc.Content
 		e.tokenized[i] = tokenize(text)    // e.tokened: [][]string
 		e.docLens[i] = len(e.tokenized[i]) // e.docLens: []string
@@ -96,10 +96,10 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 	}
 
 	// 3. 平均トークン数
-	if len(docs) > 0 {
+	if len(publicDocs) > 0 {
 		// 全体の単語を、文書数で均等に割ったら1文書あたり何単語か
-		// docsは全文章の単語数の合計
-		e.avgDl = float64(totalTokens) / float64(len(docs))
+		// publicDocsは全文章の単語数の合計
+		e.avgDl = float64(totalTokens) / float64(len(publicDocs))
 	}
 
 	slog.Info("BM25 index stats",

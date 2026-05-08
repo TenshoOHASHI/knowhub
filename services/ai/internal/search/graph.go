@@ -317,13 +317,13 @@ func (e *GraphEngine) Index(ctx context.Context, docs []Document) error {
 		relations int
 		err       error
 	}
-	resultChan := make(chan extractionResult, len(docs))
+	resultChan := make(chan extractionResult, len(publicDocs))
 
 	// 並列でエンティティ抽出（並列数を制限してAPI負荷を分散）
 	semaphore := make(chan struct{}, 5) // 最大5並列
 	var wg sync.WaitGroup
 
-	for _, doc := range docs {
+	for _, doc := range publicDocs {
 		wg.Add(1)
 		go func(d Document) {
 			defer wg.Done()

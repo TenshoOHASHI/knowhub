@@ -10,7 +10,7 @@ import {
   FaList,
 } from 'react-icons/fa';
 import ReactMarkdown from 'react-markdown';
-import type { AgentStep, AgentSource } from '@/lib/api';
+import type { AgentStep } from '@/lib/api';
 
 interface AgentStepsProps {
   steps: AgentStep[];

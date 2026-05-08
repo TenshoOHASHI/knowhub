@@ -89,8 +89,8 @@ func TestCosineSimilarityVec(t *testing.T) {
 func TestVectorEngine_SearchUsesEmbeddingSimilarity(t *testing.T) {
 	engine := NewVectorEngine(fakeEmbeddingProvider{})
 	docs := []Document{
-		{ID: "1", Title: "Remote Procedure Calls", Content: "Semantic explanation of RPC protocols"},
-		{ID: "2", Title: "Python AI", Content: "Python machine learning basics"},
+		{ID: "1", Title: "Remote Procedure Calls", Content: "Semantic explanation of RPC protocols", Visibility: "public"},
+		{ID: "2", Title: "Python AI", Content: "Python machine learning basics", Visibility: "public"},
 	}
 
 	if err := engine.Index(context.Background(), docs); err != nil {
@@ -112,8 +112,8 @@ func TestVectorEngine_SearchUsesEmbeddingSimilarity(t *testing.T) {
 func TestHybridEngine_SearchMergesBM25AndVectorScores(t *testing.T) {
 	engine := NewHybridEngine(fakeEmbeddingProvider{}, 0.2)
 	docs := []Document{
-		{ID: "1", Title: "gRPC basics", Content: "gRPC server streaming"},
-		{ID: "2", Title: "Remote Procedure Calls", Content: "semantic rpc protocol design"},
+		{ID: "1", Title: "gRPC basics", Content: "gRPC server streaming", Visibility: "public"},
+		{ID: "2", Title: "Remote Procedure Calls", Content: "semantic rpc protocol design", Visibility: "public"},
 	}
 
 	if err := engine.Index(context.Background(), docs); err != nil {
@@ -135,9 +135,9 @@ func TestHybridEngine_SearchMergesBM25AndVectorScores(t *testing.T) {
 func TestGraphEngine_SearchFindsRelatedArticlesByBFS(t *testing.T) {
 	engine := NewGraphEngine(fakeLLMProvider{})
 	docs := []Document{
-		{ID: "1", Title: "gRPC article", Content: "gRPC uses HTTP/2 for RPC communication"},
-		{ID: "2", Title: "Protocol Buffers article", Content: "Protocol Buffers defines typed messages"},
-		{ID: "3", Title: "JWT article", Content: "JWT signs authentication claims"},
+		{ID: "1", Title: "gRPC article", Content: "gRPC uses HTTP/2 for RPC communication", Visibility: "public"},
+		{ID: "2", Title: "Protocol Buffers article", Content: "Protocol Buffers defines typed messages", Visibility: "public"},
+		{ID: "3", Title: "JWT article", Content: "JWT signs authentication claims", Visibility: "public"},
 	}
 
 	if err := engine.Index(context.Background(), docs); err != nil {

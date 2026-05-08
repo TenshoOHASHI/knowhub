@@ -413,7 +413,7 @@ export default function KnowledgeGraph() {
           article_ids: d.articleIds,
         });
       })
-      .on('dblclick', (event, _d) => {
+      .on('dblclick', (event) => {
         event.stopPropagation();
         // ダブルクリックでハイライト解除
         setHighlighted(new Set());
