@@ -9,7 +9,7 @@ import (
 func TestFilterRAGResults(t *testing.T) {
 	results := []search.SearchResult{
 		{ArticleID: "low", RelevanceScore: 0.10},
-		{ArticleID: "high", RelevanceScore: 0.42},
+		{ArticleID: "high", RelevanceScore: 0.72},
 	}
 
 	filtered := filterRAGResults("vector", results)
