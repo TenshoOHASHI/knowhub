@@ -50,6 +50,10 @@ func (p *GLM5Provider) Generate(ctx context.Context, prompt string) (string, err
 	})
 }
 
+func (p *GLM5Provider) GenerateWithOptions(ctx context.Context, prompt string, opts GenerateOptions) (string, error) {
+	return p.Generate(ctx, prompt)
+}
+
 func (p *GLM5Provider) Chat(ctx context.Context, messages []Message) (string, error) {
 	// メッセージ用のバッファを用意
 	msgs := make([]chatMessageGLM5, 0, len(messages))

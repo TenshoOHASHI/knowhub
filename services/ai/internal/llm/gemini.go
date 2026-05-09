@@ -32,6 +32,10 @@ func (p *GeminiProvider) Generate(ctx context.Context, prompt string) (string, e
 	})
 }
 
+func (p *GeminiProvider) GenerateWithOptions(ctx context.Context, prompt string, opts GenerateOptions) (string, error) {
+	return p.Generate(ctx, prompt)
+}
+
 func (p *GeminiProvider) Chat(ctx context.Context, messages []Message) (string, error) {
 	// メッセージを OpenAI 互換フォーマットに変換
 	msgs := make([]chatMessageGLM5, 0, len(messages))

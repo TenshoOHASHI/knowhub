@@ -708,8 +708,10 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    文章の中で単語が出現する頻度とレア度（希少性）を算出して検索します。<br />
-                    専門用語や固有名詞など、 exact match が重要な検索に適しています。
+                    文章の中で単語が出現する頻度とレア度（希少性）を算出して検索します。
+                    <br />
+                    専門用語や固有名詞など、 exact match
+                    が重要な検索に適しています。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
                     <span className='font-medium'>おすすめ質問例:</span>
@@ -732,7 +734,8 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事をベクトル（数値）に変換し、「意味の近さ」で検索します。<br />
+                    記事をベクトル（数値）に変換し、「意味の近さ」で検索します。
+                    <br />
                     同じ単語を使わなくても似た概念や関連する記事を見つけられます。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -756,7 +759,10 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    <span className='font-medium'>BM25（単語のレア度）</span>と<span className='font-medium'> Vector（意味の近さ）</span>のスコアを正規化して統合します。<br />
+                    <span className='font-medium'>BM25（単語のレア度）</span>と
+                    <span className='font-medium'> Vector（意味の近さ）</span>
+                    のスコアを正規化して統合します。
+                    <br />
                     キーワード一致とセマンティック理解の両方をカバーするため、どの検索エンジンにするか迷ったらこれを選んでください。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -780,7 +786,10 @@ export default function ChatInterface() {
                     </span>
                   </div>
                   <p className='text-xs text-blue-800 dark:text-blue-200 mb-1'>
-                    記事から<strong>エンティティ（重要単語）</strong>と<strong>関係性</strong>を抽出してナレッジグラフを構築し、関連する記事をたどって検索します。<br />
+                    記事から<strong>エンティティ（重要単語）</strong>と
+                    <strong>関係性</strong>
+                    を抽出してナレッジグラフを構築し、関連する記事をたどって検索します。
+                    <br />
                     複数のトピックにまたがる質問や、学習ロードマップのような広範な質問に強いです。
                   </p>
                   <div className='text-xs text-blue-700 dark:text-blue-300'>
@@ -822,9 +831,36 @@ export default function ChatInterface() {
                 >
                   {/* 通信エフェクト - 電波 */}
                   <g className='antenna-signal'>
-                    <circle className='signal-wave' cx='60' cy='2' r='3' fill='none' stroke='#60a5fa' strokeWidth='1.5' opacity='0.6' />
-                    <circle className='signal-wave' cx='60' cy='2' r='6' fill='none' stroke='#60a5fa' strokeWidth='1.5' opacity='0.4' />
-                    <circle className='signal-wave' cx='60' cy='2' r='9' fill='none' stroke='#60a5fa' strokeWidth='1.5' opacity='0.2' />
+                    <circle
+                      className='signal-wave'
+                      cx='60'
+                      cy='2'
+                      r='3'
+                      fill='none'
+                      stroke='#60a5fa'
+                      strokeWidth='1.5'
+                      opacity='0.6'
+                    />
+                    <circle
+                      className='signal-wave'
+                      cx='60'
+                      cy='2'
+                      r='6'
+                      fill='none'
+                      stroke='#60a5fa'
+                      strokeWidth='1.5'
+                      opacity='0.4'
+                    />
+                    <circle
+                      className='signal-wave'
+                      cx='60'
+                      cy='2'
+                      r='9'
+                      fill='none'
+                      stroke='#60a5fa'
+                      strokeWidth='1.5'
+                      opacity='0.2'
+                    />
                   </g>
 
                   {/* ロボットの体 */}
@@ -839,8 +875,22 @@ export default function ChatInterface() {
                   />
                   {/* Tの充電エフェクト - グロー */}
                   <g className='t-charge-glow'>
-                    <ellipse cx='60' cy='53' rx='14' ry='8' fill='#fbbf24' opacity='0.3' />
-                    <ellipse cx='60' cy='53' rx='10' ry='5' fill='#fbbf24' opacity='0.4' />
+                    <ellipse
+                      cx='60'
+                      cy='53'
+                      rx='14'
+                      ry='8'
+                      fill='#fbbf24'
+                      opacity='0.3'
+                    />
+                    <ellipse
+                      cx='60'
+                      cy='53'
+                      rx='10'
+                      ry='5'
+                      fill='#fbbf24'
+                      opacity='0.4'
+                    />
                   </g>
                   {/* お腹のTマーク - 小さく細く */}
                   <g fill='#1e40af'>
@@ -850,9 +900,32 @@ export default function ChatInterface() {
                     <rect x='51' y='50' width='18' height='3' rx='0.5' />
                   </g>
                   {/* 充電粒子 */}
-                  <circle className='charge-particle' cx='54' cy='53' r='1.5' fill='#fbbf24' opacity='0.8' />
-                  <circle className='charge-particle' cx='60' cy='56' r='1.5' fill='#fbbf24' opacity='0.8' style={{ animationDelay: '0.3s' }} />
-                  <circle className='charge-particle' cx='66' cy='53' r='1.5' fill='#fbbf24' opacity='0.8' style={{ animationDelay: '0.6s' }} />
+                  <circle
+                    className='charge-particle'
+                    cx='54'
+                    cy='53'
+                    r='1.5'
+                    fill='#fbbf24'
+                    opacity='0.8'
+                  />
+                  <circle
+                    className='charge-particle'
+                    cx='60'
+                    cy='56'
+                    r='1.5'
+                    fill='#fbbf24'
+                    opacity='0.8'
+                    style={{ animationDelay: '0.3s' }}
+                  />
+                  <circle
+                    className='charge-particle'
+                    cx='66'
+                    cy='53'
+                    r='1.5'
+                    fill='#fbbf24'
+                    opacity='0.8'
+                    style={{ animationDelay: '0.6s' }}
+                  />
 
                   {/* ロボットの頭 */}
                   <g className='robot-head'>
@@ -892,9 +965,21 @@ export default function ChatInterface() {
                       fill='#60a5fa'
                     />
                     {/* 左目 */}
-                    <circle className='robot-eye-left' cx='45' cy='26' r='5' fill='#3b82f6' />
+                    <circle
+                      className='robot-eye-left'
+                      cx='45'
+                      cy='26'
+                      r='5'
+                      fill='#3b82f6'
+                    />
                     {/* 右目 */}
-                    <circle className='robot-eye-right' cx='75' cy='26' r='5' fill='#3b82f6' />
+                    <circle
+                      className='robot-eye-right'
+                      cx='75'
+                      cy='26'
+                      r='5'
+                      fill='#3b82f6'
+                    />
                     {/* 口（直線的な近未来風） */}
                     <rect
                       x='52'
@@ -917,12 +1002,7 @@ export default function ChatInterface() {
                       rx='3'
                       fill='currentColor'
                     />
-                    <circle
-                      cx='10'
-                      cy='45'
-                      r='8'
-                      fill='currentColor'
-                    />
+                    <circle cx='10' cy='45' r='8' fill='currentColor' />
                   </g>
 
                   {/* 右腕 - 手を振る */}
@@ -935,12 +1015,7 @@ export default function ChatInterface() {
                       rx='3'
                       fill='currentColor'
                     />
-                    <circle
-                      cx='110'
-                      cy='45'
-                      r='8'
-                      fill='currentColor'
-                    />
+                    <circle cx='110' cy='45' r='8' fill='currentColor' />
                   </g>
 
                   {/* 左足 */}
@@ -1034,7 +1109,8 @@ export default function ChatInterface() {
                 <p>{msg.content}</p>
               )}
               {/* 参照記事: RAG (sources) または Agent (agentSources) */}
-              {((msg.sources && msg.sources.length > 0) || (msg.agentSources && msg.agentSources.length > 0)) && (
+              {((msg.sources && msg.sources.length > 0) ||
+                (msg.agentSources && msg.agentSources.length > 0)) && (
                 <div className='text-xs text-stone-500 dark:text-stone-400 mt-2 pt-2 border-t border-stone-300 dark:border-stone-500'>
                   <div className='mb-1 font-medium'>参照記事</div>
                   <div className='flex flex-wrap gap-1.5'>
@@ -1066,7 +1142,9 @@ export default function ChatInterface() {
                             href={`/wiki/${s.article_id}`}
                             className='inline-flex max-w-full items-center gap-1 rounded border border-stone-300 px-2 py-1 hover:border-blue-400 hover:text-blue-500 dark:border-stone-500 dark:hover:border-blue-400 dark:hover:text-blue-300'
                           >
-                            <span className='truncate'>{s.title || s.article_id}</span>
+                            <span className='truncate'>
+                              {s.title || s.article_id}
+                            </span>
                             {score && (
                               <span className='shrink-0 rounded bg-stone-200 px-1.5 py-0.5 text-[10px] text-stone-700 dark:bg-stone-700 dark:text-stone-200'>
                                 score {score}
