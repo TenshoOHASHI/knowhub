@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   let article = null;
   try {
-    const data = await getArticle(id, null); // 公開記事のみ取得
+    const data = await getArticle(id, undefined); // 公開記事のみ取得
     article = data.Article;
   } catch {
     // 記事が見つからない場合
