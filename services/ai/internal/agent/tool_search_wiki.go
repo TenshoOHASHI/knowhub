@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	wikiPb "github.com/TenshoOHASHI/knowhub/proto/wiki"
@@ -45,6 +46,13 @@ func (t *SearchWikiTool) Description() string {
 }
 
 func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) {
+	slog.Info("search_wiki: tool called",
+		"input", input,
+		"engineName", t.engineName,
+		"provider", fmt.Sprintf("%T", t.provider),
+		"embedder", fmt.Sprintf("%T", t.embedder),
+	)
+
 	var in searchWikiInput
 	if err := json.Unmarshal([]byte(input), &in); err != nil {
 		// LLMがプレーン文字列を出力した場合のフォールバック
@@ -75,10 +83,18 @@ func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) 
 			return "", fmt.Errorf("failed to list articles: %w", err)
 		}
 
+		slog.Info("search_wiki: fetched articles from wiki",
+			"total_articles", len(articles.Article),
+		)
+
 		docs := make([]search.Document, 0, len(articles.Article))
 		for _, a := range articles.Article {
-			docs = append(docs, search.Document{ID: a.Id, Title: a.Title, Content: a.Content})
+			docs = append(docs, search.Document{ID: a.Id, Title: a.Title, Content: a.Content, Visibility: a.Visibility})
 		}
+
+		slog.Info("search_wiki: prepared documents for search",
+			"docs_count", len(docs),
+		)
 
 		engine := search.SelectEngine(t.engineName, t.provider, t.embedder)
 		if err := engine.Index(ctx, docs); err != nil {
@@ -88,6 +104,20 @@ func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) 
 		results, err = engine.Search(ctx, in.Query, in.Limit)
 		if err != nil {
 			return "", fmt.Errorf("search failed: %w", err)
+		}
+
+		// デバッグログ
+		slog.Info("search_wiki: raw results",
+			"query", in.Query,
+			"results_count", len(results),
+			"engine", t.engineName,
+		)
+		for i, r := range results {
+			slog.Info("search_wiki: result",
+				"rank", i+1,
+				"title", r.Title,
+				"score", r.RelevanceScore,
+			)
 		}
 	}
 
@@ -102,6 +132,22 @@ func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) 
 		if r.RelevanceScore >= threshold {
 			filtered = append(filtered, r)
 		}
+	}
+
+	// タイトル完全一致を優先：もし完全一致するタイトルがあれば、その記事のみを返す
+	var titleMatch *search.SearchResult
+	queryLower := strings.ToLower(in.Query)
+	for i, r := range filtered {
+		titleLower := strings.ToLower(r.Title)
+		if titleLower == queryLower {
+			titleMatch = &filtered[i]
+			break
+		}
+	}
+
+	// タイトル完全一致がある場合、その記事のみを返す
+	if titleMatch != nil {
+		filtered = []search.SearchResult{*titleMatch}
 	}
 
 	if len(filtered) == 0 {
@@ -128,7 +174,7 @@ func ragSourceThreshold(engineName string) float64 {
 	case "tfidf":
 		return 0.08
 	case "bm25", "":
-		return 0.5
+		return 0.01 // BM25はキーワード一致なので、閾値をほぼ0にする（RAGと同じ値）
 	default:
 		return 0.0
 	}

@@ -74,9 +74,16 @@ func (a *Agent) Run(ctx context.Context, question string) (*AgentResult, error) 
 	if _, hasWeb := a.tools["web_search"]; hasWeb {
 		toolGuidance += `
 - search_wiki の後、必ず web_search でも検索してください。両方の結果を比較して回答すること
+- Wikiで記事が見つからない場合は、必ず web_search を使って最新情報を探してください
 - web_search を使った後は、必ず read_url で上位の検索結果URLの本文を取得してください
 - read_url を使わずに Final Answer を出力してはいけません`
-		noAnswerGuidance = `- ツールを実行しても関連情報が見つからない場合は、「Wiki内には関連する記事が見つかりませんでした。」と回答してください。`
+		noAnswerGuidance = `- Wikiで記事が見つからない場合は、まず「Wiki内には関連する記事が見つかりませんでした。」と明記してください
+- その後、web_search で最新情報を取得して補足してください
+- 回答形式：「Wiki内には関連する記事が見つかりませんでした。
+
+【Web検索で補足情報】
+...（web_searchの結果）」
+- web_search の結果がある場合は、必ず補足情報を提供してください`
 	} else {
 		noAnswerGuidance = `- ツールの結果に「## 」で始まる記事タイトルが含まれている場合は、必ずその記事の内容に基づいて回答してください。
 - 記事が提供されているのに「関連する情報がありません」と答えるのはやめてください。`
@@ -169,8 +176,18 @@ Final Answer: ユーザーへの回答文（日本語）
 			}
 
 			// 後処理: 回答フォーマットを統一（LLMモデルに依存しないように）
-			hasContext := len(sources) > 0
-			formattedAnswer := formatAgentAnswer(finalAnswer, hasContext)
+			hasWiki := false
+			hasWeb := false
+			for _, s := range sources {
+				if s.ArticleID != "" {
+					hasWiki = true
+				}
+				if s.URL != "" {
+					hasWeb = true
+				}
+			}
+			slog.Info("agent: format check", "hasWiki", hasWiki, "hasWeb", hasWeb, "sources_count", len(sources), "sources", sources)
+			formattedAnswer := formatAgentAnswer(finalAnswer, hasWiki, hasWeb)
 
 			return &AgentResult{
 				Answer:  formattedAnswer,
@@ -459,6 +476,7 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	var steps []AgentStepResult
 	var sources []AgentSourceResult
 	var contextBuilder strings.Builder
+	var hasWikiContent bool // Wiki記事が実際に見つかったか
 
 	searchInput := fmt.Sprintf(`{"query":"%s"}`, escapeJSON(question))
 
@@ -491,7 +509,11 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 				}
 				a.callbacks.OnToolEnd(ctx, "read_article", articleObs)
 
-				contextBuilder.WriteString(fmt.Sprintf("## Wiki記事\n%s\n\n", articleObs))
+				// 記事が実際に取得できた場合のみコンテキストに追加
+				if articleObs != "" && !strings.HasPrefix(articleObs, "エラー:") {
+					hasWikiContent = true
+					contextBuilder.WriteString(fmt.Sprintf("## Wiki記事\n%s\n\n", articleObs))
+				}
 				steps = append(steps, AgentStepResult{
 					Thought:     "Wiki記事の全文を取得",
 					Action:      "read_article",
@@ -548,6 +570,48 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	jst := time.FixedZone("JST", 9*60*60)
 	currentTime := time.Now().In(jst).Format("2006年1月2日 15:04 MST")
 
+	// hasWiki と hasWeb を判定
+	hasWiki := false
+	hasWeb := false
+
+	slog.Info("pipeline: checking sources", "hasWikiContent", hasWikiContent, "sources_count", len(sources))
+
+	// Wiki記事が見つからない場合、Wiki関連のソースを削除
+	if !hasWikiContent {
+		var filteredSources []AgentSourceResult
+		for _, s := range sources {
+			// ArticleID がないもの（Web検索結果）のみ残す
+			if s.ArticleID == "" {
+				filteredSources = append(filteredSources, s)
+			}
+		}
+		sources = filteredSources
+		slog.Info("pipeline: filtered wiki sources", "filtered_count", len(sources))
+	}
+
+	for _, s := range sources {
+		if s.ArticleID != "" {
+			hasWiki = true
+		}
+		if s.URL != "" {
+			hasWeb = true
+		}
+	}
+
+	slog.Info("pipeline: final check", "hasWiki", hasWiki, "hasWeb", hasWeb)
+
+	// 回答の前置きを決定
+	var answerPrefix string
+	if hasWiki && !hasWeb {
+		answerPrefix = "「Wikiの情報を参考に回答します。」"
+	} else if !hasWiki && hasWeb {
+		answerPrefix = "「Web検索の情報を参考に回答します。」"
+	} else if hasWiki && hasWeb {
+		answerPrefix = "「WikiとWeb検索の情報を参考に回答します。」"
+	} else {
+		answerPrefix = "「収集した情報を参考に回答します。」"
+	}
+
 	// コンテキストが空の場合は「関連情報なし」テキストを設定
 	contextText := contextBuilder.String()
 	if strings.TrimSpace(contextText) == "" {
@@ -571,17 +635,15 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 					"以下の情報を参考に、ユーザーの質問に日本語で丁寧に回答してください。"+
 					"情報源の文体や一人称を真似してはいけません。独自の丁寧な口調で回答してください。\n\n"+
 					"【回答の形式】\n"+
-					"収集した情報（Wiki記事）が見つかった場合は、**「Wikiの情報を参考に回答します。」**と太字で書いてから、改行を入れずにそのまま回答本文を続けてください。\n\n"+
+					"回答の冒頭に必ず%sと書いてから、改行を入れずにそのまま回答本文を続けてください。\n\n"+
 					"【最重要ルール】\n"+
-					"コンテキストに「関連する記事は見つかりませんでした」と含まれる場合、"+
-					"必ず以下の文だけを回答してください:\n"+
-					"「Wiki内には関連する記事が見つかりませんでした。別の質問をお願いします。詳細や最新の情報が必要な場合は、検索モード（Web検索ON）を使用してください。」\n\n"+
+					"1. コンテキストに「--- 記事タイトル」が含まれている場合は、その記事の内容に基づいて回答してください。\n"+
+					"2. 記事が見つからない場合のみ、「Wiki内には関連する記事が見つかりませんでした。」と答えてください。\n"+
+					"3. 記事が見つかっているのに「関連しない」と答えてはいけません。\n\n"+
 					"絶対に守ってください:\n"+
-					"- この場合、あなたの知識で補足情報を提供しないでください\n"+
-					"- 会話を続けようとしないでください\n"+
-					"- 質問し返さないでください\n"+
-					"- 上記の文だけを回答してください",
-				currentTime,
+					"- コンテキストに記事がある場合は、その内容を説明してください\n"+
+					"- 記事が見つからない場合のみ、見つからないと答えてください",
+				currentTime, answerPrefix,
 			),
 		},
 	}
@@ -599,6 +661,12 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 		return nil, fmt.Errorf("LLM call failed: %w", err)
 	}
 	a.callbacks.OnLLMEnd(ctx, -1, answer)
+
+	// LLMが「関連情報がない」と答えた場合、参照記事をクリア
+	if answerIndicatesNoRelevantContext(answer) {
+		slog.Info("pipeline: LLM indicated no relevant context, clearing sources")
+		sources = []AgentSourceResult{}
+	}
 
 	return &AgentResult{
 		Answer:  answer,
@@ -618,17 +686,63 @@ func extractFirstArticleID(obs string) string {
 }
 
 // formatAgentAnswer はAgent回答のフォーマットを統一する（LLMモデルに依存しない）
-func formatAgentAnswer(answer string, hasContext bool) string {
-	if hasContext {
-		// コンテキストがある場合：先頭に「Wikiの情報を参考に回答します。」を追加
-		prefix := "### Wikiの情報を参考に回答します。"
-		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "Wikiの情報を参考に回答します。") {
+func formatAgentAnswer(answer string, hasWiki, hasWeb bool) string {
+	// Wikiのみ
+	if hasWiki && !hasWeb {
+		prefix := "Wikiの情報を参考に回答します。"
+		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "### Wikiの情報を参考に") {
 			return prefix + "\n\n" + answer
 		}
 		return answer
 	}
-	// コンテキストがない場合：回答をそのまま返す
+	// Webのみ
+	if !hasWiki && hasWeb {
+		prefix := "Web検索の情報を参考に回答します。"
+		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "Wikiの情報を参考に") {
+			return prefix + "\n\n" + answer
+		}
+		return answer
+	}
+	// 両方
+	if hasWiki && hasWeb {
+		prefix := "WikiとWeb検索の情報を参考に回答します。"
+		if !strings.HasPrefix(answer, prefix) && !strings.HasPrefix(answer, "Wikiの情報を参考に") {
+			return prefix + "\n\n" + answer
+		}
+		return answer
+	}
+	// どちらもない場合：回答をそのまま返す
 	return answer
+}
+
+// answerIndicatesNoRelevantContext は、LLMが「関連情報がない」と答えたかを判定する
+func answerIndicatesNoRelevantContext(answer string) bool {
+	trimmedAnswer := strings.TrimSpace(answer)
+
+	phrases := []string{
+		"コンテキストには関連情報がありません",
+		"提供されたコンテキストには関連情報がありません",
+		"関連情報がありません",
+		"関連する情報はありません",
+		"関連する記事は見つかりません",
+		"関連情報は見つかりませんでした",
+		"関連情報は見つかりませんでした。",
+		"見つかりませんでした",
+		"ナレッジベースには関連する情報がありません。別の質問をお願いします。",
+		"最新ニュースに関する情報は提供されていません",
+		"最新ニュースやイベントについての情報は含まれていません",
+		"最新ニュースや更新については含まれていません",
+		"関連するニュースに関する情報は含まれていません",
+		"最新ニュースであるとは限りません",
+		"それらが「最新ニュース」であるとは限りません",
+	}
+
+	for _, phrase := range phrases {
+		if strings.Contains(trimmedAnswer, phrase) {
+			return true
+		}
+	}
+	return false
 }
 
 // extractFirstURL は observation から最初のURLを抽出する

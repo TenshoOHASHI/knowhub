@@ -329,7 +329,8 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			slog.Error("failed to get article for RAG", "error", err, "article_id", r.ArticleID)
 			continue
 		}
-		contextBuilder.WriteString(fmt.Sprintf("## %s\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
+		// 記事の境界を明確にする
+		contextBuilder.WriteString(fmt.Sprintf("--- 記事タイトル: %s ---\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
 		sources = append(sources, &pb.Source{
 			ArticleId:      r.ArticleID,
 			Title:          articleResp.Article.Title,
@@ -363,6 +364,8 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"- コンテキストに「## 」で始まる記事タイトルが含まれている場合は、必ずその記事の内容に基づいて回答してください。" +
 		"- 記事が提供されているのに「関連する情報がありません」と答えるのはやめてください。" +
 		"- コンテキストに「関連する記事は見つかりませんでした」としか書かれていない場合のみ、同じ内容を答えてください。" +
+		"【最重要】コンテキストの内容が質問と全く関係ない場合は、必ず「関連する情報は見つかりませんでしたでした」と答えてください。" +
+		"例えば、質問が「最新ニュース」なのにコンテキストが技術ドキュメントの場合、関係ないと判断してください。" +
 		"【重要】外部リンクやURLを含む回答はしないでください。Wiki内の記事のみを参照してください。"
 
 	// Graph RAGの場合: 質問に直接関連する記事のみを使用
@@ -417,15 +420,20 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	)
 
 	// 保険として、関連性がない記事は、参照リンクを空にする
-	// TODO: 一時的に無効化してデバッグ
-	/*
-		if answerIndicatesNoRelevantContext(answer) {
-			slog.Warn("RAG LLM indicated no relevant context, clearing sources",
-				"answer", answer,
-			)
-			sources = []*pb.Source{}
-		}
-	*/
+	// 回答に「関連」と「見つかりません」が両方含まれる場合はクリア
+	trimmedAnswer := strings.TrimSpace(answer)
+	slog.Info("RAG checking for no relevant context",
+		"answer_length", len(answer),
+		"answer_preview", answer,
+		"trimmed_answer", fmt.Sprintf("%q", trimmedAnswer),
+		"contains_no_relevant", strings.Contains(trimmedAnswer, "関連") && strings.Contains(trimmedAnswer, "見つかりません"),
+	)
+	if strings.Contains(trimmedAnswer, "関連") && strings.Contains(trimmedAnswer, "見つかりません") {
+		slog.Warn("RAG LLM indicated no relevant context, clearing sources",
+			"answer", answer,
+		)
+		sources = []*pb.Source{}
+	}
 
 	slog.Info("RAG final response",
 		"sources_count", len(sources),
@@ -509,16 +517,28 @@ func ragSourceThreshold(engineName string) float64 {
 // answerIndicatesNoRelevantContext は、LLM自身が「コンテキストに関連情報がない」と
 // 判断した回答かを見て、無関係な参照リンクを出さないための最終ガード。
 func answerIndicatesNoRelevantContext(answer string) bool {
+	// 前後のスペースを削除
+	trimmedAnswer := strings.TrimSpace(answer)
+
 	phrases := []string{
 		"コンテキストには関連情報がありません",
 		"提供されたコンテキストには関連情報がありません",
 		"関連情報がありません",
 		"関連する情報はありません",
 		"関連する記事は見つかりません",
+		"関連情報は見つかりませんでした",
+		"関連情報は見つかりませんでした。",
 		"ナレッジベースには関連する情報がありません。別の質問をお願いします。",
+		"最新ニュースに関する情報は提供されていません",
+		"最新ニュースやイベントについての情報は含まれていません",
+		"最新ニュースや更新については含まれていません",
+		"関連するニュースに関する情報は含まれていません",
+		"最新ニュースであるとは限りません",
+		"それらが「最新ニュース」であるとは限りません",
 	}
+
 	for _, phrase := range phrases {
-		if strings.Contains(answer, phrase) {
+		if strings.Contains(trimmedAnswer, phrase) {
 			return true
 		}
 	}
