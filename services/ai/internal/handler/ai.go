@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -360,13 +359,13 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"以下のコンテキストを参考にして回答してください。" +
 		"コンテキストに記載されている記事の内容を、質問に対する回答として説明してください。" +
 		"提供されたコンテキストを使って質問に答えてください。" +
-		"【重要ルール】" +
-		"- コンテキストに「## 」で始まる記事タイトルが含まれている場合は、必ずその記事の内容に基づいて回答してください。" +
-		"- 記事が提供されているのに「関連する情報がありません」と答えるのはやめてください。" +
-		"- コンテキストに「関連する記事は見つかりませんでした」としか書かれていない場合のみ、同じ内容を答えてください。" +
-		"【最重要】コンテキストの内容が質問と全く関係ない場合は、必ず「関連する情報は見つかりませんでしたでした」と答えてください。" +
-		"例えば、質問が「最新ニュース」なのにコンテキストが技術ドキュメントの場合、関係ないと判断してください。" +
-		"【重要】外部リンクやURLを含む回答はしないでください。Wiki内の記事のみを参照してください。"
+		"【絶対に守ってください】" +
+		"- 提供されたコンテキストに含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。" +
+		"- コンテキストに記載されていない情報を絶対に答えないでください。" +
+		"- コンテキストに「--- 記事タイトル:」と含まれる記事がある場合、その記事の内容だけを答えてください。" +
+		"- コンテキストに記載されている記事と質問が関係ない場合は、「Wiki内には関連する記事は見つかりませんでした」とだけ答えてください。" +
+		"- 自分の知識で補足情報を追加しないでください。" +
+		"- 記事がない場合は「Wiki内には関連する記事は見つかりませんでした」とだけ答えてください。"
 
 	// Graph RAGの場合: 質問に直接関連する記事のみを使用
 	if req.SearchEngine == "graph" {
@@ -690,19 +689,8 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	callbacks := agent.NewLoggingCallbacks()
 	ag := agent.NewAgent(provider, tools, 10, callbacks)
 
-	// 会話履歴をパース
+	// 会話履歴は使用しない（純粋なRAG検索にする）
 	var history []llm.Message
-	if req.History != "" {
-		var entries []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		}
-		if err := json.Unmarshal([]byte(req.History), &entries); err == nil {
-			for _, e := range entries {
-				history = append(history, llm.Message{Role: e.Role, Content: e.Content})
-			}
-		}
-	}
 
 	// 外部モデル（Gemini/DeepSeek/OpenAI等）→ 自律ReAct、Ollama → 固定パイプライン
 	var result *agent.AgentResult
@@ -807,19 +795,8 @@ func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc
 	})
 	ag := agent.NewAgent(provider, tools, 10, callbacks)
 
-	// 会話履歴をパース
+	// 会話履歴は使用しない（純粋なRAG検索にする）
 	var history []llm.Message
-	if req.History != "" {
-		var entries []struct {
-			Role    string `json:"role"`
-			Content string `json:"content"`
-		}
-		if err := json.Unmarshal([]byte(req.History), &entries); err == nil {
-			for _, e := range entries {
-				history = append(history, llm.Message{Role: e.Role, Content: e.Content})
-			}
-		}
-	}
 
 	// Agent 実行
 	var result *agent.AgentResult

@@ -415,7 +415,8 @@ func collectSources(sources *[]AgentSourceResult, step AgentStepResult) {
 // extractTitleFromObservation は read_article の Observation からタイトルを抽出する
 // 形式: "# タイトル (ID: xxx)" からタイトル部分を抽出
 func extractTitleFromObservation(obs string) string {
-	re := regexp.MustCompile(`^#\s+([^\(]+)\s*\(ID:`)
+	// "# タイトル" 形式に対応
+	re := regexp.MustCompile(`^#\s+([^\n\(]+)`)
 	m := re.FindStringSubmatch(obs)
 	if len(m) > 1 {
 		return strings.TrimSpace(m[1])
@@ -637,18 +638,24 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 					"【回答の形式】\n"+
 					"回答の冒頭に必ず%sと書いてから、改行を入れずにそのまま回答本文を続けてください。\n\n"+
 					"【最重要ルール】\n"+
-					"1. コンテキストに「--- 記事タイトル」が含まれている場合は、その記事の内容に基づいて回答してください。\n"+
+					"1. 「## Wiki記事」または「## Web情報」セクションの内容のみを使って回答してください。\n"+
 					"2. 記事が見つからない場合のみ、「Wiki内には関連する記事が見つかりませんでした。」と答えてください。\n"+
-					"3. 記事が見つかっているのに「関連しない」と答えてはいけません。\n\n"+
+					"3. 記事が見つかっているのに「関連しない」と答えてはいけません。\n"+
+					"4. 提供された「収集した情報」に含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。\n"+
+					"5. 記事に記載されていない情報を絶対に答えないでください。\n"+
+					"6. 検索結果に含まれる「(ID:xxx)」は記事の識別子です。回答に絶対に含めないでください。\n"+
+					"7. 「ID: xxx」のような表現は絶対に使わないでください。\n"+
+					"8. 記事のタイトルと内容のみを答えてください。\n\n"+
 					"絶対に守ってください:\n"+
 					"- コンテキストに記事がある場合は、その内容を説明してください\n"+
-					"- 記事が見つからない場合のみ、見つからないと答えてください",
+					"- 記事が見つからない場合のみ、見つからないと答えてください\n"+
+					"- 自分の知識で補足情報を追加しないでください\n"+
+					"- 記事IDを回答に含めないでください",
 				currentTime, answerPrefix,
 			),
 		},
 	}
-	// 会話履歴を追加
-	messages = append(messages, history...)
+	// 会話履歴は使用しない（純粋なRAG検索）
 	// 収集した情報 + 質問
 	messages = append(messages, llm.Message{
 		Role:    "user",
@@ -677,7 +684,7 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 
 // extractFirstArticleID は observation から最初の記事IDを抽出する
 func extractFirstArticleID(obs string) string {
-	re := regexp.MustCompile(`\(ID:\s*([a-f0-9-]+)`)
+	re := regexp.MustCompile(`\(ID:([a-f0-9-]+)\)`)
 	m := re.FindStringSubmatch(obs)
 	if len(m) > 1 {
 		return m[1]
