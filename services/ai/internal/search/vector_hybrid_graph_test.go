@@ -77,6 +77,10 @@ func (p fakeLLMProvider) Chat(ctx context.Context, messages []llm.Message) (stri
 	return "", nil
 }
 
+func (p fakeLLMProvider) GenerateWithOptions(ctx context.Context, prompt string, opts llm.GenerateOptions) (string, error) {
+	return p.Generate(ctx, prompt)
+}
+
 func TestCosineSimilarityVec(t *testing.T) {
 	if got := cosineSimilarityVec([]float64{1, 0}, []float64{1, 0}); got != 1 {
 		t.Fatalf("cosineSimilarityVec(same direction) = %f, want 1", got)
