@@ -1,9 +1,9 @@
 export const MODELS = [
   {
     id: 'ollama',
-    name: 'Ollama（qwen3:1.7b）',
+    name: 'Ollama（llama3.2:1b）',
     needsKey: false,
-    defaultModel: 'qwen3:1.7b', // gemma3:1b, qwen2.5:1.5b
+    defaultModel: 'llama3.2:1b', // gemma3:1b, qwen2.5:1.5b
   },
   {
     id: 'openai',
