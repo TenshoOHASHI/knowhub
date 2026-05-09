@@ -409,7 +409,7 @@ func extractEntities(ctx context.Context, provider llm.LLMProvider, title, conte
   ]
 }`, text)
 
-	response, err := provider.Generate(ctx, prompt)
+	response, err := provider.GenerateWithOptions(ctx, prompt, llm.GenerateOptions{Format: "json"})
 
 	if err != nil {
 		return nil, fmt.Errorf("LLM entity extraction failed: %w", err)

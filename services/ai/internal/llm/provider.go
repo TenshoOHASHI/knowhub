@@ -7,6 +7,7 @@ import (
 
 type LLMProvider interface {
 	Generate(ctx context.Context, prompt string) (string, error)
+	GenerateWithOptions(ctx context.Context, prompt string, opts GenerateOptions) (string, error)
 	Chat(ctx context.Context, message []Message) (string, error)
 }
 

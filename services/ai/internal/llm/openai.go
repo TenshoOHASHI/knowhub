@@ -29,6 +29,10 @@ func (p *OpenAIProvider) Generate(ctx context.Context, prompt string) (string, e
 	})
 }
 
+func (p *OpenAIProvider) GenerateWithOptions(ctx context.Context, prompt string, opts GenerateOptions) (string, error) {
+	return p.Generate(ctx, prompt)
+}
+
 func (p *OpenAIProvider) Chat(ctx context.Context, messages []Message) (string, error) {
 	msgs := make([]chatMessageGLM5, 0, len(messages))
 	for _, m := range messages {
