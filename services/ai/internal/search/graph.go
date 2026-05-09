@@ -127,7 +127,7 @@ func (kg *KnowledgeGraph) getRelatedArticles(entityID string, maxHops int) map[s
 			continue
 		}
 
-			// 隣接ノードをキューに追加
+		// 隣接ノードをキューに追加
 		for _, neighbor := range kg.adjacency[current.id] {
 			if !visited[neighbor] {
 				visited[neighbor] = true
@@ -246,7 +246,7 @@ func extractEntities(ctx context.Context, provider llm.LLMProvider, title, conte
 重要:
 - JSON形式のみを出力してください
 - JSON以外のテキスト、説明文、マークダウン形式は一切出力しないでください
-- ```jsonや```などのコードブロック記号も不要です
+- コードブロック記号（バッククォート3つなど）も不要です
 - 有効なJSONのみを返してください
 
 出力形式:
