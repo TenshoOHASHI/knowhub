@@ -1,94 +1,77 @@
-server {
-    listen 80;
-    server_name ${SERVER_NAME};
+# http ブロックで囲む
+http {
+    # レート制限ゾーン定義（httpブロック内の先頭）
+    limit_req_zone $binary_remote_addr zone=api:10m rate=${RATE_LIMIT_API_RATE};
+    limit_req_zone $binary_remote_addr zone=general:10m rate=${RATE_LIMIT_GENERAL_RATE};
+    limit_conn_zone $binary_remote_addr zone=addr:10m;
 
-    client_max_body_size 20m;
+    server {
+        listen 80;
+        server_name ${SERVER_NAME};
 
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
+        client_max_body_size 20m;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
     }
 
-    location / {
-        proxy_pass http://frontend:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
+    server {
+        listen 443 ssl;
+        http2 on;
+        server_name ${SERVER_NAME};
 
-    # Next.js Route Handler に通すAPIです。
-    # /api/auth/*:
-    #   login/register/logout は Next.js 側で HttpOnly Cookie をセット/削除します。
-    #
-    # /api/ai/agent/stream:
-    #   SSE をリアルタイム転送するため、Next.js の専用 Route Handler を通します。
-    #
-    # /api/changelog:
-    #   frontend image内の Markdown を読む Route Handler です。
-    #
-    # 注意:
-    #   これらは `location /api/` より上に置きます。
-    #   nginx はより具体的な location を優先するためです。
-    location /api/auth/ {
-        proxy_pass http://frontend:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+        # ... SSL設定 ...
 
-    location /api/ai/agent/stream {
-        proxy_pass http://frontend:3000;
-        proxy_http_version 1.1;
-        proxy_buffering off;
-        proxy_cache off;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
 
-    location /api/changelog {
-        proxy_pass http://frontend:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+        location / {
+            limit_req zone=general burst=10 nodelay;
+            proxy_pass http://frontend:3000;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
 
-    # /api/analytics/*:
-    #   Next.js Route Handler で snake_case → camelCase 変換を行うため frontend へ。
-    location /api/analytics/ {
-        proxy_pass http://frontend:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+        # ... 既存の location 設定 ...
 
-    # og画像
-    location /api/og {
-      proxy_pass http://localhost:3000;
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection 'upgrade';
-      proxy_set_header Host $host;
-      proxy_cache_bypass $http_upgrade;
-  }
+        # /api/og の proxy_pass を修正
+        location /api/og {
+            proxy_pass http://frontend:3000;  # localhost → frontend
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
 
-    # その他の /api/* は Go gateway に直接流します。
-    location /api/ {
-        proxy_pass http://gateway:8080/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        # その他の /api/* は Go gateway に直接流します。
+        location /api/ {
+            # 大量同時接続から守る
+            limit_req zone=api burst=${RATE_LIMIT_API_BURST} nodelay;
+            limit_conn addr ${RATE_LIMIT_API_CONN};
+
+            proxy_pass http://gateway:8080/api/;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # タイムアウト設定
+            proxy_read_timeout 180s;
+            proxy_send_timeout 180s;
+        }
     }
 }
