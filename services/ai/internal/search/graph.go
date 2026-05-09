@@ -236,12 +236,20 @@ func extractEntities(ctx context.Context, provider llm.LLMProvider, title, conte
 		}
 	}
 
-	prompt := fmt.Sprintf(`以下の技術記事から、エンティティ（固有名詞・概念）とエンティティ間の関係を抽出してください。
+	prompt := fmt.Sprintf(`あなたはエンティティ抽出専門のAIアシスタントです。
+
+以下の技術記事から、エンティティ（固有名詞・概念）とエンティティ間の関係を抽出してください。
 
 記事:
 %s
 
-以下のJSON形式で出力してください。他の説明文は不要です。
+重要:
+- JSON形式のみを出力してください
+- JSON以外のテキスト、説明文、マークダウン形式は一切出力しないでください
+- ```jsonや```などのコードブロック記号も不要です
+- 有効なJSONのみを返してください
+
+出力形式:
 {
   "entities": [
     {"name": "エンティティ名", "type": "種別(Technology/Protocol/Company/Concept/Language/Tool等)"}
