@@ -7,9 +7,53 @@ import ArticleActions from '@/components/ArticleActions';
 import { extractToc } from '@/lib/toc';
 import { TableOfContents } from '@/components/TableOfContents';
 import { cookies } from 'next/headers';
+import type { Metadata } from 'next';
 
 interface Props {
   params: Promise<{ id: string }>;
+}
+
+// 動的メタデータ生成
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+
+  let article = null;
+  try {
+    const data = await getArticle(id, null); // 公開記事のみ取得
+    article = data.Article;
+  } catch {
+    // 記事が見つからない場合
+  }
+
+  if (!article) {
+    return {
+      title: '記事が見つかりません - TenHub',
+    };
+  }
+
+  // 記事の内容から説明文を作成（最初の100文字程度）
+  const plainText = article.content.replace(/[#*`>\-\[\]()]/g, '').trim();
+  const description = plainText.slice(0, 100) + (plainText.length > 100 ? '...' : '');
+
+  return {
+    title: `${article.title} - TenHub Wiki`,
+    description: description || '学びの断片を、知識の資産へ変えるナレッジベース',
+    openGraph: {
+      title: `${article.title} - TenHub Wiki`,
+      description: description || '学びの断片を、知識の資産へ変えるナレッジベース',
+      type: 'article',
+      url: `https://tenhub.tech/wiki/${id}`,
+      siteName: 'TenHub',
+      images: ['/api/og'],
+      locale: 'ja_JP',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${article.title} - TenHub Wiki`,
+      description: description || '学びの断片を、知識の資産へ変えるナレッジベース',
+      images: ['/api/og'],
+    },
+  };
 }
 
 export default async function ArticleDetailPage({ params }: Props) {

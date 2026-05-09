@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -18,6 +20,12 @@
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+/* クラスベースのダークモード */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
@@ -70,6 +78,10 @@ body {
   .thin-scrollbar::-webkit-scrollbar-thumb {
     background: #555;
   }
+}
+
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
 }
 
 /* Callout body paragraph spacing */
@@ -140,6 +152,14 @@ body {
   }
 }
 
+.dark .article-content .article-h2 {
+  border-bottom-color: #404040;
+}
+
+.dark .article-content .article-h2::before {
+  background: linear-gradient(180deg, #b91c1c, #dc2626);
+}
+
 /* External link style */
 .article-content .external-link {
   color: #3b82f6;
@@ -162,6 +182,14 @@ body {
   }
 }
 
+.dark .article-content .external-link {
+  color: #60a5fa;
+}
+
+.dark .article-content .external-link:hover {
+  border-bottom-color: #60a5fa;
+}
+
 /* Blockquote: left accent bar */
 .article-content .article-blockquote {
   border-left: 4px solid #3b82f6;
@@ -176,6 +204,11 @@ body {
     border-left-color: #60a5fa;
     background: #1e293b;
   }
+}
+
+.dark .article-content .article-blockquote {
+  border-left-color: #60a5fa;
+  background: #1e293b;
 }
 
 /* ===== Chat Robot Animations ===== */
