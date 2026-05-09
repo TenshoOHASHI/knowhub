@@ -13,12 +13,20 @@ export const metadata: Metadata = {
   title: 'TenHub - 学びの断片を、知識の資産へ変えるナレッジベース',
   description:
     '技術を記し、考え、発信する。小さなアウトプットが、やがてプロダクトになる。Go マイクロサービス + Next.js で構築された、モダンな技術スタックの実践場。',
-  keywords: ['ナレッジベース', 'Wiki', 'AI', 'RAG', '技術ブログ', 'Go', 'Next.js'],
+  keywords: [
+    'ナレッジベース',
+    'Wiki',
+    'AI',
+    'RAG',
+    '技術ブログ',
+    'Go',
+    'Next.js',
+  ],
   authors: [{ name: 'Tensho' }],
   openGraph: {
-    title: 'TenHub - 学びの断片を、知識の資産へ変えるナレッジベース',
+    title: '学びの断片を、知識の資産へ変える',
     description:
-      '技術を記し、考え、発信する。小さなアウトプットが、やがてプロダクトになる。Go マイクロサービス + Next.js で構築された、モダンな技術スタックの実践場。',
+      'Go/TypeScript/Next.jsで開発するAIナレッジベース\n技術を記し、考え、発信する。',
     type: 'website',
     url: 'https://www.tenhub.tech',
     siteName: 'TenHub',
@@ -27,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TenHub - 学びの断片を、知識の資産へ変えるナレッジベース',
+    title: '学びの断片を、知識の資産へ変える',
     description:
-      '技術を記し、考え、発信する。小さなアウトプットが、やがてプロダクトになる。',
+      'Go/TypeScript/Next.jsで開発するAIナレッジベース\n技術を記し、考え、発信する。',
     images: ['https://www.tenhub.tech/api/og'],
   },
 };

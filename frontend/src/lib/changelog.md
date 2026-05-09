@@ -1,3 +1,13 @@
+## 2026-05-09 OGP画像生成 + メタデータ日本語化 + nginxセキュリティ強化
+- Frontend: /api/og ルート追加（next/og ImageResponse で動的OG画像生成）
+- Frontend: OG画像デザイン（骸骨ロゴ + TenHubグラデーション + 背景技術キーワード散りばめ）
+- Frontend: メタデータを日本語化（タイトル・説明・OGP・Twitterカード）
+- Frontend: 個別Wiki記事の動的メタデータ生成（generateMetadata + 記事タイトル・内容反映）
+- Deploy: nginxテンプレート修正（/api/og proxy_pass を frontend:3000 に変更）
+- Deploy: nginxレート制限追加（.env.productionで設定可能、3r/sでDDoS対策）
+- Deploy: nginxタイムアウト設定追加（/api/ai/* は180s、/api/ai/agent/stream は300s）
+- Docs: セキュリティセクション追加（nginxレート制限の詳細とテスト方法）
+
 ## 2026-05-09 OGP画像生成 + メタデータ日本語化
 - Frontend: /api/og ルート追加（next/og ImageResponse で動的OG画像生成）
 - Frontend: OG画像デザイン（骸骨ロゴ + TenHubグラデーション + 背景技術キーワード散りばめ）
