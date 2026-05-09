@@ -95,21 +95,76 @@ body {
 
 /* Code block - GitHub dark style */
 .prose pre {
-  background-color: #161b22 !important;
-  border: 1px solid #30363d !important;
+  background-color: #f6f8fa !important;
+  border: 1px solid #d0d7de !important;
   border-radius: 0.5rem;
   padding: 1rem !important;
+  color: #24292f !important;
 }
 
 .prose pre code.hljs {
   background: transparent !important;
   padding: 0 !important;
+  color: #24292f !important;
 }
 
 .prose pre code {
   background: transparent !important;
   font-size: 0.875rem;
   line-height: 1.7;
+  color: #24292f !important;
+}
+
+/* Dark mode code blocks */
+@media (prefers-color-scheme: dark) {
+  .prose pre {
+    background-color: #161b22 !important;
+    border: 1px solid #30363d !important;
+    color: #e6edf3 !important;
+  }
+
+  .prose pre code.hljs {
+    color: #e6edf3 !important;
+  }
+
+  .prose pre code {
+    color: #e6edf3 !important;
+  }
+}
+
+.dark .prose pre {
+  background-color: #161b22 !important;
+  border: 1px solid #30363d !important;
+  color: #e6edf3 !important;
+}
+
+.dark .prose pre code.hljs {
+  color: #e6edf3 !important;
+}
+
+.dark .prose pre code {
+  color: #e6edf3 !important;
+}
+
+/* Inline code */
+.prose code:not(pre code) {
+  background-color: #f6f8fa !important;
+  color: #24292f !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.875em !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .prose code:not(pre code) {
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
+  }
+}
+
+.dark .prose code:not(pre code) {
+  background-color: #161b22 !important;
+  color: #e6edf3 !important;
 }
 
 /* ===== Article Content Typography ===== */

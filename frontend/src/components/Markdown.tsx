@@ -19,7 +19,7 @@ function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
 
   return (
     <div className='relative group'>
-      <pre ref={ref} {...props}>
+      <pre ref={ref} className='bg-stone-100 dark:bg-stone-900 text-stone-800 dark:text-stone-200 rounded-lg p-4 overflow-x-auto' {...props}>
         {children}
       </pre>
       <button
@@ -62,7 +62,7 @@ export default function markdownComponents(): Components {
       }
 
       return (
-        <code className={className} {...props}>
+        <code className={className || 'bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-stone-200 px-1.5 py-0.5 rounded text-sm font-mono'} {...props}>
           {children}
         </code>
       );

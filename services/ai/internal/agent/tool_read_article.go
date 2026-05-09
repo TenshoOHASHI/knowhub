@@ -38,6 +38,6 @@ func (t *ReadArticleTool) Run(ctx context.Context, input string) (string, error)
 	}
 
 	a := resp.Article
-	result := fmt.Sprintf("# %s (ID: %s)\n\n%s", a.Title, a.Id, a.Content)
+	result := fmt.Sprintf("# %s\n\n%s", a.Title, a.Content)
 	return truncate(result, 3000), nil
 }

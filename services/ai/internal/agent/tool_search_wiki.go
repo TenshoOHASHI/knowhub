@@ -156,7 +156,7 @@ func (t *SearchWikiTool) Run(ctx context.Context, input string) (string, error) 
 
 	var out string
 	for i, r := range filtered {
-		out += fmt.Sprintf("%d. [%s] (ID: %s, スコア: %.2f)\n%s\n\n", i+1, r.Title, r.ArticleID, r.RelevanceScore, r.Context)
+		out += fmt.Sprintf("%d. %s (ID:%s)\n%s\n\n", i+1, r.Title, r.ArticleID, r.Context)
 	}
 	return truncate(out, 3000), nil
 }
