@@ -1,3 +1,11 @@
+## 2026-05-09 Chat UI リデザイン + Analytics API ルート修正
+- Frontend: ChatInterface ヘッダーロゴをエレガントなストーングレーから青系パルスエフェクトに変更
+- Frontend: 空状態ロボットを近未来風にリデザイン（アンテナ通信エフェクト + フローティング/ウェイブ/バウンスアニメーション）
+- Frontend: ロボットにお腹に「T」マーク + 充電エフェクト（グロー + 粒子アニメーション）
+- Frontend: globals.css にロボットアニメーション追加（float/wave-arm/wave-head/bounce/signal-body/signal-wave/blink）
+- Deploy: nginxテンプレートに /api/analytics/ ルート追加（Next.js Route Handler経由でsnake_case→camelCase変換）
+- Deploy: Analytics API レスポンスが camelCase で返るように修正（totalViews/uniqueVisitors/todayViews/dailyViews等）
+
 ## 2026-05-08 Agent UI改善 + 補足情報制御 + 関連度スコア表示 + キャンセル機能
 - Frontend: AgentSteps に入力コードブロック背景に薄い緑色適用
 - Frontend: ChatInterface ヘルプ「利用可能ツール」→「内部ツール」に変更（AIエージェントが使用する内部ツールであることを明記）
