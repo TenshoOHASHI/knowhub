@@ -106,16 +106,21 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 
 // GetKnowledgeGraph — GET /api/ai/graph
 func (h *AIHandler) GetKnowledgeGraph(w http.ResponseWriter, r *http.Request) {
-	// Graph RAGの構築には時間がかかるため、タイムアウトを延長（10分）
-	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Minute)
+	start := time.Now()
+	slog.Info("GetKnowledgeGraph started")
+
+	// Graph RAGの構築には時間がかかるため、タイムアウトを延長（30分）
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Minute)
 	defer cancel()
 
 	resp, err := h.client.GetKnowledgeGraph(ctx, &pb.GetKnowledgeGraphRequest{})
 	if err != nil {
-		slog.Error("failed to get knowledge graph", "error", err)
+		slog.Error("failed to get knowledge graph", "error", err, "duration", time.Since(start))
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	slog.Info("GetKnowledgeGraph completed", "duration", time.Since(start), "entities", len(resp.Entities))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)

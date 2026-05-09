@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -29,6 +30,7 @@ type AIHandler struct {
 	ollamaModel  string              // Ollama embedding model
 	wikiClient   wikiPb.WikiServicesClient
 	searxngURL   string // SearXNG URL
+	graphPath    string // グラフ永続化ファイルパス
 
 	// キャッシュ済みナレッジグラフ
 	graphMu    sync.RWMutex
@@ -44,6 +46,7 @@ func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollama
 		ollamaModel:  ollamaModel,
 		wikiClient:   wikiClient,
 		searxngURL:   searxngURL,
+		graphPath:    "./data/knowledge_graph.json", // グラフ永続化パス
 	}
 }
 
@@ -58,12 +61,12 @@ func (h *AIHandler) ensureGraph(ctx context.Context) (*search.GraphEngine, error
 	h.graphMu.RUnlock()
 
 	// グラフ構築は全記事 × LLM API 呼び出しが発生するため、リクエストの ctx とは独立したタイムアウトを設定
-	graphCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	graphCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
 	return h.buildGraph(graphCtx)
 }
 
-// buildGraph はグラフを強制的に再構築する（refresh=true 時に使用）
+// buildGraph はグラフを構築する（永続化・差分更新対応）
 func (h *AIHandler) buildGraph(ctx context.Context) (*search.GraphEngine, error) {
 	h.graphMu.Lock()
 	defer h.graphMu.Unlock()
@@ -74,17 +77,35 @@ func (h *AIHandler) buildGraph(ctx context.Context) (*search.GraphEngine, error)
 		return cache, nil
 	}
 
-	slog.Info("building knowledge graph...")
+	// データディレクトリを作成
+	if err := os.MkdirAll("./data", 0755); err != nil {
+		slog.Warn("failed to create data directory", "error", err)
+	}
+
+	engine := search.NewGraphEngine(h.llmProvider)
+
+	// 保存されたグラフがあれば読み込む
+	if err := engine.LoadGraph(h.graphPath); err != nil {
+		slog.Warn("failed to load saved graph, starting fresh", "error", err)
+	}
+
+	slog.Info("building knowledge graph (incremental update)...")
 	docs, err := h.fetchDocs(ctx)
 	if err != nil {
 		h.graphErr = err
 		return nil, err
 	}
 
-	engine := search.NewGraphEngine(h.llmProvider)
+	// 差分更新を実行
 	if err := engine.Index(ctx, docs); err != nil {
 		h.graphErr = err
 		return nil, err
+	}
+
+	// グラフを保存
+	if err := engine.SaveGraph(h.graphPath); err != nil {
+		slog.Warn("failed to save graph", "error", err)
+		// 保存に失敗しても処理は続行
 	}
 
 	h.graphCache = engine
@@ -113,11 +134,16 @@ func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
 	}
 	docs := make([]search.Document, 0, len(articles.Article))
 	for _, a := range articles.Article {
+		var updatedAt time.Time
+		if a.UpdatedAt != nil {
+			updatedAt = a.UpdatedAt.AsTime()
+		}
 		docs = append(docs, search.Document{
 			ID:         a.Id,
 			Title:      a.Title,
 			Content:    a.Content,
 			Visibility: a.Visibility,
+			UpdatedAt:  updatedAt,
 		})
 	}
 	return docs, nil
@@ -501,13 +527,17 @@ func answerIndicatesNoRelevantContext(answer string) bool {
 
 // GetKnowledgeGraph はナレッジグラフの全データ（エンティティ・リレーション）を返す
 func (h *AIHandler) GetKnowledgeGraph(ctx context.Context, req *pb.GetKnowledgeGraphRequest) (*pb.GetKnowledgeGraphResponse, error) {
+	start := time.Now()
+	slog.Info("GetKnowledgeGraph: building graph...")
+
 	graphEngine, err := h.ensureGraph(ctx)
 	if err != nil {
-		slog.Error("failed to build knowledge graph", "error", err)
+		slog.Error("failed to build knowledge graph", "error", err, "duration", time.Since(start))
 		return nil, status.Error(codes.Internal, "failed to build knowledge graph")
 	}
 
 	graph := graphEngine.GetGraph()
+	slog.Info("GetKnowledgeGraph: graph ready", "duration", time.Since(start), "entities", len(graph.GetEntities()))
 
 	pbEntities := make([]*pb.EntityNode, 0, len(graph.GetEntities()))
 	for _, e := range graph.GetEntities() {
@@ -527,6 +557,8 @@ func (h *AIHandler) GetKnowledgeGraph(ctx context.Context, req *pb.GetKnowledgeG
 			Label:  r.Label,
 		})
 	}
+
+	slog.Info("GetKnowledgeGraph: completed", "duration", time.Since(start), "entities", len(pbEntities))
 
 	return &pb.GetKnowledgeGraphResponse{
 		Entities:  pbEntities,

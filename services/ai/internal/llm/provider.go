@@ -7,13 +7,23 @@ import (
 
 type LLMProvider interface {
 	Generate(ctx context.Context, prompt string) (string, error)
-
 	Chat(ctx context.Context, message []Message) (string, error)
 }
 
 type Message struct {
 	Role    string //  "system", "user", "assistant"
 	Content string
+}
+
+// GenerateOptions は LLM 生成時のオプション（Ollama向け）
+type GenerateOptions struct {
+	Temperature float64
+	Format      string
+}
+
+// JSONOptions は構造化出力向けオプション（temperatureはデフォルト値を使用）
+var JSONOptions = GenerateOptions{
+	Format: "json",
 }
 
 func NewProvider(ollamaURL, model, apiKey string) LLMProvider {

@@ -26,9 +26,11 @@ func NewOllamaProvider(baseURL string, model string) *OllamaProvider {
 }
 
 type ollamaGenerateRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	Stream bool   `json:"stream"`
+	Model   string                 `json:"model"`
+	Prompt  string                 `json:"prompt"`
+	Stream  bool                   `json:"stream"`
+	Options map[string]interface{} `json:"options,omitempty"`
+	Format  string                 `json:"format,omitempty"`
 }
 
 type ollamaGenerateResponse struct {
@@ -36,9 +38,11 @@ type ollamaGenerateResponse struct {
 }
 
 type ollamaChatRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
-	Stream   bool          `json:"stream"`
+	Model    string                 `json:"model"`
+	Messages []chatMessage          `json:"messages"`
+	Stream   bool                   `json:"stream"`
+	Options  map[string]interface{} `json:"options,omitempty"`
+	Format   string                 `json:"format,omitempty"`
 }
 
 type chatMessage struct {
@@ -51,10 +55,26 @@ type ollamaChatResponse struct {
 }
 
 func (p *OllamaProvider) Generate(ctx context.Context, prompt string) (string, error) {
+	return p.GenerateWithOptions(ctx, prompt, GenerateOptions{})
+}
+
+// GenerateWithOptions はオプションを指定して生成する
+func (p *OllamaProvider) GenerateWithOptions(ctx context.Context, prompt string, opts GenerateOptions) (string, error) {
 	body := ollamaGenerateRequest{
 		Model:  p.model,
 		Prompt: prompt,
 		Stream: false,
+	}
+
+	// オプションが設定されている場合のみ追加
+	if opts.Temperature > 0 || opts.Format != "" {
+		body.Options = make(map[string]interface{})
+		if opts.Temperature > 0 {
+			body.Options["temperature"] = opts.Temperature
+		}
+	}
+	if opts.Format != "" {
+		body.Format = opts.Format
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -89,6 +109,11 @@ func (p *OllamaProvider) Generate(ctx context.Context, prompt string) (string, e
 }
 
 func (p *OllamaProvider) Chat(ctx context.Context, messages []Message) (string, error) {
+	return p.ChatWithOptions(ctx, messages, GenerateOptions{})
+}
+
+// ChatWithOptions はオプションを指定してチャットする
+func (p *OllamaProvider) ChatWithOptions(ctx context.Context, messages []Message, opts GenerateOptions) (string, error) {
 	chatMsgs := make([]chatMessage, 0, len(messages))
 	for _, m := range messages {
 		chatMsgs = append(chatMsgs, chatMessage{
@@ -101,6 +126,17 @@ func (p *OllamaProvider) Chat(ctx context.Context, messages []Message) (string, 
 		Model:    p.model,
 		Messages: chatMsgs,
 		Stream:   false,
+	}
+
+	// オプションが設定されている場合のみ追加
+	if opts.Temperature > 0 || opts.Format != "" {
+		body.Options = make(map[string]interface{})
+		if opts.Temperature > 0 {
+			body.Options["temperature"] = opts.Temperature
+		}
+	}
+	if opts.Format != "" {
+		body.Format = opts.Format
 	}
 
 	jsonBody, err := json.Marshal(body)
