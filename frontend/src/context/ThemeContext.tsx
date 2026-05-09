@@ -23,7 +23,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // マウント時にlocalStorageからテーマを読み込む
     const saved = localStorage.getItem(THEME_KEY) as Theme;
-    const initialTheme: Theme = saved === 'light' || saved === 'dark' ? saved : 'light';
+    const initialTheme: Theme =
+      saved === 'light' || saved === 'dark' ? saved : 'light';
 
     // HTML要素にdarkクラスを設定
     const root = document.documentElement;

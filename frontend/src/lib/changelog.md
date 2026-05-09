@@ -1,3 +1,9 @@
+## 2026-05-09 OGP画像生成 + メタデータ日本語化
+- Frontend: /api/og ルート追加（next/og ImageResponse で動的OG画像生成）
+- Frontend: OG画像デザイン（骸骨ロゴ + TenHubグラデーション + 背景技術キーワード散りばめ）
+- Frontend: メタデータを日本語化（タイトル・説明・OGP・Twitterカード）
+- Frontend: 個別Wiki記事の動的メタデータ生成（generateMetadata + 記事タイトル・内容反映）
+
 ## 2026-05-09 Chat UI リデザイン + Analytics API ルート修正
 - Frontend: ChatInterface ヘッダーロゴをエレガントなストーングレーから青系パルスエフェクトに変更
 - Frontend: 空状態ロボットを近未来風にリデザイン（アンテナ通信エフェクト + フローティング/ウェイブ/バウンスアニメーション）

@@ -20,9 +20,9 @@ export const metadata: Metadata = {
     description:
       '技術を記し、考え、発信する。小さなアウトプットが、やがてプロダクトになる。Go マイクロサービス + Next.js で構築された、モダンな技術スタックの実践場。',
     type: 'website',
-    url: 'https://tenhub.tech',
+    url: 'https://www.tenhub.tech',
     siteName: 'TenHub',
-    images: ['/api/og'],
+    images: ['https://www.tenhub.tech/api/og'],
     locale: 'ja_JP',
   },
   twitter: {
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: 'TenHub - 学びの断片を、知識の資産へ変えるナレッジベース',
     description:
       '技術を記し、考え、発信する。小さなアウトプットが、やがてプロダクトになる。',
-    images: ['/api/og'],
+    images: ['https://www.tenhub.tech/api/og'],
   },
 };
 
