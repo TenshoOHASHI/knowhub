@@ -42,16 +42,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${article.title} - TenHub Wiki`,
       description: description || '学びの断片を、知識の資産へ変えるナレッジベース',
       type: 'article',
-      url: `https://tenhub.tech/wiki/${id}`,
+      url: `https://www.tenhub.tech/wiki/${id}`,
       siteName: 'TenHub',
-      images: ['/api/og'],
+      images: ['https://www.tenhub.tech/api/og'],
       locale: 'ja_JP',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${article.title} - TenHub Wiki`,
       description: description || '学びの断片を、知識の資産へ変えるナレッジベース',
-      images: ['/api/og'],
+      images: ['https://www.tenhub.tech/api/og'],
     },
   };
 }
