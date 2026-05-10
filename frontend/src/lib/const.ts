@@ -1,7 +1,7 @@
 export const MODELS = [
   {
     id: 'ollama',
-    name: 'Ollama（qwen2.5:1.5b）',
+    name: 'Ollama（qwen3:0.6b）',
     needsKey: false,
     defaultModel: 'qwen3:0.6b', // llama3.2:1b、gemma3:1b, qwen2.5:3b、qwen2.5:1.5b, qwen3:0.6b
   },
