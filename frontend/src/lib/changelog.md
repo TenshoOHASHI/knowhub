@@ -1,3 +1,12 @@
+## 2026-05-10 RAG検索改善 + 日本語ストップワード対応
+- Backend: RAG検索のsystemPromptを緩和（記事がある場合は内容を説明するように変更）
+- Backend: answerIndicatesNoRelevantContext関数の判定ロジックを厳密化
+- Backend: 日本語ストップワード対応追加（と、に、を、は、が、で、も、から、まで、へ、や、か、の、て、た、だ、です、ます、した）
+- Backend: BM25/TF-IDF検索でクエリからストップワードを自動除外（removeStopwords関数）
+- Backend: BM25検索のデバッグログ改善（query_tokens出力、term_freq>0のみスコア計算ログ）
+- Fix: 「テスと」等のクエリで助詞のみがマッチし無関係な記事が表示される問題を修正
+- Fix: 記事タイトルが一致しているのに「見つかりません」と回答する問題を修正
+
 ## 2026-05-09 OGP画像生成 + メタデータ日本語化 + nginxセキュリティ強化
 - Frontend: /api/og ルート追加（next/og ImageResponse で動的OG画像生成）
 - Frontend: OG画像デザイン（骸骨ロゴ + TenHubグラデーション + 背景技術キーワード散りばめ）
@@ -7,12 +16,6 @@
 - Deploy: nginxレート制限追加（.env.productionで設定可能、3r/sでDDoS対策）
 - Deploy: nginxタイムアウト設定追加（/api/ai/* は180s、/api/ai/agent/stream は300s）
 - Docs: セキュリティセクション追加（nginxレート制限の詳細とテスト方法）
-
-## 2026-05-09 OGP画像生成 + メタデータ日本語化
-- Frontend: /api/og ルート追加（next/og ImageResponse で動的OG画像生成）
-- Frontend: OG画像デザイン（骸骨ロゴ + TenHubグラデーション + 背景技術キーワード散りばめ）
-- Frontend: メタデータを日本語化（タイトル・説明・OGP・Twitterカード）
-- Frontend: 個別Wiki記事の動的メタデータ生成（generateMetadata + 記事タイトル・内容反映）
 
 ## 2026-05-09 Chat UI リデザイン + Analytics API ルート修正
 - Frontend: ChatInterface ヘッダーロゴをエレガントなストーングレーから青系パルスエフェクトに変更
