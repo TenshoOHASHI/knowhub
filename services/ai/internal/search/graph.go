@@ -396,6 +396,8 @@ func extractEntities(ctx context.Context, provider llm.LLMProvider, title, conte
 
 	prompt := fmt.Sprintf(`以下の技術記事から、エンティティ（固有名詞・概念）とエンティティ間の関係を抽出してください。
 
+【重要】出力は日本語または英語のみを使用してください。中国語・韓国語などの他言語は使用禁止です。
+
 記事:
 %s
 
