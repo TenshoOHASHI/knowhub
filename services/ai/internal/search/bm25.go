@@ -125,9 +125,13 @@ func (e *BM25Engine) Index(ctx context.Context, docs []Document) error {
 func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {
 	// ① クエリをトークン化
 	queryTokens := tokenize(query)
+	// ② 日本語のストップワード（助詞など）を除外
+	queryTokens = removeStopwords(queryTokens)
+
 	slog.Info("BM25 search query",
 		"query", query,
 		"query_tokens", queryTokens,
+		"num_query_tokens", len(queryTokens),
 		"num_documents", len(e.documents),
 	)
 	if len(queryTokens) == 0 {
@@ -148,15 +152,18 @@ func (e *BM25Engine) Search(ctx context.Context, query string, limit int) ([]Sea
 			idfVal := e.idf[qToken]       // BM25版 IDF
 			dl := float64(e.docLens[i])   // 文書のトークン数
 
-			slog.Info("BM25 score calculation",
-				"query_token", qToken,
-				"doc_id", doc.ID,
-				"doc_title", doc.Title,
-				"term_freq", f,
-				"idf", idfVal,
-				"doc_len", dl,
-				"avg_dl", e.avgDl,
-			)
+			// トークンが見つかった場合のみログ出力（デバッグ用）
+			if f > 0 {
+				slog.Info("BM25 score calculation",
+					"query_token", qToken,
+					"doc_id", doc.ID,
+					"doc_title", doc.Title,
+					"term_freq", f,
+					"idf", idfVal,
+					"doc_len", dl,
+					"avg_dl", e.avgDl,
+				)
+			}
 
 			// 長い文章 => Lが大きい -> 分母が大きい -> スコア下がる
 			numerator := f * (e.k1 + 1)                      // k1はどれくらい効かせるか
