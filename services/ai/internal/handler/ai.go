@@ -362,10 +362,10 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"【絶対に守ってください】" +
 		"- 提供されたコンテキストに含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。" +
 		"- コンテキストに記載されていない情報を絶対に答えないでください。" +
-		"- コンテキストに「--- 記事タイトル:」と含まれる記事がある場合、その記事の内容だけを答えてください。" +
-		"- コンテキストに記載されている記事と質問が関係ない場合は、「Wiki内には関連する記事は見つかりませんでした」とだけ答えてください。" +
+		"- コンテキストに「--- 記事タイトル:」と含まれる記事がある場合、その記事の内容を説明してください。" +
+		"- 記事のタイトルが質問と一致する場合、その記事の内容を答えてください。" +
 		"- 自分の知識で補足情報を追加しないでください。" +
-		"- 記事がない場合は「Wiki内には関連する記事は見つかりませんでした」とだけ答えてください。"
+		"- コンテキストに記事が1つもない場合のみ、「Wiki内には関連する記事は見つかりませんでした」と答えてください。"
 
 	// Graph RAGの場合: 質問に直接関連する記事のみを使用
 	if req.SearchEngine == "graph" {
@@ -418,16 +418,14 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"sources_count_before_filter", len(sources),
 	)
 
-	// 保険として、関連性がない記事は、参照リンクを空にする
-	// 回答に「関連」と「見つかりません」が両方含まれる場合はクリア
-	trimmedAnswer := strings.TrimSpace(answer)
+	// 保険として、LLM自身が「コンテキストに関連情報がない」と判断した場合のみ参照リンクを空にする
 	slog.Info("RAG checking for no relevant context",
 		"answer_length", len(answer),
 		"answer_preview", answer,
-		"trimmed_answer", fmt.Sprintf("%q", trimmedAnswer),
-		"contains_no_relevant", strings.Contains(trimmedAnswer, "関連") && strings.Contains(trimmedAnswer, "見つかりません"),
+		"trimmed_answer", fmt.Sprintf("%q", strings.TrimSpace(answer)),
+		"indicates_no_relevant", answerIndicatesNoRelevantContext(answer),
 	)
-	if strings.Contains(trimmedAnswer, "関連") && strings.Contains(trimmedAnswer, "見つかりません") {
+	if answerIndicatesNoRelevantContext(answer) {
 		slog.Warn("RAG LLM indicated no relevant context, clearing sources",
 			"answer", answer,
 		)
@@ -507,9 +505,9 @@ func ragSourceThreshold(engineName string) float64 {
 	case "tfidf":
 		return 0.08
 	case "bm25", "":
-		return 0.01 // BM25はキーワード一致なので、閾値をほぼ0にする
+		return 0.5 // BM25はキーワード一致だが、無関係な記事を除外するため閾値を上げる
 	default:
-		return 0.0
+		return 0.5
 	}
 }
 
@@ -522,6 +520,8 @@ func answerIndicatesNoRelevantContext(answer string) bool {
 	phrases := []string{
 		"コンテキストには関連情報がありません",
 		"提供されたコンテキストには関連情報がありません",
+		"提供されたコンテキストには、関連する記事が見つかりませんでした",
+		"提供されたコンテキストには関連する記事が見つかりませんでした",
 		"関連情報がありません",
 		"関連する情報はありません",
 		"関連する記事は見つかりません",

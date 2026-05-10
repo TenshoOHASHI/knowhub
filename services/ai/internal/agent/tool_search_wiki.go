@@ -174,8 +174,8 @@ func ragSourceThreshold(engineName string) float64 {
 	case "tfidf":
 		return 0.08
 	case "bm25", "":
-		return 0.01 // BM25はキーワード一致なので、閾値をほぼ0にする（RAGと同じ値）
+		return 0.5 // BM25はキーワード一致だが、無関係な記事を除外するため閾値を上げる
 	default:
-		return 0.0
+		return 0.5
 	}
 }

@@ -479,6 +479,9 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	var contextBuilder strings.Builder
 	var hasWikiContent bool // Wiki記事が実際に見つかったか
 
+	// Web検索が有効かどうかを事前にチェック
+	_, hasWebSearch := a.tools["web_search"]
+
 	searchInput := fmt.Sprintf(`{"query":"%s"}`, escapeJSON(question))
 
 	// Step 1: search_wiki（自動実行）
@@ -496,7 +499,10 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 			ActionInput: searchInput,
 			Observation: obs,
 		})
-		collectSources(&sources, steps[len(steps)-1])
+		// Web検索が有効な場合は、Wiki検索の結果をsourcesに追加しない
+		if !hasWebSearch {
+			collectSources(&sources, steps[len(steps)-1])
+		}
 
 		// Step 2: read_article（検索結果の上位記事を自動取得）
 		if readTool, ok := a.tools["read_article"]; ok {
@@ -521,7 +527,10 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 					ActionInput: articleInput,
 					Observation: truncate(articleObs, 500),
 				})
-				collectSources(&sources, steps[len(steps)-1])
+				// Web検索が有効な場合は、Wiki記事をsourcesに追加しない
+				if !hasWebSearch {
+					collectSources(&sources, steps[len(steps)-1])
+				}
 			}
 		}
 	}
@@ -729,12 +738,13 @@ func answerIndicatesNoRelevantContext(answer string) bool {
 	phrases := []string{
 		"コンテキストには関連情報がありません",
 		"提供されたコンテキストには関連情報がありません",
+		"提供されたコンテキストには、関連する記事が見つかりませんでした",
+		"提供されたコンテキストには関連する記事が見つかりませんでした",
 		"関連情報がありません",
 		"関連する情報はありません",
 		"関連する記事は見つかりません",
 		"関連情報は見つかりませんでした",
 		"関連情報は見つかりませんでした。",
-		"見つかりませんでした",
 		"ナレッジベースには関連する情報がありません。別の質問をお願いします。",
 		"最新ニュースに関する情報は提供されていません",
 		"最新ニュースやイベントについての情報は含まれていません",

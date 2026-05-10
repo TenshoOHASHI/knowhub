@@ -39,6 +39,26 @@ func tokenizeOld(text string) []string {
 	return tokens
 }
 
+// japaneseStopwords は検索時に除外する日本語の助詞・助動詞
+var japaneseStopwords = map[string]bool{
+	// 助詞
+	"と": true, "に": true, "を": true, "は": true, "が": true,
+	"で": true, "も": true, "から": true, "まで": true, "へ": true,
+	"や": true, "か": true, "の": true, "て": true, "た": true,
+	"だ": true, "です": true, "ます": true, "した": true,
+}
+
+// removeStopwords はストップワードを除外する
+func removeStopwords(tokens []string) []string {
+	filtered := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		if !japaneseStopwords[token] {
+			filtered = append(filtered, token)
+		}
+	}
+	return filtered
+}
+
 func tokenize(text string) []string {
 	text = strings.ToLower(text)
 	var tokens []string
@@ -76,6 +96,9 @@ func tokenize(text string) []string {
 	if len(current) > 0 {
 		tokens = append(tokens, string(current))
 	}
+
+	// デバッグ: トークン化の結果をログ出力（テスト時のみ）
+	// slog.Debug("tokenize result", "input", text, "tokens", fmt.Sprintf("%v", tokens))
 
 	return tokens
 }
@@ -249,6 +272,8 @@ func (e *TFIDFEngine) Index(ctx context.Context, docs []Document) error {
 func (e *TFIDFEngine) Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {
 	// 1. クエリをトークン化
 	queryTokens := tokenize(query)
+	// 2. 日本語のストップワード（助詞など）を除外
+	queryTokens = removeStopwords(queryTokens)
 
 	// クエリが空の場合は空結果を返す
 	if len(queryTokens) == 0 {
