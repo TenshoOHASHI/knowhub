@@ -120,6 +120,7 @@ Final Answer: ユーザーへの回答文（日本語）
 - Action Input は {"key":"value"} のJSON形式にすること
 - ツールは一度に1つだけ呼び出すこと
 - Thought, Action, Action Input を1行ずつ出力すること
+- 日本語で回答すること
 %s`, currentTime, toolDescriptions, toolGuidance, noAnswerGuidance)
 
 	// 会話履歴を構築
@@ -479,9 +480,6 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 	var contextBuilder strings.Builder
 	var hasWikiContent bool // Wiki記事が実際に見つかったか
 
-	// Web検索が有効かどうかを事前にチェック
-	_, hasWebSearch := a.tools["web_search"]
-
 	searchInput := fmt.Sprintf(`{"query":"%s"}`, escapeJSON(question))
 
 	// Step 1: search_wiki（自動実行）
@@ -499,10 +497,8 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 			ActionInput: searchInput,
 			Observation: obs,
 		})
-		// Web検索が有効な場合は、Wiki検索の結果をsourcesに追加しない
-		if !hasWebSearch {
-			collectSources(&sources, steps[len(steps)-1])
-		}
+		// Wiki検索の結果からsourcesを収集
+		collectSources(&sources, steps[len(steps)-1])
 
 		// Step 2: read_article（検索結果の上位記事を自動取得）
 		if readTool, ok := a.tools["read_article"]; ok {
@@ -516,9 +512,51 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 				}
 				a.callbacks.OnToolEnd(ctx, "read_article", articleObs)
 
-				// 記事が実際に取得できた場合のみコンテキストに追加
+				// 記事が実際に取得できた場合のみ処理
 				if articleObs != "" && !strings.HasPrefix(articleObs, "エラー:") {
 					hasWikiContent = true
+					title := extractTitleFromObservation(articleObs)
+					contentLen := len(articleObs)
+
+					// タイトルが一致する場合はLLMに説明させる（情報量に応じて簡潔さを調整）
+					if title != "" && strings.Contains(question, title) {
+						slog.Info("pipeline: exact title match, using LLM for explanation", "title", title, "content_length", contentLen)
+
+						// 情報量が少ない（500文字未満）の場合は「簡潔に」指示
+						extraPrompt := ""
+						if contentLen < 500 {
+							extraPrompt = "情報量が少ないので、簡潔に要約して回答してください。"
+						} else {
+							extraPrompt = "詳細に説明してください。"
+						}
+
+						// コンテキストを構築してLLMを呼ぶ
+						contextText := fmt.Sprintf("## Wiki記事\n%s\n\nタイトル「%s」が質問と一致しました。%s", articleObs, title, extraPrompt)
+
+						// LLMに説明させる
+						llmAnswer, err := a.provider.Chat(ctx, []llm.Message{
+							{Role: "system", Content: "あなたは技術ナレッジベースのアシスタントです。日本語で回答してください。"},
+							{Role: "user", Content: fmt.Sprintf("以下の情報を参考に回答してください:\n\n%s\n\n質問: %s", contextText, question)},
+						})
+						if err != nil {
+							return nil, fmt.Errorf("LLM call failed: %w", err)
+						}
+
+						// Wiki記事をsourcesに追加
+						wikiSource := AgentSourceResult{
+							ArticleID:      articleID,
+							Title:          title,
+							RelevanceScore: 1.0, // タイトル一致なのでスコア1.0
+						}
+						sources = append(sources, wikiSource)
+
+						return &AgentResult{
+							Answer:  fmt.Sprintf("### Wikiの情報を参考に回答します。\n\n%s", llmAnswer),
+							Steps:   steps,
+							Sources: sources,
+						}, nil
+					}
+
 					contextBuilder.WriteString(fmt.Sprintf("## Wiki記事\n%s\n\n", articleObs))
 				}
 				steps = append(steps, AgentStepResult{
@@ -527,10 +565,8 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 					ActionInput: articleInput,
 					Observation: truncate(articleObs, 500),
 				})
-				// Web検索が有効な場合は、Wiki記事をsourcesに追加しない
-				if !hasWebSearch {
-					collectSources(&sources, steps[len(steps)-1])
-				}
+				// Wiki記事をsourcesに収集（Web検索の有無に関わらず）
+				collectSources(&sources, steps[len(steps)-1])
 			}
 		}
 	}
@@ -642,22 +678,24 @@ func (a *Agent) RunPipeline(ctx context.Context, question string, history []llm.
 			Role: "system",
 			Content: fmt.Sprintf(
 				"あなたは技術ナレッジベースのアシスタントです。\n現在の時刻: %s\n"+
+					"【言語ルール】出力は日本語または英語のみを使用してください。中国語・韓国語などの他言語は使用禁止です。\n"+
 					"以下の情報を参考に、ユーザーの質問に日本語で丁寧に回答してください。"+
 					"情報源の文体や一人称を真似してはいけません。独自の丁寧な口調で回答してください。\n\n"+
 					"【回答の形式】\n"+
 					"回答の冒頭に必ず%sと書いてから、改行を入れずにそのまま回答本文を続けてください。\n\n"+
 					"【最重要ルール】\n"+
-					"1. 「## Wiki記事」または「## Web情報」セクションの内容のみを使って回答してください。\n"+
-					"2. 記事が見つからない場合のみ、「Wiki内には関連する記事が見つかりませんでした。」と答えてください。\n"+
-					"3. 記事が見つかっているのに「関連しない」と答えてはいけません。\n"+
-					"4. 提供された「収集した情報」に含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。\n"+
-					"5. 記事に記載されていない情報を絶対に答えないでください。\n"+
-					"6. 検索結果に含まれる「(ID:xxx)」は記事の識別子です。回答に絶対に含めないでください。\n"+
-					"7. 「ID: xxx」のような表現は絶対に使わないでください。\n"+
-					"8. 記事のタイトルと内容のみを答えてください。\n\n"+
+					"1. 「## Wiki記事」セクションがある場合は、必ずその記事の内容を説明してください。「見つかりません」と答えないでください。\n"+
+					"2. 記事のタイトルが質問と一致する場合は、必ずその内容を説明してください。また、この質問の問いかけは、回答に含めないでください。\n"+
+					"3. 「## Wiki記事」または「## Web情報」セクションの内容のみを使って回答してください。\n"+
+					"4. 記事が全く見つからない場合のみ、「Wiki内には関連する記事が見つかりませんでした。」と答えてください。\n"+
+					"5. 提供された「収集した情報」に含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。\n"+
+					"6. 記事に記載されていない情報を絶対に答えないでください。\n"+
+					"7. 検索結果に含まれる「(ID:xxx)」は記事の識別子です。回答に絶対に含めないでください。\n"+
+					"8. 「ID: xxx」のような表現は絶対に使わないでください。\n"+
+					"9. 記事のタイトルと内容のみを答えてください。\n\n"+
 					"絶対に守ってください:\n"+
-					"- コンテキストに記事がある場合は、その内容を説明してください\n"+
-					"- 記事が見つからない場合のみ、見つからないと答えてください\n"+
+					"- コンテキストに「## Wiki記事」がある場合は、その内容を説明してください\n"+
+					"- 記事が全く見つからない場合のみ、見つからないと答えてください\n"+
 					"- 自分の知識で補足情報を追加しないでください\n"+
 					"- 記事IDを回答に含めないでください",
 				currentTime, answerPrefix,

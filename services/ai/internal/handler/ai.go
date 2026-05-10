@@ -349,31 +349,32 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"context_is_empty", strings.TrimSpace(contextText) == "",
 		"context_preview", string([]rune(contextText)[:min(500, len([]rune(contextText)))]),
 	)
+
+	// 記事が見つからない場合はLLMを呼ばずにすぐ返す
 	if strings.TrimSpace(contextText) == "" {
-		contextText = "関連する記事は見つかりませんでした。"
-		slog.Warn("RAG context is empty, using fallback message")
+		slog.Info("RAG context is empty, returning fixed message without LLM call")
+		return &pb.QuestionResponse{
+			Answer:  "Wiki内には関連する記事は見つかりませんでした。",
+			Sources: []*pb.Source{},
+		}, nil
 	}
 
 	// Step 3: RAG プロンプトで LLM に回答生成
 	systemPrompt := "あなたは技術ナレッジベースのアシスタントです。" +
 		"以下のコンテキストを参考にして回答してください。" +
-		"コンテキストに記載されている記事の内容を、質問に対する回答として説明してください。" +
-		"提供されたコンテキストを使って質問に答えてください。" +
+		"【言語ルール】出力は日本語または英語のみを使用してください。中国語・韓国語などの他言語は使用禁止です。" +
 		"【絶対に守ってください】" +
-		"- 提供されたコンテキストに含まれている情報のみを使って回答してください。自分自身の知識は一切使わないでください。" +
-		"- コンテキストに記載されていない情報を絶対に答えないでください。" +
-		"- コンテキストに「--- 記事タイトル:」と含まれる記事がある場合、その記事の内容を説明してください。" +
-		"- 記事のタイトルが質問と一致する場合、その記事の内容を答えてください。" +
-		"- 自分の知識で補足情報を追加しないでください。" +
-		"- コンテキストに記事が1つもない場合のみ、「Wiki内には関連する記事は見つかりませんでした」と答えてください。"
+		"- コンテキストに「--- 記事タイトル:」が含まれる場合は、必ずその記事の内容を説明してください。「見つかりません」と答えないでください。" +
+		"- 記事のタイトルが質問と一致する場合は、必ずその記事の内容を説明してください。" +
+		"- 記事の内容が少ない（300文字未満）場合は「タイトルは見つかりましたが、詳細情報は少ないです」と答えた上で、内容を説明してください。" +
+		"- 記事の内容が十分にある場合は、詳細に説明してください。" +
+		"- 回答は簡潔にしてください。"
 
 	// Graph RAGの場合: 質問に直接関連する記事のみを使用
 	if req.SearchEngine == "graph" {
 		systemPrompt += " " +
 			"【重要】今回はGraph RAG（ナレッジグラフ）を使った検索です。" +
-			"コンテキストに含まれる記事のうち、質問に直接関連するもののみを使用して回答を構築してください。" +
-			"質問と明らかに関係のないトピック（例：質問が「gRPC」なのに「MCPサーバ」や「認証」など）については、言及しないでください。" +
-			"回答は简潔に、質問に対する直接的な回答に集中してください。"
+			"質問と直接関係のある記事の内容のみ説明してください。"
 	}
 
 	messages := []llm.Message{
@@ -419,13 +420,15 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	)
 
 	// 保険として、LLM自身が「コンテキストに関連情報がない」と判断した場合のみ参照リンクを空にする
+	// ただし、ソースがある場合はクリアしない（LLMの誤判断を防ぐため）
 	slog.Info("RAG checking for no relevant context",
 		"answer_length", len(answer),
 		"answer_preview", answer,
 		"trimmed_answer", fmt.Sprintf("%q", strings.TrimSpace(answer)),
 		"indicates_no_relevant", answerIndicatesNoRelevantContext(answer),
+		"sources_count", len(sources),
 	)
-	if answerIndicatesNoRelevantContext(answer) {
+	if answerIndicatesNoRelevantContext(answer) && len(sources) == 0 {
 		slog.Warn("RAG LLM indicated no relevant context, clearing sources",
 			"answer", answer,
 		)
@@ -527,6 +530,8 @@ func answerIndicatesNoRelevantContext(answer string) bool {
 		"関連する記事は見つかりません",
 		"関連情報は見つかりませんでした",
 		"関連情報は見つかりませんでした。",
+		"見つかりませんでした。",
+		"見つかりませんでした",
 		"ナレッジベースには関連する情報がありません。別の質問をお願いします。",
 		"最新ニュースに関する情報は提供されていません",
 		"最新ニュースやイベントについての情報は含まれていません",
