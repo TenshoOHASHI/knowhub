@@ -21,6 +21,11 @@ func NewHybridEngine(embedder embedding.EmbeddingProvider, alpha float64) *Hybri
 	}
 }
 
+// GetVectorEngine は内部の VectorEngine を返す（永続化のため）
+func (e *HybridEngine) GetVectorEngine() *VectorEngine {
+	return e.vector
+}
+
 func (e *HybridEngine) Index(ctx context.Context, docs []Document) error {
 	// 両方のエンジンにインデックスを構築
 	if err := e.bm25.Index(ctx, docs); err != nil {

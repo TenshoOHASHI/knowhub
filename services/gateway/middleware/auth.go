@@ -49,6 +49,24 @@ func (m *AuthMiddleWare) RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
+		// logs 関連パスは認証必須
+		if strings.HasPrefix(r.URL.Path, "/api/logs/") {
+			tokenStr := tokenFromRequest(r)
+			if tokenStr == "" {
+				http.Error(w, "unauthorized: missing token", http.StatusUnauthorized)
+				return
+			}
+			resp, err := m.authClient.VerifyToken(r.Context(), &pb.VerifyTokenRequest{Token: tokenStr})
+			if err != nil {
+				slog.Error("token verification failed", "error", err)
+				http.Error(w, "unauthorized: invalid token", http.StatusUnauthorized)
+				return
+			}
+			ctx := context.WithValue(r.Context(), "userID", resp.User.Id)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
 		// analytics 関連パスは認証不要
 		if strings.HasPrefix(r.URL.Path, "/api/analytics/") {
 			next.ServeHTTP(w, r)

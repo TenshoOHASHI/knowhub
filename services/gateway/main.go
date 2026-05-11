@@ -58,6 +58,8 @@ func main() {
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
 	aiHandler := handler.NewAIHandler(aiConn)
 	analyticsHandler := handler.NewAnalyticsHandler(wikiHandler.Client())
+	dockerClient := NewDockerClient(cfg.ComposeFile, cfg.ComposeEnvFile)
+	logsHandler := handler.NewLogsHandler(dockerClient)
 
 	// Routes
 	mux := http.NewServeMux()
@@ -115,6 +117,11 @@ func main() {
 	// analytics
 	mux.HandleFunc("POST /api/analytics/ping", analyticsHandler.RecordPageView)
 	mux.HandleFunc("GET /api/analytics/summary", analyticsHandler.GetAnalyticsSummary)
+
+	// logs（ログ監視ダッシュボード）
+	mux.HandleFunc("GET /api/logs/stream", logsHandler.StreamLogsHandler)
+	mux.HandleFunc("GET /api/logs/containers", logsHandler.ListContainersHandler)
+	mux.HandleFunc("POST /api/logs/action", logsHandler.ExecActionHandler)
 
 	// static file serving for uploads (development)
 	// ルートディレクトの指定、静的ファイルサーバ、リクエストされたパスのファイルを読み込んでレスポンスとして返す、また、プレフィックスを削除

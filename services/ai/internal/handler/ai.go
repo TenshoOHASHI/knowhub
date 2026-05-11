@@ -30,11 +30,26 @@ type AIHandler struct {
 	wikiClient   wikiPb.WikiServicesClient
 	searxngURL   string // SearXNG URL
 	graphPath    string // グラフ永続化ファイルパス
+	vectorPath   string // ベクトル埋め込み永続化ファイルパス
 
 	// キャッシュ済みナレッジグラフ
 	graphMu    sync.RWMutex
 	graphCache *search.GraphEngine
 	graphErr   error
+
+	// キャッシュ済み検索エンジン（エンジンタイプ名 → 検索エンジン）
+	// "bm25", "vector", "hybrid", "tfidf" などをキーにする
+	searchCacheMu   sync.RWMutex
+	searchCache     map[string]cachedSearchEngine
+	lastArticleHash string // 記事更新検出用のハッシュ
+}
+
+// cachedSearchEngine はキャッシュされた検索エンジンとそのメタデータ
+type cachedSearchEngine struct {
+	engine      search.SearchEngine
+	docCount    int       // キャッシュ時の記事数
+	builtAt     time.Time // 構築時刻
+	articleHash string    // 記事のハッシュ（更新検出用）
 }
 
 func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient, searxngURL string) *AIHandler {
@@ -45,7 +60,9 @@ func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollama
 		ollamaModel:  ollamaModel,
 		wikiClient:   wikiClient,
 		searxngURL:   searxngURL,
-		graphPath:    "./data/knowledge_graph.json", // グラフ永続化パス
+		graphPath:    "./data/knowledge_graph.json",            // グラフ永続化パス
+		vectorPath:   "./data/vector_embeddings.json",         // ベクトル埋め込み永続化パス
+		searchCache:  make(map[string]cachedSearchEngine),
 	}
 }
 
@@ -125,6 +142,104 @@ func (h *AIHandler) invalidateGraph() {
 	slog.Info("knowledge graph cache invalidated")
 }
 
+// invalidateSearchCache は検索エンジンキャッシュを無効化する
+func (h *AIHandler) invalidateSearchCache() {
+	h.searchCacheMu.Lock()
+	defer h.searchCacheMu.Unlock()
+	h.searchCache = make(map[string]cachedSearchEngine)
+	h.lastArticleHash = ""
+	slog.Info("search engine cache invalidated")
+}
+
+// computeArticleHash は記事リストからハッシュを計算する（更新検出用）
+func (h *AIHandler) computeArticleHash(docs []search.Document) string {
+	var sb strings.Builder
+	for _, d := range docs {
+		sb.WriteString(d.ID)
+		sb.WriteString(d.UpdatedAt.Format(time.RFC3339Nano))
+	}
+	return fmt.Sprintf("%x", sb.Len()) // 簡易ハッシュ（内容が変われば長さも変わりやすい）
+}
+
+// ensureSearchEngine はキャッシュがあれば返し、なければ構築する
+// engineType: "bm25", "vector", "hybrid", "tfidf" など
+func (h *AIHandler) ensureSearchEngine(ctx context.Context, engineType string, factory func() search.SearchEngine) (search.SearchEngine, error) {
+	h.searchCacheMu.RLock()
+	cached, ok := h.searchCache[engineType]
+	h.searchCacheMu.RUnlock()
+
+	if ok {
+		slog.Info("search engine cache hit", "engine_type", engineType, "built_at", cached.builtAt, "doc_count", cached.docCount)
+		return cached.engine, nil
+	}
+
+	slog.Info("search engine cache miss, building index", "engine_type", engineType)
+	h.searchCacheMu.Lock()
+	defer h.searchCacheMu.Unlock()
+
+	// ダブルチェック
+	if cached, ok := h.searchCache[engineType]; ok {
+		return cached.engine, nil
+	}
+
+	// ドキュメント取得
+	docs, err := h.fetchDocs(ctx)
+	if err != nil {
+		slog.Error("failed to fetch articles for search index", "error", err)
+		return nil, err
+	}
+
+	// 新しい検索エンジンを作成
+	engine := factory()
+
+	// ベクトルエンジンの場合は永続化ファイルから読み込む
+	vectorEngine := h.extractVectorEngine(engine)
+	if vectorEngine != nil {
+		if err := os.MkdirAll("./data", 0755); err != nil {
+			slog.Warn("failed to create data directory", "error", err)
+		}
+		if err := vectorEngine.LoadEmbeddings(h.vectorPath); err != nil {
+			slog.Warn("failed to load saved vector embeddings, starting fresh", "error", err)
+		}
+	}
+
+	start := time.Now()
+	if err := engine.Index(ctx, docs); err != nil {
+		slog.Error("failed to build search index", "error", err)
+		return nil, err
+	}
+	slog.Info("search index built", "engine_type", engineType, "duration", time.Since(start), "doc_count", len(docs))
+
+	// ベクトルエンジンの場合は埋め込みベクトルを保存
+	if vectorEngine != nil {
+		if err := vectorEngine.SaveEmbeddings(h.vectorPath); err != nil {
+			slog.Warn("failed to save vector embeddings", "error", err)
+		}
+	}
+
+	// キャッシュに保存
+	h.searchCache[engineType] = cachedSearchEngine{
+		engine:      engine,
+		docCount:    len(docs),
+		builtAt:     time.Now(),
+		articleHash: h.computeArticleHash(docs),
+	}
+
+	return engine, nil
+}
+
+// extractVectorEngine はエンジンから VectorEngine を取得する（永続化のため）
+func (h *AIHandler) extractVectorEngine(engine search.SearchEngine) *search.VectorEngine {
+	switch e := engine.(type) {
+	case *search.VectorEngine:
+		return e
+	case *search.HybridEngine:
+		return e.GetVectorEngine()
+	default:
+		return nil
+	}
+}
+
 // fetchDocs は Wiki Service から全記事を取得して search.Document に変換する
 func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
 	articles, err := h.wikiClient.List(ctx, &wikiPb.ListArticleRequest{})
@@ -148,28 +263,33 @@ func (h *AIHandler) fetchDocs(ctx context.Context) ([]search.Document, error) {
 	return docs, nil
 }
 
-// searchWithEngine は指定エンジンでインデックス構築 → 検索を実行する
-func (h *AIHandler) searchWithEngine(ctx context.Context, se search.SearchEngine, query string, limit int) ([]search.SearchResult, error) {
+// searchWithEngine は指定エンジンで検索を実行する（キャッシュ使用）
+// engineName: "bm25", "vector", "hybrid", "tfidf", "graph" など
+func (h *AIHandler) searchWithEngine(ctx context.Context, engineName string, engineFactory func() search.SearchEngine, query string, limit int) ([]search.SearchResult, error) {
 	slog.Info("searchWithEngine called",
-		"engine_type", fmt.Sprintf("%T", se),
+		"engine_type", engineName,
 		"query", query,
 		"limit", limit,
 	)
 
-	docs, err := h.fetchDocs(ctx)
-	if err != nil {
-		slog.Error("failed to fetch articles from wiki service", "error", err)
-		return nil, status.Error(codes.Internal, "failed to fetch articles from wiki service")
+	// Graph RAGは専用のキャッシュ（ensureGraph）を使う
+	if engineName == "graph" {
+		graphEngine, err := h.ensureGraph(ctx)
+		if err != nil {
+			slog.Error("failed to get cached graph", "error", err)
+			return nil, status.Error(codes.Internal, "failed to build knowledge graph")
+		}
+		return graphEngine.Search(ctx, query, limit)
 	}
 
-	slog.Info("fetched articles for search", "num_docs", len(docs))
-
-	if err := se.Index(ctx, docs); err != nil {
-		slog.Error("failed to build search index", "error", err)
+	// その他のエンジンは共通キャッシュを使用
+	engine, err := h.ensureSearchEngine(ctx, engineName, engineFactory)
+	if err != nil {
+		slog.Error("failed to ensure search engine", "error", err)
 		return nil, status.Error(codes.Internal, "failed to build search index")
 	}
 
-	results, err := se.Search(ctx, query, limit)
+	results, err := engine.Search(ctx, query, limit)
 	if err != nil {
 		slog.Error("search failed", "error", err)
 		return nil, status.Error(codes.Internal, "search failed")
@@ -191,7 +311,10 @@ func (h *AIHandler) SearchArticles(ctx context.Context, req *pb.SearchRequest) (
 		limit = 10
 	}
 
-	results, err := h.searchWithEngine(ctx, h.searchEngine, req.Query, limit)
+	// デフォルトのBM25エンジンを使用（キャッシュ経由）
+	results, err := h.searchWithEngine(ctx, "bm25", func() search.SearchEngine {
+		return h.searchEngine
+	}, req.Query, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -259,34 +382,19 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	// Embedding プロバイダー生成（model + apiKey から自動判定）
 	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
 
-	// 検索エンジン選択（search.SelectEngine ファクトリで動的切替）
-	engine := search.SelectEngine(req.SearchEngine, provider, embedder)
-	slog.Info("RAG search engine selected",
-		"requested_engine", req.SearchEngine,
-		"engine_type", fmt.Sprintf("%T", engine),
-	)
-
 	// Step 1: 関連記事を検索
 	var results []search.SearchResult
-	if req.SearchEngine == "graph" {
-		// Graph RAG はキャッシュ済みグラフを使う（毎回 Index すると全記事 × LLM 呼び出しでタイムアウトする）
-		graphEngine, err := h.ensureGraph(ctx)
-		if err != nil {
-			slog.Error("failed to get cached graph", "error", err)
-			return nil, status.Error(codes.Internal, "failed to build knowledge graph")
-		}
-		results, err = graphEngine.Search(ctx, req.Question, 5)
-		if err != nil {
-			slog.Error("graph search failed", "error", err)
-			return nil, status.Error(codes.Internal, "graph search failed")
-		}
-	} else {
-		var err error
-		results, err = h.searchWithEngine(ctx, engine, req.Question, 5)
-		if err != nil {
-			return nil, err
-		}
+	var err error
+
+	// 検索エンジン名を正規化（空文字はデフォルトのBM25）
+	engineName := req.SearchEngine
+	if engineName == "" {
+		engineName = "bm25"
 	}
+
+	results, err = h.searchWithEngine(ctx, engineName, func() search.SearchEngine {
+		return search.SelectEngine(req.SearchEngine, provider, embedder)
+	}, req.Question, 5)
 
 	if len(results) == 0 {
 		// 検索で何も見つからない場合もLLMには回答させる。
@@ -318,27 +426,50 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 		"threshold", ragSourceThreshold(req.SearchEngine),
 	)
 
-	// Step 2: コンテキストを構築
+	// Step 2: コンテキストを構築（記事取得を並列化）
+	type articleFetchResult struct {
+		index    int
+		result   search.SearchResult
+		article  *wikiPb.Article
+		err      error
+	}
+
+	fetchResults := make([]articleFetchResult, len(relevantResults))
+	var wg sync.WaitGroup
+
+	for i, r := range relevantResults {
+		wg.Add(1)
+		go func(idx int, sr search.SearchResult) {
+			defer wg.Done()
+			resp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: sr.ArticleID})
+			fr := articleFetchResult{index: idx, result: sr, err: err}
+			if err == nil {
+				fr.article = resp.Article
+			}
+			fetchResults[idx] = fr
+		}(i, r)
+	}
+	wg.Wait()
+
+	// 結果をインデックス順に処理（順序を保持）
 	var contextBuilder strings.Builder
 	sources := make([]*pb.Source, 0, len(relevantResults))
 
-	for _, r := range relevantResults {
-		articleResp, err := h.wikiClient.Get(ctx, &wikiPb.GetArticleRequest{Id: r.ArticleID})
-		if err != nil {
-			slog.Error("failed to get article for RAG", "error", err, "article_id", r.ArticleID)
+	for _, fr := range fetchResults {
+		if fr.err != nil {
+			slog.Error("failed to get article for RAG", "error", fr.err, "article_id", fr.result.ArticleID)
 			continue
 		}
-		// 記事の境界を明確にする
-		contextBuilder.WriteString(fmt.Sprintf("--- 記事タイトル: %s ---\n%s\n\n", articleResp.Article.Title, articleResp.Article.Content))
+		contextBuilder.WriteString(fmt.Sprintf("--- 記事タイトル: %s ---\n%s\n\n", fr.article.Title, fr.article.Content))
 		sources = append(sources, &pb.Source{
-			ArticleId:      r.ArticleID,
-			Title:          articleResp.Article.Title,
-			RelevanceScore: r.RelevanceScore,
+			ArticleId:      fr.result.ArticleID,
+			Title:          fr.article.Title,
+			RelevanceScore: fr.result.RelevanceScore,
 		})
 		slog.Info("RAG article added to context",
-			"article_id", r.ArticleID,
-			"title", articleResp.Article.Title,
-			"content_length", len(articleResp.Article.Content),
+			"article_id", fr.result.ArticleID,
+			"title", fr.article.Title,
+			"content_length", len(fr.article.Content),
 		)
 	}
 
@@ -655,9 +786,10 @@ func (h *AIHandler) GetRelatedArticles(ctx context.Context, req *pb.GetRelatedAr
 	return &pb.GetRelatedArticlesResponse{Results: results}, nil
 }
 
-// InvalidateGraphCache はキャッシュされたグラフを無効化する（次回アクセス時に再構築される）
+// InvalidateGraphCache はキャッシュされたグラフと検索インデックスを無効化する（次回アクセス時に再構築される）
 func (h *AIHandler) InvalidateGraphCache(ctx context.Context, req *pb.InvalidateGraphCacheRequest) (*pb.InvalidateGraphCacheResponse, error) {
 	h.invalidateGraph()
+	h.invalidateSearchCache()
 	return &pb.InvalidateGraphCacheResponse{}, nil
 }
 

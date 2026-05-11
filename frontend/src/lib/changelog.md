@@ -1,3 +1,19 @@
+## 2026-05-11 ログ監視ダッシュボード + VectorEngine差分更新
+- Backend: DockerClient実装（docker compose logs ストリーミング、コンテナ一覧、許可リスト方式のDocker操作）
+- Backend: LogsHandler実装（SSEストリーミング + サーバーサイドログレベルフィルタリング）
+- Backend: /api/logs/* エンドポイント追加（stream / containers / action）
+- Backend: /api/logs/* を認証必須に設定（JWT Cookie検証）
+- Backend: VectorEngine差分更新 + JSON永続化（新規・更新記事のみEmbedding再計算）
+- Backend: GraphEngine差分更新のarticleUpdated比較修正
+- Backend: gateway config にCOMPOSE_FILE / COMPOSE_ENV_FILE追加（本番用docker compose対応）
+- Infrastructure: go-service.Dockerfileにgateway専用docker-cli条件インストール追加
+- Infrastructure: Nginx SSE対応（/api/logs/stream proxy_buffering off + proxy_read_timeout 3600s）
+- Frontend: LogViewerコンポーネント実装（SSE接続管理 + サービス選択 + ログレベルフィルタ + 通信量表示）
+- Frontend: 開発/本番でサービスボタン自動切替（開発: MySQL/Redis/SearXNG、本番: AI/Gateway等）
+- Frontend: ログレベル検出強化（MySQL [Warning]/[Note]、Redis # / *、SearXNG WARNING:/ERROR: 対応）
+- Frontend: SSEストリーミングプロキシRoute Handler追加（Next.js rewriteバッファリング問題回避）
+- Frontend: Admin「ログ」タブ追加
+
 ## 2026-05-10 RAG検索改善 + 日本語ストップワード対応
 - Backend: RAG検索のsystemPromptを緩和（記事がある場合は内容を説明するように変更）
 - Backend: answerIndicatesNoRelevantContext関数の判定ロジックを厳密化

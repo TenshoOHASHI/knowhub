@@ -7,9 +7,10 @@ import { CategoryManager } from '@/components/CategoryManager';
 import ProfileManager from '@/components/ProfileManager';
 import { PortfolioManager } from '@/components/PortfolioManager';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
+import LogViewer from '@/components/LogViewer';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { FiFileText, FiArchive, FiUser, FiBriefcase, FiTrendingUp } from 'react-icons/fi';
+import { FiFileText, FiArchive, FiUser, FiBriefcase, FiTrendingUp, FiTerminal } from 'react-icons/fi';
 
 const tabs = [
   { id: 'article' as const, label: '記事作成', icon: FiFileText, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
@@ -17,11 +18,12 @@ const tabs = [
   { id: 'profile' as const, label: 'プロフィール', icon: FiUser, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
   { id: 'portfolio' as const, label: 'ポートフォリオ', icon: FiBriefcase, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
   { id: 'analytics' as const, label: 'アナリティクス', icon: FiTrendingUp, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
+  { id: 'logs' as const, label: 'ログ', icon: FiTerminal, bg: 'bg-stone-100 dark:bg-stone-800', text: 'text-stone-600 dark:text-stone-400' },
 ];
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<
-    'article' | 'category' | 'profile' | 'portfolio' | 'analytics'
+    'article' | 'category' | 'profile' | 'portfolio' | 'analytics' | 'logs'
   >('article');
   const { isLoggedIn } = useAuth();
   const router = useRouter();
@@ -91,6 +93,8 @@ export default function AdminPage() {
         </div>
       ) : activeTab === 'analytics' ? (
         <AnalyticsDashboard />
+      ) : activeTab === 'logs' ? (
+        <LogViewer />
       ) : (
         <div className='rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 shadow-sm overflow-hidden'>
           <PortfolioManager />
