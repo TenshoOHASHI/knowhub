@@ -40,6 +40,16 @@ ENV SERVICE=${SERVICE}
 # 証明書とタイムゾーンデータの追加
 RUN apk add --no-cache ca-certificates tzdata
 
+# gateway サービスのみ: ログ監視ダッシュボード用に docker CLI を追加
+# gateway コンテナ内で docker compose logs / ps / restart 等を実行するために必要。
+# docker-cli        = docker コマンド本体
+# docker-cli-compose = docker compose サブコマンド
+# docker デーモン自体はインストールしない（ホストの docker.sock を volume マウントして使う）。
+# 他のサービス（auth, wiki, profile, ai）には不要なので条件付きでインストールする。
+RUN if [ "$SERVICE" = "gateway" ]; then \
+      apk add --no-cache docker-cli docker-cli-compose; \
+    fi
+
 # 実行ディレクトリの作成
 WORKDIR /app/services/${SERVICE}
 

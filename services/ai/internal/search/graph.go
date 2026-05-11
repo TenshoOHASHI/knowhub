@@ -193,8 +193,8 @@ func (kg *KnowledgeGraph) GetRelatedArticleIDs(articleID string, maxHops int) ma
 type GraphEngine struct {
 	mu             sync.RWMutex
 	graph          *KnowledgeGraph
-	provider       llm.LLMProvider // エンティティ抽出用 LLM
-	docs           map[string]Document // ID -> Document
+	provider       llm.LLMProvider      // エンティティ抽出用 LLM
+	docs           map[string]Document  // ID -> Document
 	articleUpdated map[string]time.Time // 記事ID -> 最終更新時刻
 }
 

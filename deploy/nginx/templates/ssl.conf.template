@@ -75,6 +75,21 @@ server {
         proxy_send_timeout 300s;
     }
 
+    location /api/logs/stream {
+        proxy_pass http://gateway:8080/api/logs/stream;
+        proxy_http_version 1.1;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-ForwardedFor $proxy_add_x_forwarded_for;
+        proxy_set_header X-ForwardedProto $scheme;
+        proxy_set_header Connection '';
+
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
     location /api/changelog {
         proxy_pass http://frontend:3000;
         proxy_http_version 1.1;

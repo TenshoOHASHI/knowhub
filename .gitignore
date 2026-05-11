@@ -23,7 +23,7 @@ deploy/ansible/group_vars/vault.yml
 # Runtime data / generated files
 # ============================================================
 data/
-logs/
+/logs/
 uploads/
 services/auth/keys
 services/*/logs/
@@ -51,6 +51,7 @@ next-env.d.ts
 # ============================================================
 doc/
 plan.md
+lighthouse-setup.md
 
 # ============================================================
 # Local tools / AI assistant state

@@ -37,6 +37,10 @@ type Config struct {
 	// AI rate limit
 	AIAnonMaxConcurrent int
 	AIAnonDailyLimit    int
+
+	// Docker
+	ComposeFile    string
+	ComposeEnvFile string
 }
 
 func Load(envPath string) *Config {
@@ -58,6 +62,8 @@ func Load(envPath string) *Config {
 		SetupRegisterToken:   getEnv("SETUP_REGISTER_TOKEN", ""),
 		AIAnonMaxConcurrent:  getEnvInt("AI_ANON_MAX_CONCURRENT", 1),
 		AIAnonDailyLimit:     getEnvInt("AI_ANON_DAILY_LIMIT", 5),
+		ComposeFile:          getEnv("COMPOSE_FILE", ""),
+		ComposeEnvFile:       getEnv("COMPOSE_ENV_FILE", ""),
 	}
 }
 
