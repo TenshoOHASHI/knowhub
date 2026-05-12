@@ -57,10 +57,12 @@ func normalizeScores(results []SearchResult) {
 	}
 
 	// (score - min) / (max - min) で 0〜1 にする
-	// max == min の場合は全て同じスコア → 0 にする
+	// max == min の場合（結果が1件 or 全て同スコア）→ 1.0 にする
+	// 理由: 唯一のマッチ結果を 0 にすると、ハイブリッドスコアでその
+	// エンジンの貢献が消えてしまうため（例: "mcp" のようなレアワード）
 	for i := range results {
 		if max == min {
-			results[i].RelevanceScore = 0
+			results[i].RelevanceScore = 1.0
 		} else {
 			results[i].RelevanceScore = (results[i].RelevanceScore - min) / (max - min)
 		}

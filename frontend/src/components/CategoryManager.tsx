@@ -7,6 +7,39 @@ import { getCategories, createCategory, deleteCategory } from '@/lib/api';
 import ConfirmModal from './ConfirmModal';
 import { FiFile, FiFolder, FiTrash2 } from 'react-icons/fi';
 
+/** フラットなカテゴリ配列を「親 → 子…, 親 → 子…」の順に並べ替える */
+function sortByTree(categories: Category[]): Category[] {
+  const roots: Category[] = [];
+  const childrenMap = new Map<string, Category[]>();
+
+  for (const c of categories) {
+    if (!c.parent_id) {
+      roots.push(c);
+    } else {
+      const list = childrenMap.get(c.parent_id) || [];
+      list.push(c);
+      childrenMap.set(c.parent_id, list);
+    }
+  }
+
+  const result: Category[] = [];
+  for (const root of roots) {
+    result.push(root);
+    const children = childrenMap.get(root.id) || [];
+    result.push(...children);
+  }
+
+  // 親が存在しない孤立した子カテゴリも末尾に追加
+  const added = new Set(result.map((c) => c.id));
+  for (const c of categories) {
+    if (!added.has(c.id)) {
+      result.push(c);
+    }
+  }
+
+  return result;
+}
+
 export function CategoryManager() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState('');
@@ -96,7 +129,7 @@ export function CategoryManager() {
         {categories.length === 0 ? (
           <p className='text-stone-400 text-sm text-center py-8'>カテゴリがありません</p>
         ) : (
-          categories.map((c) => {
+          sortByTree(categories).map((c) => {
             const isRoot = !c.parent_id;
             return (
               <div
