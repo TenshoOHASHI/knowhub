@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
@@ -24,6 +24,33 @@ export default function EditorPreview({
 }: EditorPreviewProps) {
   const [showFullPreview, setShowFullPreview] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const isSyncing = useRef(false);
+
+  const handleEditorScroll = useCallback(() => {
+    if (isSyncing.current) return;
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) return;
+
+    isSyncing.current = true;
+    const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1);
+    preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight);
+    requestAnimationFrame(() => { isSyncing.current = false; });
+  }, []);
+
+  const handlePreviewScroll = useCallback(() => {
+    if (isSyncing.current) return;
+    const editor = editorRef.current;
+    const preview = previewRef.current;
+    if (!editor || !preview) return;
+
+    isSyncing.current = true;
+    const ratio = preview.scrollTop / (preview.scrollHeight - preview.clientHeight || 1);
+    editor.scrollTop = ratio * (editor.scrollHeight - editor.clientHeight);
+    requestAnimationFrame(() => { isSyncing.current = false; });
+  }, []);
 
   const processed = preprocessCallouts(content);
 
@@ -40,9 +67,11 @@ export default function EditorPreview({
               </label>
             </div>
             <textarea
+              ref={editorRef}
               name='content'
               value={content}
               onChange={(e) => onContentChange(e.target.value)}
+              onScroll={handleEditorScroll}
               className='w-full border border-stone-300 dark:border-stone-600 rounded-xl p-3 h-80 bg-stone-50 dark:bg-stone-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 thin-scrollbar resize-none'
               placeholder='Markdownで記事を書く...'
             />
@@ -71,7 +100,10 @@ export default function EditorPreview({
                 </button>
               </div>
             </div>
-            <div className='border border-stone-200 dark:border-stone-700 rounded-xl p-3 h-80 overflow-y-auto prose prose-sm dark:prose-invert prose-li:marker:text-stone-600 dark:prose-li:marker:text-stone-300 prose-hr:border-stone-500 dark:prose-hr:border-stone-400 prose-code:text-stone-800 dark:prose-code:text-stone-200 max-w-none thin-scrollbar bg-white dark:bg-stone-800'>
+            <div
+              ref={previewRef}
+              onScroll={handlePreviewScroll}
+              className='border border-stone-200 dark:border-stone-700 rounded-xl p-3 h-80 overflow-y-auto prose prose-sm dark:prose-invert prose-li:marker:text-stone-600 dark:prose-li:marker:text-stone-300 prose-hr:border-stone-500 dark:prose-hr:border-stone-400 prose-code:text-stone-800 dark:prose-code:text-stone-200 max-w-none thin-scrollbar bg-white dark:bg-stone-800'>
               {processed ? (
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkCallout]}
