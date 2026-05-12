@@ -14,11 +14,12 @@ type Article struct {
 	Content    string
 	CategoryID string
 	Visibility string
+	IsPinned   bool
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
 
-func NewArticle(title string, content string, categoryID string, visibility string) (*Article, error) {
+func NewArticle(title string, content string, categoryID string, visibility string, isPinned bool) (*Article, error) {
 	if title == "" {
 		return nil, fmt.Errorf("title is required")
 	}
@@ -37,13 +38,14 @@ func NewArticle(title string, content string, categoryID string, visibility stri
 		Content:    content,
 		CategoryID: categoryID,
 		Visibility: visibility,
+		IsPinned:   isPinned,
 		CreatedAt:  createAt,
 		UpdatedAt:  createAt,
 	}, nil
 }
 
 // 元の記事を直接変更（インスタンスを生成する必要がない）
-func (a *Article) Update(title string, content string, visibility string) {
+func (a *Article) Update(title string, content string, visibility string, isPinned *bool) {
 	if title != "" {
 		a.Title = title // 既存の値を上書き
 	}
@@ -52,6 +54,9 @@ func (a *Article) Update(title string, content string, visibility string) {
 	}
 	if visibility != "" {
 		a.Visibility = visibility
+	}
+	if isPinned != nil {
+		a.IsPinned = *isPinned
 	}
 	a.UpdatedAt = time.Now()
 }

@@ -263,19 +263,6 @@ export default function LogViewer() {
     };
   }, [selectedServices, logLevel, disconnect]);
 
-  // タブ非アクティブ時の自動切断
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.hidden && isStreaming) {
-        disconnect();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [isStreaming, disconnect]);
-
   // コンポーネントのアンマウント時にクリーンアップ
   useEffect(() => {
     return () => {

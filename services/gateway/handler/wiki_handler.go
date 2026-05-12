@@ -138,6 +138,7 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 		Content    string `json:"content"`
 		CategoryID string `json:"category_id"`
 		Visibility string `json:"visibility"`
+		IsPinned   *bool  `json:"is_pinned,omitempty"`
 	}
 
 	// リクエストbodyをjsonからGo構造体に変換
@@ -147,12 +148,18 @@ func (h *WikiHandler) CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isPinned := false
+	if req.IsPinned != nil {
+		isPinned = *req.IsPinned
+	}
+
 	// gRPC
 	resp, err := h.client.Create(r.Context(), &pb.CreateArticleRequest{
 		Title:      req.Title,
 		Content:    req.Content,
 		CategoryId: req.CategoryID,
 		Visibility: req.Visibility,
+		IsPinned:   isPinned,
 	})
 
 	if err != nil {
@@ -195,6 +202,7 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		Title      *string `json:"title,omitempty"` // 空値ならjsonに出力しない
 		Content    *string `json:"content,omitempty"`
 		Visibility *string `json:"visibility,omitempty"`
+		IsPinned   *bool   `json:"is_pinned,omitempty"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -208,6 +216,7 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		Title:      req.Title,
 		Content:    req.Content, // ポインタアドレスで指定する必要がある、nilになる可能性があるため
 		Visibility: req.Visibility,
+		IsPinned:   req.IsPinned,
 	})
 
 	if err != nil {

@@ -136,6 +136,7 @@ type Article struct {
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Visibility    string                 `protobuf:"bytes,7,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	IsPinned      bool                   `protobuf:"varint,8,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -219,6 +220,13 @@ func (x *Article) GetVisibility() string {
 	return ""
 }
 
+func (x *Article) GetIsPinned() bool {
+	if x != nil {
+		return x.IsPinned
+	}
+	return false
+}
+
 // 記事を取得
 type CreateArticleRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -226,6 +234,7 @@ type CreateArticleRequest struct {
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 	CategoryId    string                 `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Visibility    string                 `protobuf:"bytes,4,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	IsPinned      bool                   `protobuf:"varint,5,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -286,6 +295,13 @@ func (x *CreateArticleRequest) GetVisibility() string {
 		return x.Visibility
 	}
 	return ""
+}
+
+func (x *CreateArticleRequest) GetIsPinned() bool {
+	if x != nil {
+		return x.IsPinned
+	}
+	return false
 }
 
 // 記事を返す
@@ -512,6 +528,7 @@ type UpdateArticleRequest struct {
 	Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	Content       *string                `protobuf:"bytes,3,opt,name=content,proto3,oneof" json:"content,omitempty"`
 	Visibility    *string                `protobuf:"bytes,4,opt,name=visibility,proto3,oneof" json:"visibility,omitempty"`
+	IsPinned      *bool                  `protobuf:"varint,5,opt,name=is_pinned,json=isPinned,proto3,oneof" json:"is_pinned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -572,6 +589,13 @@ func (x *UpdateArticleRequest) GetVisibility() string {
 		return *x.Visibility
 	}
 	return ""
+}
+
+func (x *UpdateArticleRequest) GetIsPinned() bool {
+	if x != nil && x.IsPinned != nil {
+		return *x.IsPinned
+	}
+	return false
 }
 
 // 更新した記事を返す
@@ -2191,7 +2215,7 @@ var File_proto_wiki_wiki_proto protoreflect.FileDescriptor
 
 const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x80\x02\n" +
+	"\x15proto/wiki/wiki.proto\x12\x04wiki\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x9d\x02\n" +
 	"\aArticle\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -2204,7 +2228,8 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12\x1e\n" +
 	"\n" +
 	"visibility\x18\a \x01(\tR\n" +
-	"visibility\"\x87\x01\n" +
+	"visibility\x12\x1b\n" +
+	"\tis_pinned\x18\b \x01(\bR\bisPinned\"\xa4\x01\n" +
 	"\x14CreateArticleRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x1f\n" +
@@ -2212,7 +2237,8 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"categoryId\x12\x1e\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\tR\n" +
-	"visibility\"@\n" +
+	"visibility\x12\x1b\n" +
+	"\tis_pinned\x18\x05 \x01(\bR\bisPinned\"@\n" +
 	"\x15CreateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"#\n" +
 	"\x11GetArticleRequest\x12\x0e\n" +
@@ -2221,18 +2247,21 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\aArticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aArticle\"\x14\n" +
 	"\x12ListArticleRequest\">\n" +
 	"\x13ListArticleResponse\x12'\n" +
-	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"\xaa\x01\n" +
+	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"\xda\x01\n" +
 	"\x14UpdateArticleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x1d\n" +
 	"\acontent\x18\x03 \x01(\tH\x01R\acontent\x88\x01\x01\x12#\n" +
 	"\n" +
 	"visibility\x18\x04 \x01(\tH\x02R\n" +
-	"visibility\x88\x01\x01B\b\n" +
+	"visibility\x88\x01\x01\x12 \n" +
+	"\tis_pinned\x18\x05 \x01(\bH\x03R\bisPinned\x88\x01\x01B\b\n" +
 	"\x06_titleB\n" +
 	"\n" +
 	"\b_contentB\r\n" +
-	"\v_visibility\"@\n" +
+	"\v_visibilityB\f\n" +
+	"\n" +
+	"_is_pinned\"@\n" +
 	"\x15UpdateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"&\n" +
 	"\x14DeleteArticleRequest\x12\x0e\n" +

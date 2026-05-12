@@ -15,7 +15,7 @@ import {
 import EditorPreview from './EditorPreview';
 import { useRouter } from 'next/navigation';
 import ConfirmModal from './ConfirmModal';
-import { FiEdit3 } from 'react-icons/fi';
+import { FiEdit3, FiMapPin } from 'react-icons/fi';
 
 interface EditorProps {
   embedded?: boolean;
@@ -36,6 +36,7 @@ export default function Editor({ embedded = false }: EditorProps) {
   const [content, setContent] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [visibility, setVisibility] = useState('public');
+  const [isPinned, setIsPinned] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const router = useRouter();
@@ -50,6 +51,7 @@ export default function Editor({ embedded = false }: EditorProps) {
         setContent(article.content);
         setCategoryId(article.category_id || '');
         setVisibility(article.visibility || 'public');
+        setIsPinned(article.is_pinned || false);
       })
       .catch(() => toast('記事の取得に失敗しました', 'error'));
   }, [editId, toast]);
@@ -96,6 +98,7 @@ export default function Editor({ embedded = false }: EditorProps) {
         content,
         category_id: categoryId,
         visibility,
+        is_pinned: isPinned,
       });
       const msg = editId ? '記事を更新しました' : '記事を作成しました';
       toast(msg, 'success');
@@ -168,7 +171,7 @@ export default function Editor({ embedded = false }: EditorProps) {
             />
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-5'>
             <div>
               <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>
                 カテゴリ
@@ -201,6 +204,24 @@ export default function Editor({ embedded = false }: EditorProps) {
                 <option value='public'>一般公開</option>
                 <option value='locked'>限定公開</option>
               </select>
+            </div>
+
+            <div>
+              <label className='block text-sm font-semibold mb-2 text-stone-900 dark:text-stone-100'>
+                トップ表示
+              </label>
+              <button
+                type='button'
+                onClick={() => setIsPinned(!isPinned)}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border transition-colors ${
+                  isPinned
+                    ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                    : 'bg-white dark:bg-stone-900 border-stone-300 dark:border-stone-600 text-stone-500 dark:text-stone-400'
+                }`}
+              >
+                <FiMapPin size={14} className={isPinned ? 'text-amber-500' : ''} />
+                {isPinned ? 'ピン留め中' : 'ピン留めなし'}
+              </button>
             </div>
           </div>
         </div>

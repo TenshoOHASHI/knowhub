@@ -7,7 +7,20 @@ import { getCategories, createCategory, deleteCategory } from '@/lib/api';
 import ConfirmModal from './ConfirmModal';
 import { FiFile, FiFolder, FiTrash2 } from 'react-icons/fi';
 
-/** フラットなカテゴリ配列を「親 → 子…, 親 → 子…」の順に並べ替える */
+/** カテゴリの深さを算出（ルート=0, 子=1, 孫=2） */
+function getDepth(categoryId: string, categories: Category[]): number {
+  const map = new Map(categories.map((c) => [c.id, c]));
+  let depth = 0;
+  let current = map.get(categoryId);
+  while (current?.parent_id) {
+    depth++;
+    current = map.get(current.parent_id);
+    if (depth > 10) break; // 無限ループ防止
+  }
+  return depth;
+}
+
+/** フラットなカテゴリ配列を「親 → 子 → 孫…」の順に3階層まで展開 */
 function sortByTree(categories: Category[]): Category[] {
   const roots: Category[] = [];
   const childrenMap = new Map<string, Category[]>();
@@ -26,7 +39,11 @@ function sortByTree(categories: Category[]): Category[] {
   for (const root of roots) {
     result.push(root);
     const children = childrenMap.get(root.id) || [];
-    result.push(...children);
+    for (const child of children) {
+      result.push(child);
+      const grandchildren = childrenMap.get(child.id) || [];
+      result.push(...grandchildren);
+    }
   }
 
   // 親が存在しない孤立した子カテゴリも末尾に追加
@@ -109,11 +126,14 @@ export function CategoryManager() {
             className='w-full border border-stone-300 dark:border-stone-600 rounded-lg px-3 py-2 bg-white dark:bg-stone-900 text-sm focus:outline-none focus:ring-2 focus:ring-stone-500 transition'
           >
             <option value=''>なし（ルート）</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
+            {categories.map((c) => {
+              const depth = getDepth(c.id, categories);
+              return (
+                <option key={c.id} value={c.id} disabled={depth >= 2}>
+                  {'　'.repeat(depth)}{c.name}{depth >= 2 ? '（これ以上の階層は作成不可）' : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
         <button
@@ -130,18 +150,20 @@ export function CategoryManager() {
           <p className='text-stone-400 text-sm text-center py-8'>カテゴリがありません</p>
         ) : (
           sortByTree(categories).map((c) => {
-            const isRoot = !c.parent_id;
+            const depth = getDepth(c.id, categories);
             return (
               <div
                 key={c.id}
                 className={`flex items-center justify-between py-3 px-4 rounded-xl transition-colors ${
-                  isRoot
+                  depth === 0
                     ? 'bg-stone-50 dark:bg-stone-800/50'
-                    : 'bg-stone-50/50 dark:bg-stone-800/30 ml-6'
+                    : depth === 1
+                      ? 'bg-stone-50/50 dark:bg-stone-800/30 ml-6'
+                      : 'bg-stone-50/30 dark:bg-stone-800/20 ml-12'
                 } hover:bg-stone-100 dark:hover:bg-stone-700/50`}
               >
                 <span className='flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300'>
-                  {isRoot ? <FiFolder size={16} /> : <FiFile size={16} />}
+                  {depth === 0 ? <FiFolder size={16} /> : <FiFile size={16} />}
                   {c.name}
                 </span>
                 <button

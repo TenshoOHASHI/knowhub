@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FiSearch, FiCalendar, FiFileText, FiLock, FiX } from 'react-icons/fi';
+import { FiSearch, FiCalendar, FiFileText, FiLock, FiX, FiMapPin } from 'react-icons/fi';
 import type { Article } from '@/lib/types';
 import { motion } from 'motion/react';
 
@@ -48,14 +48,20 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
     );
   });
 
-  // 既存の検索バー用のフィルタリング
-  const filtered = articles.filter((a) => {
-    const q = query.toLowerCase();
-    const matchesQuery =
-      a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
-    const matchesCategory = !categoryId || a.category_id === categoryId;
-    return matchesQuery && matchesCategory;
-  });
+  // 既存の検索バー用のフィルタリング + ピン留め記事を先頭に
+  const filtered = articles
+    .filter((a) => {
+      const q = query.toLowerCase();
+      const matchesQuery =
+        a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
+      const matchesCategory = !categoryId || a.category_id === categoryId;
+      return matchesQuery && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (a.is_pinned && !b.is_pinned) return -1;
+      if (!a.is_pinned && b.is_pinned) return 1;
+      return 0;
+    });
 
   // 「/」キーで検索ダイアログを開く
   useEffect(() => {
@@ -185,10 +191,19 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
         {filtered.map((a) => (
           <Link href={`/wiki/${a.id}`} key={a.id} className='block group'>
             <div
-              className='border border-black/10 dark:border-stone-700 rounded-lg p-5
-              hover:border-black/20 dark:hover:border-stone-500
-              hover:shadow-md transition-all duration-200 overflow-hidden'
+              className={`border rounded-lg p-5
+              hover:shadow-md transition-all duration-200 overflow-hidden relative ${
+                a.is_pinned
+                  ? 'border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-900/10 hover:border-amber-400 dark:hover:border-amber-600'
+                  : 'border-black/10 dark:border-stone-700 hover:border-black/20 dark:hover:border-stone-500'
+              }`}
             >
+              {a.is_pinned && (
+                <span className='absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 text-xs font-medium'>
+                  <FiMapPin size={10} />
+                  TOP
+                </span>
+              )}
               <h2 className='text-lg font-semibold group-hover:text-red-500/70 transition-colors flex items-center gap-2'>
                 {a.visibility === 'locked' && (
                   <span className='inline-flex items-center justify-center w-5 h-5 rounded bg-stone-200 dark:bg-stone-700 shrink-0'>

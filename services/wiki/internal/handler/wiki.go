@@ -31,7 +31,7 @@ func NewWikiHandler(repo repository.ArticleRepository) *WikiHandler {
 func (h *WikiHandler) Create(ctx context.Context, req *pb.CreateArticleRequest) (*pb.CreateArticleResponse, error) {
 	// ドメインのバリデーションチェック
 	// 記事のインスタンスを作成
-	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId, req.Visibility)
+	article, err := model.NewArticle(req.Title, req.Content, req.CategoryId, req.Visibility, req.IsPinned)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -103,7 +103,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 	}
 
 	// ここの引数はポインターアドレスを渡す必要があるみたいです？
-	article.Update(title, content, visibility) // メソッドを呼び出し、既存の値を上書き
+	article.Update(title, content, visibility, req.IsPinned) // メソッドを呼び出し、既存の値を上書き
 	err = h.repo.Save(ctx, article)
 	if err != nil {
 		slog.Error("failed to save article", "error", err, "id", req.Id)
@@ -133,6 +133,7 @@ func toProductArticle(a *model.Article) *pb.Article {
 		Content:    a.Content,
 		CategoryId: a.CategoryID,
 		Visibility: a.Visibility,
+		IsPinned:   a.IsPinned,
 		CreatedAt:  timestamppb.New(a.CreatedAt),
 		UpdatedAt:  timestamppb.New(a.UpdatedAt),
 	}

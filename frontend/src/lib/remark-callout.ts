@@ -1,7 +1,7 @@
 import type { Plugin } from 'unified';
 import type { Html, Paragraph, Root } from 'mdast';
 
-export type CalloutType = 'note' | 'info' | 'tip' | 'warning' | 'caution' | 'important' | 'warm';
+export type CalloutType = 'note' | 'info' | 'tip' | 'warning' | 'caution' | 'important' | 'warm' | 'sticky';
 
 const GITHUB_TYPE_MAP: Record<string, CalloutType> = {
   NOTE: 'note',
@@ -20,26 +20,36 @@ const ZENN_TYPE_MAP: Record<string, CalloutType> = {
   warning: 'warning',
   important: 'important',
   warm: 'warm',
+  sticky: 'sticky',
 };
 
 const CALLOUT_TYPES = Object.keys(GITHUB_TYPE_MAP).join('|');
 const CALLOUT_RE = new RegExp(`^\\[!(${CALLOUT_TYPES})\\]\\s*\\n?`);
 const ZENN_TYPES = Object.keys(ZENN_TYPE_MAP).filter(Boolean).join('|');
 const ZENN_RE = new RegExp(`^:::message\\s*(?:(${ZENN_TYPES}))?\\s*\\n([\\s\\S]*?)^:::\\s*$`, 'gm');
+const STICKY_RE = /^:::sticky\s*\n([\s\S]*?)^:::\s*$/gm;
 
 /**
  * Pre-process raw markdown to convert Zenn-style callouts to HTML divs.
  * :::message ... ::: → <div class="callout callout-note">...</div>
  * :::message alert ... ::: → <div class="callout callout-caution">...</div>
+ * :::sticky ... ::: → <div class="callout callout-sticky">...</div>
  */
 export function preprocessCallouts(markdown: string): string {
-  return markdown.replace(
+  let result = markdown.replace(
     ZENN_RE,
     (_match, typeFlag, content) => {
       const type = ZENN_TYPE_MAP[typeFlag || ''] || 'note';
       return `<div class="callout callout-${type}">\n\n${content.trim()}\n\n</div>`;
     }
   );
+  result = result.replace(
+    STICKY_RE,
+    (_match, content) => {
+      return `<div class="callout callout-sticky">\n\n${content.trim()}\n\n</div>`;
+    }
+  );
+  return result;
 }
 
 /**

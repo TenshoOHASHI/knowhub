@@ -6,13 +6,14 @@ import rehypeSlug from 'rehype-slug';
 import rehypeRaw from 'rehype-raw';
 import MermaidDiagram from './MermaidDiagram';
 import Callout from './Callout';
+import StickyNote from './StickyNote';
 import 'highlight.js/styles/github-dark.css';
 import remarkGfm from 'remark-gfm';
 import { remarkCallout, preprocessCallouts } from '@/lib/remark-callout';
 import type { CalloutType } from '@/lib/remark-callout';
 import { useState, useRef, useCallback } from 'react';
 
-const CALLOUT_TYPE_RE = /callout callout-(note|info|tip|warning|caution|important|warm)/;
+const CALLOUT_TYPE_RE = /callout callout-(note|info|tip|warning|caution|important|warm|sticky)/;
 
 function CodeBlock({ children, ...props }: React.ComponentProps<'pre'>) {
   const ref = useRef<HTMLPreElement>(null);
@@ -112,6 +113,9 @@ export default function ArticleContent({ content }: { content: string }) {
             const classStr = className || '';
             const match = classStr.match(CALLOUT_TYPE_RE);
             if (match) {
+              if (match[1] === 'sticky') {
+                return <StickyNote>{children}</StickyNote>;
+              }
               return (
                 <Callout type={match[1] as CalloutType}>{children}</Callout>
               );
