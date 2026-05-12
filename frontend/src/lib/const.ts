@@ -1,5 +1,11 @@
 export const MODELS = [
   {
+    id: 'deepseek-free',
+    name: 'DeepSeek (Free)',
+    needsKey: false,
+    defaultModel: 'deepseek-v4-flash',
+  },
+  {
     id: 'ollama',
     name: 'Ollama（qwen3:0.6b）',
     needsKey: false,

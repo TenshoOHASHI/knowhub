@@ -56,7 +56,8 @@ func main() {
 	authHandler := handler.NewAuthHandler(authConn, cfg.EnablePublicRegister, cfg.SetupRegisterToken)
 	profileHandler := handler.NewProfileHandle(profileConn)
 	uploadHandler := handler.NewUploadHandler(cfg.UploadDir)
-	aiHandler := handler.NewAIHandler(aiConn)
+	aiRateLimiter := middleware.NewAIRateLimiter(cfg.AIAnonMaxConcurrent, cfg.AIAnonDailyLimit, cfg.AIDeepSeekFreeDailyLimit)
+	aiHandler := handler.NewAIHandler(aiConn, aiRateLimiter)
 	analyticsHandler := handler.NewAnalyticsHandler(wikiHandler.Client())
 	dockerClient := NewDockerClient(cfg.ComposeFile, cfg.ComposeEnvFile)
 	logsHandler := handler.NewLogsHandler(dockerClient)
@@ -140,7 +141,6 @@ func main() {
 	}
 
 	authMW := middleware.NewAuthMiddleware(pb.NewAuthServiceClient(authConn))
-	aiRateLimiter := middleware.NewAIRateLimiter(cfg.AIAnonMaxConcurrent, cfg.AIAnonDailyLimit)
 	handler := middleware.NewCoreMiddleware(cfg.AllowedOrigin, cfg.AllowedMethods, cfg.AllowedHeaders, cfg.AllowedCredential).CorsMiddleware(
 		middleware.RequestIDMiddleware(
 			authMW.RequireAuth(aiRateLimiter.Middleware(mux)),

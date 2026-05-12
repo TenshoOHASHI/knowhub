@@ -7,6 +7,7 @@ import {
   type AgentSource,
   type ChatHistoryEntry,
   type AgentStreamStepEvent,
+  type RateLimitInfo,
 } from '@/lib/api';
 import {
   useCallback,
@@ -186,12 +187,27 @@ export default function ChatInterface() {
   >('idle');
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const [model, setModel] = useState('ollama');
+  const [model, setModel] = useState('deepseek-free');
   const [apiKey, setApiKey] = useState('');
   const [searchEngine, setSearchEngine] = useState('bm25');
   const [chatMode, setChatMode] = useState('rag');
   const [enableWebSearch, setEnableWebSearch] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  // モデル種別ごとにレート制限情報を保持（リフレッシュ・切替時に消えないように sessionStorage に永続化）
+  const RATE_LIMIT_STORAGE_KEY = 'ai_rate_limits';
+  const [rateLimits, setRateLimits] = useState<Record<string, RateLimitInfo>>(
+    {},
+  );
+
+  // sessionStorage からの復元は useEffect で行い、SSR との hydration mismatch を防ぐ
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(RATE_LIMIT_STORAGE_KEY);
+      if (saved) {
+        setRateLimits(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
 
   const currentModel = MODELS.find((m) => m.id === model);
   const currentEngine = SEARCH_ENGINES.find((e) => e.id === searchEngine);
@@ -202,6 +218,23 @@ export default function ChatInterface() {
   // API Key の初期化は不要:
   // 初期モデルは ollama（needsKey: false）なので入力欄が非表示
   // モデル切替時に handleModelChange で sessionStorage から読み込む
+
+  // レート制限のキー: deepseek-free は専用、その他外部モデルは共通カウンター
+  const rateLimitKey = model === 'deepseek-free' ? 'deepseek-free' : 'external';
+  const currentRateLimit = rateLimits[rateLimitKey] ?? null;
+
+  const updateRateLimit = useCallback(
+    (info: RateLimitInfo) => {
+      setRateLimits((prev) => {
+        const next = { ...prev, [rateLimitKey]: info };
+        try {
+          sessionStorage.setItem(RATE_LIMIT_STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    },
+    [rateLimitKey],
+  );
 
   const handleModelChange = (newModel: string) => {
     setModel(newModel);
@@ -312,6 +345,9 @@ export default function ChatInterface() {
               setCurrentAction('');
               setRagPhase('idle');
             },
+            onRateLimit: (info) => {
+              updateRateLimit(info);
+            },
           },
           abortController.signal,
         );
@@ -330,17 +366,17 @@ export default function ChatInterface() {
         }, 1600);
 
         try {
-          const { answer, sources } = await askQuestion(
-            input,
-            modelToSend,
-            apiKey,
-            searchEngine,
-          );
+          const {
+            answer,
+            sources,
+            rateLimit: rl,
+          } = await askQuestion(input, modelToSend, apiKey, searchEngine);
 
           // タイムアウトをクリア
           clearTimeout(readingTimeout);
           clearTimeout(generatingTimeout);
 
+          if (rl) updateRateLimit(rl);
           setRagPhase('idle');
           updateMessages((prev) => [
             ...prev,
@@ -439,6 +475,26 @@ export default function ChatInterface() {
           ))}
         </select>
 
+        {model === 'deepseek-free' && (
+          <span className='shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'>
+            {currentRateLimit
+              ? `残り${currentRateLimit.remaining}/${currentRateLimit.limit}回`
+              : '1日2回まで'}
+          </span>
+        )}
+        {model === 'ollama' && (
+          <span className='shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500 dark:bg-stone-700 dark:text-stone-400'>
+            応答が遅い場合があります
+          </span>
+        )}
+        {currentModel?.needsKey && (
+          <span className='shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500 dark:bg-stone-700 dark:text-stone-400'>
+            {currentRateLimit
+              ? `残り${currentRateLimit.remaining}/${currentRateLimit.limit}回`
+              : '1日5回まで'}
+          </span>
+        )}
+
         <select
           value={searchEngine}
           onChange={(e) => setSearchEngine(e.target.value)}
@@ -523,11 +579,15 @@ export default function ChatInterface() {
                 </p>
                 <ul className='list-disc ml-4 mt-1 space-y-0.5 text-stone-700 dark:text-stone-300 text-xs'>
                   <li>
-                    未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
+                    <strong>DeepSeek (Free)</strong>:
+                    サーバー側のAPIキーを使用。1日2回まで（入力1000文字、出力1000トークン制限）。
                   </li>
                   <li>
-                    外部モデルは入力した API Key
-                    を使います。利用料金・上限は各モデル提供元の設定に依存します。
+                    外部モデル（自分のAPI Key使用）:
+                    1日5回まで。利用料金は各モデル提供元の設定に依存します。
+                  </li>
+                  <li>
+                    Wiki内に関連記事が見つからなかった場合は回数にカウントされません。
                   </li>
                   <li>
                     API Key はブラウザの sessionStorage
@@ -671,7 +731,15 @@ export default function ChatInterface() {
                 </p>
                 <ul className='list-disc ml-4 mt-1 space-y-0.5 text-stone-700 dark:text-stone-300 text-xs'>
                   <li>
-                    未ログイン利用は混雑防止のため、同時実行数と1日の利用回数に制限があります。
+                    <strong>DeepSeek (Free)</strong>:
+                    サーバー側のAPIキーを使用。1日2回まで（入力1000文字、出力1000トークン制限）。
+                  </li>
+                  <li>
+                    外部モデル（自分のAPI Key使用）:
+                    1日5回まで。利用料金は各モデル提供元の設定に依存します。
+                  </li>
+                  <li>
+                    Wiki内に関連記事が見つからなかった場合は回数にカウントされません。
                   </li>
                   <li>
                     Vector / Hybrid / Graph RAG は Embedding や LLM API
@@ -1378,7 +1446,8 @@ export default function ChatInterface() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder='Wikiについて質問してください...'
+          placeholder='Wikiについて質問してください（1000文字まで）'
+          maxLength={1000}
           disabled={loading}
           className='min-w-0 flex-1 rounded-xl border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 dark:text-stone-100 dark:placeholder-stone-500 shadow-sm'
         />

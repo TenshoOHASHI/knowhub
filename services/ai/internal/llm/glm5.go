@@ -31,6 +31,7 @@ type chatCompletionRequest struct {
 	Model    string            `json:"model"`
 	Messages []chatMessageGLM5 `json:"messages"`
 	Stream   bool              `json:"stream"`
+	MaxTokens int              `json:"max_tokens,omitempty"`
 }
 
 type chatMessageGLM5 struct {

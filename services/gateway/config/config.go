@@ -35,8 +35,9 @@ type Config struct {
 	SetupRegisterToken   string
 
 	// AI rate limit
-	AIAnonMaxConcurrent int
-	AIAnonDailyLimit    int
+	AIAnonMaxConcurrent      int
+	AIAnonDailyLimit         int
+	AIDeepSeekFreeDailyLimit int
 
 	// Docker
 	ComposeFile    string
@@ -60,8 +61,9 @@ func Load(envPath string) *Config {
 		SlackWebhookURL:      getEnv("SLACK_WEBHOOK_URL", ""),
 		EnablePublicRegister: getEnvBool("ENABLE_PUBLIC_REGISTER", true),
 		SetupRegisterToken:   getEnv("SETUP_REGISTER_TOKEN", ""),
-		AIAnonMaxConcurrent:  getEnvInt("AI_ANON_MAX_CONCURRENT", 1),
-		AIAnonDailyLimit:     getEnvInt("AI_ANON_DAILY_LIMIT", 5),
+		AIAnonMaxConcurrent:      getEnvInt("AI_ANON_MAX_CONCURRENT", 2),
+		AIAnonDailyLimit:         getEnvInt("AI_ANON_DAILY_LIMIT", 5),
+		AIDeepSeekFreeDailyLimit: getEnvInt("AI_DEEPSEEK_FREE_DAILY_LIMIT", 2),
 		ComposeFile:          getEnv("COMPOSE_FILE", ""),
 		ComposeEnvFile:       getEnv("COMPOSE_ENV_FILE", ""),
 	}
