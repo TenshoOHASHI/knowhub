@@ -23,6 +23,7 @@ import { FaRobot, FaUser } from 'react-icons/fa';
 import { FiTrash2, FiHelpCircle, FiX } from 'react-icons/fi';
 import { MODELS, SEARCH_ENGINES, CHAT_MODES } from '@/lib/const';
 import ConfirmModal from './ConfirmModal';
+import FloatingRobot from './FloatingRobot';
 import AgentSteps from './AgentSteps';
 import { AiOutlineGlobal } from 'react-icons/ai';
 import { MdOutlineSupportAgent } from 'react-icons/md';
@@ -381,7 +382,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className='flex flex-col h-full rounded-xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950 shadow-lg overflow-hidden'>
+    <div className='relative flex flex-col h-full rounded-xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-white to-stone-50 dark:from-stone-900 dark:to-stone-950 shadow-lg overflow-hidden'>
       {/* タイトルヘッダー */}
       <div className='flex items-center justify-between px-5 py-4 border-b border-stone-200 dark:border-stone-700 bg-white/50 dark:bg-stone-800/50 backdrop-blur-sm'>
         <div className='flex items-center gap-3'>
@@ -1367,6 +1368,7 @@ export default function ChatInterface() {
         )}
         <div ref={messagesEndRef} />
       </div>
+      <FloatingRobot visible={loading} />
 
       {/* 入力フォーム */}
       <form

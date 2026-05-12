@@ -85,7 +85,7 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	resp, err := h.client.AskQuestion(ctx, &pb.QuestionRequest{

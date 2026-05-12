@@ -51,6 +51,11 @@ const HELP_SECTIONS = [
         description: 'GitHub記法のコールアウト',
       },
       {
+        title: '付箋コメント',
+        syntax: ':::sticky\nここは将来的に k8s に移行する予定\n:::',
+        description: 'PCでは右マージンに付箋風表示、モバイルではインライン表示',
+      },
+      {
         title: '折りたたみブロック',
         syntax: '<details>\n<summary>クリックして展開</summary>\n\n```go\nfmt.Println("hello")\n```\n\n</details>',
         description: 'クリックで展開/折りたたみ',

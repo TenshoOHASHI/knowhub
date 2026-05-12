@@ -440,3 +440,152 @@ body {
 .charge-particle {
   animation: charge-particle 1s ease-in-out 9s infinite;
 }
+
+/* ===== Walking Robot Animations (FloatingRobot) ===== */
+
+@keyframes walk-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes walk-leg-left {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-20deg); }
+  75% { transform: rotate(20deg); }
+}
+
+@keyframes walk-leg-right {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  75% { transform: rotate(-20deg); }
+}
+
+@keyframes bubble-fade {
+  0% { opacity: 0; transform: translateY(4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.walking-robot-body {
+  animation: walk-bob 0.4s ease-in-out infinite;
+}
+
+.walking-robot-leg-left {
+  animation: walk-leg-left 0.6s ease-in-out infinite;
+  transform-origin: 46px 70px;
+}
+
+.walking-robot-leg-right {
+  animation: walk-leg-right 0.6s ease-in-out infinite;
+  transform-origin: 74px 70px;
+}
+
+.bubble-fade {
+  animation: bubble-fade 3.5s ease-in-out infinite;
+}
+
+/* ===== Boost Effect (FloatingRobot) ===== */
+
+@keyframes boost-flicker {
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  25% { transform: scaleY(1.15); opacity: 0.85; }
+  50% { transform: scaleY(0.9); opacity: 1; }
+  75% { transform: scaleY(1.1); opacity: 0.9; }
+}
+
+@keyframes boost-particle-fall-1 {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(18px) scale(0.3); opacity: 0; }
+}
+
+@keyframes boost-particle-fall-2 {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(22px) scale(0.2); opacity: 0; }
+}
+
+@keyframes boost-particle-fall-3 {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(16px) scale(0.3); opacity: 0; }
+}
+
+.robot-boost-strong {
+  animation: boost-flicker 0.2s ease-in-out infinite;
+  transform-origin: 60px 100px;
+}
+
+.robot-boost-weak {
+  animation: boost-flicker 0.6s ease-in-out infinite;
+  transform-origin: 60px 100px;
+}
+
+.boost-particle-1 {
+  animation: boost-particle-fall-1 0.5s ease-out infinite;
+}
+
+.boost-particle-2 {
+  animation: boost-particle-fall-2 0.6s ease-out infinite;
+  animation-delay: 0.15s;
+}
+
+.boost-particle-3 {
+  animation: boost-particle-fall-3 0.5s ease-out infinite;
+  animation-delay: 0.3s;
+}
+
+/* ===== Sticky Note (Article Annotation) ===== */
+
+.sticky-note {
+  position: relative;
+  float: left;
+  margin-left: -14rem;
+  margin-right: 1.5rem;
+  margin-bottom: 1rem;
+  width: 12rem;
+  padding: 1.25rem 1rem 1rem;
+  background: linear-gradient(135deg, #fef9c3, #fef08a);
+  border-radius: 2px;
+  box-shadow:
+    2px 3px 8px rgba(0, 0, 0, 0.12),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+  transform: rotate(-1.5deg);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #78350f;
+  z-index: 1;
+}
+
+.sticky-note-pin {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sticky-note-body p {
+  margin: 0;
+}
+
+.sticky-note-body p + p {
+  margin-top: 0.375rem;
+}
+
+.dark .sticky-note {
+  background: linear-gradient(135deg, #854d0e, #a16207);
+  color: #fef9c3;
+  box-shadow:
+    2px 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1280px) {
+  .sticky-note {
+    float: none;
+    margin-right: 0;
+    margin-left: 0;
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    transform: rotate(0deg);
+  }
+}

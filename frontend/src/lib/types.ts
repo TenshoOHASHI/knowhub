@@ -21,6 +21,7 @@ export interface Article {
   content: string;
   category_id: string;
   visibility: string;
+  is_pinned: boolean;
   created_at: { seconds: number };
   updated_at: { seconds: number };
 }

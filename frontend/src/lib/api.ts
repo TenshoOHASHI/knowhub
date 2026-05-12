@@ -176,6 +176,7 @@ export async function saveArticle(data: {
   content: string;
   category_id?: string;
   visibility?: string;
+  is_pinned?: boolean;
 }) {
   const { id, ...body } = data;
   const res = await fetch(

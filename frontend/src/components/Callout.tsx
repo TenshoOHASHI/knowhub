@@ -88,7 +88,7 @@ type ThemeConfig = {
   headerText: string;
 };
 
-const CONFIG: Record<CalloutType, ThemeConfig> = {
+const CONFIG: Record<Exclude<CalloutType, 'sticky'>, ThemeConfig> = {
   note: {
     icon: <IconNote />,
     label: 'Note',
@@ -143,7 +143,9 @@ const CONFIG: Record<CalloutType, ThemeConfig> = {
 /* ── Component ─────────────────────────────────────────── */
 
 export default function Callout({ type, children }: CalloutProps) {
-  const { icon, label, border, bg, headerText } = CONFIG[type];
+  const conf = CONFIG[type as Exclude<CalloutType, 'sticky'>];
+  if (!conf) return <div>{children}</div>;
+  const { icon, label, border, bg, headerText } = conf;
 
   return (
     <div
