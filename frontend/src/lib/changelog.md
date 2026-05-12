@@ -1,3 +1,24 @@
+## 2026-05-12 カテゴリ3階層化 + カテゴリ内トップ記事ピン留め
+- DB: articles に is_pinned カラム追加（BOOLEAN DEFAULT 0）
+- Proto: Article / Create/UpdateRequest に is_pinned フィールド追加 + Go コード再生成
+- Backend: Article model（NewArticle / Update）に IsPinned 追加（Update は *bool で optional 対応）
+- Backend: CQRS / 旧リポの INSERT/UPDATE/SELECT クエリに is_pinned 追加
+- Backend: Save() でピン留め設定時に同カテゴリの既存ピン記事を自動解除（カテゴリごとに1件のみ）
+- Backend: ORDER BY is_pinned DESC, created_at DESC でピン記事を先頭にソート
+- Backend: gRPC Handler（wiki_cqrs / wiki）の Create/Update/toProto に is_pinned マッピング追加
+- Backend: saved_article リポジトリの SELECT クエリに is_pinned 追加
+- Gateway: wiki_handler.go の Create/Update JSON body に is_pinned 追加
+- Frontend: Article interface / saveArticle 引数に is_pinned 追加
+- Frontend: Editor にトップ表示トグルボタン追加（FiMapPin アイコン + amber 系カラー）
+- Frontend: Wiki 一覧でピン留め記事を先頭ソート + 右上に「TOP」バッジ + amber ボーダー表示
+- Frontend: CategoryManager の sortByTree を3階層展開に拡張（ルート→子→孫）
+- Frontend: CategoryManager に getDepth ヘルパー追加（parent_id チェーンで深さ算出）
+- Frontend: カテゴリ作成フォームで depth >= 2 のカテゴリを選択不可に（4階層目の作成防止）
+- Frontend: カテゴリ一覧の孫カテゴリに ml-12 インデント追加
+- Frontend: FloatingRobot の useEffect 内同期 setState を修正（ESLint set-state-in-effect 対応）
+- Test: article model テストを新シグネチャ（isPinned 引数 / *bool 引数）に更新
+- Deploy: 本番用マイグレーション 002_add_is_pinned.sql 追加（goose Up/Down 対応）
+
 ## 2026-05-11 ログ監視ダッシュボード + VectorEngine差分更新
 - Backend: DockerClient実装（docker compose logs ストリーミング、コンテナ一覧、許可リスト方式のDocker操作）
 - Backend: LogsHandler実装（SSEストリーミング + サーバーサイドログレベルフィルタリング）
