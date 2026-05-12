@@ -13,16 +13,18 @@ import (
 // DeepSeekProvider は DeepSeek API と通信する
 // OpenAI 互換フォーマットを使用
 type DeepSeekProvider struct {
-	apiKey string
-	model  string
-	client *http.Client
+	apiKey    string
+	model     string
+	maxTokens int
+	client    *http.Client
 }
 
-func NewDeepSeekProvider(apiKey, model string) *DeepSeekProvider {
+func NewDeepSeekProvider(apiKey, model string, maxTokens int) *DeepSeekProvider {
 	return &DeepSeekProvider{
-		apiKey: apiKey,
-		model:  model,
-		client: &http.Client{},
+		apiKey:    apiKey,
+		model:     model,
+		maxTokens: maxTokens,
+		client:    &http.Client{},
 	}
 }
 
@@ -46,6 +48,7 @@ func (p *DeepSeekProvider) Chat(ctx context.Context, messages []Message) (string
 		Model:    p.model,
 		Messages: msgs,
 		Stream:   false,
+		MaxTokens: p.maxTokens,
 	}
 
 	jsonBody, err := json.Marshal(body)

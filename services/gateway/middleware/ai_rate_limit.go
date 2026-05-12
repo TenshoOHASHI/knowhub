@@ -15,11 +15,13 @@ import (
 type AIRateLimiter struct {
 	anonSemaphore chan struct{}
 	dailyLimit    int
+	deepseekLimit int
 	now           func() time.Time
 
-	mu     sync.Mutex
-	daily  map[string]dailyCounter
-	logger *slog.Logger
+	mu             sync.Mutex
+	daily          map[string]dailyCounter
+	deepseekDaily  map[string]dailyCounter
+	logger         *slog.Logger
 }
 
 type dailyCounter struct {
@@ -27,7 +29,7 @@ type dailyCounter struct {
 	count int
 }
 
-func NewAIRateLimiter(anonMaxConcurrent, anonDailyLimit int) *AIRateLimiter {
+func NewAIRateLimiter(anonMaxConcurrent, anonDailyLimit, deepseekFreeDailyLimit int) *AIRateLimiter {
 	var sem chan struct{}
 	if anonMaxConcurrent > 0 {
 		sem = make(chan struct{}, anonMaxConcurrent)
@@ -36,12 +38,16 @@ func NewAIRateLimiter(anonMaxConcurrent, anonDailyLimit int) *AIRateLimiter {
 	return &AIRateLimiter{
 		anonSemaphore: sem,
 		dailyLimit:    anonDailyLimit,
+		deepseekLimit: deepseekFreeDailyLimit,
 		now:           time.Now,
 		daily:         make(map[string]dailyCounter),
+		deepseekDaily: make(map[string]dailyCounter),
 		logger:        slog.Default(),
 	}
 }
 
+// Middleware は同時接続制限と日次上限チェック（カウントなし）を行う。
+// 実際のカウントはハンドラーレベルで IncrementDaily / IncrementDeepSeekDaily を呼ぶ。
 func (l *AIRateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// AIと関係ないなら制限しない、また　CORS preflight なら制限しない（ブラウザーへの確認だけだから）
@@ -56,18 +62,13 @@ func (l *AIRateLimiter) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// 同時実行制限
+		// 同時実行制限のみ（日次制限はハンドラーレベルで実施）
 		if !l.acquireAnonymousSlot(w, r) {
 			return
 
 		}
 		// 開いたら解放
 		defer l.releaseAnonymousSlot()
-		// クライアントのIDを取得
-		clientID := anonymousClientID(r)
-		if !l.allowDaily(w, r, clientID) {
-			return
-		}
 
 		next.ServeHTTP(w, r)
 	})
@@ -101,49 +102,150 @@ func (l *AIRateLimiter) releaseAnonymousSlot() {
 	<-l.anonSemaphore
 }
 
-func (l *AIRateLimiter) allowDaily(w http.ResponseWriter, r *http.Request, clientID string) bool {
-	// 制限がなければ、そおまま通す
+// CheckDaily は外部モデル用の日次上限チェックのみ行う（カウントしない）。
+// 上限超過の場合は 429 を返して false を返す。
+func (l *AIRateLimiter) CheckDaily(w http.ResponseWriter, clientID string) bool {
+	// 制限がなければ、そのまま通す
 	if l.dailyLimit <= 0 {
 		return true
 	}
 
-	// 今日の日付を用意
 	today := l.now().Format("2006-01-02")
 
-	// ロックを取得
 	l.mu.Lock()
-	// マップにクライアントidを読み込む、ぞんざいしない場合は、ゼロ値（dailyCounter{day: "", count: 0}）
-	counter := l.daily[clientID] // {"id": {day: 2026-01-02, count:0}}
-	// dayにアクセス、初期値はからのデータなので、日付に現在の日付をいれて、初期化
+	counter := l.daily[clientID]
 	if counter.day != today {
 		counter = dailyCounter{day: today}
 	}
 
-	// マップからcountプロパティにアクセスし、上限を確認、もし上限を越した場合、ロックを解放し、エラーを返して、終了
 	if counter.count >= l.dailyLimit {
 		l.mu.Unlock()
-		l.logger.Warn("anonymous AI request rejected by daily limit", "path", r.URL.Path)
-		// このヘッダーは標準？
+		l.logger.Warn("anonymous AI request rejected by daily limit", "client_id", clientID)
 		w.Header().Set("Retry-After", secondsUntilTomorrow(l.now()))
 		http.Error(w, "anonymous AI daily limit exceeded", http.StatusTooManyRequests)
 		return false
 	}
-	// もし上限を越していなかったら、カウンタープロパティを１増やす
-	counter.count++
-	// 現在の残り回数を計算
-	remaining := l.dailyLimit - counter.count
-	// キーにマップを保存
-	l.daily[clientID] = counter
 	l.mu.Unlock()
 
-	w.Header().Set("X-RateLimit-Limit", intToString(l.dailyLimit))
-	w.Header().Set("X-RateLimit-Remaining", intToString(remaining))
 	return true
 }
 
-func anonymousClientID(r *http.Request) string {
+// CheckDeepSeekDaily は DeepSeek Free 用の日次上限チェックのみ行う（カウントしない）。
+// 上限超過の場合は 429 を返して false を返す。
+func (l *AIRateLimiter) CheckDeepSeekDaily(w http.ResponseWriter, clientID string) bool {
+	if l.deepseekLimit <= 0 {
+		return true
+	}
+
+	today := l.now().Format("2006-01-02")
+
+	l.mu.Lock()
+	counter := l.deepseekDaily[clientID]
+	if counter.day != today {
+		counter = dailyCounter{day: today}
+	}
+
+	if counter.count >= l.deepseekLimit {
+		l.mu.Unlock()
+		l.logger.Warn("anonymous AI request rejected by DeepSeek free daily limit", "client_id", clientID)
+		w.Header().Set("Retry-After", secondsUntilTomorrow(l.now()))
+		http.Error(w, "DeepSeek free daily limit exceeded", http.StatusTooManyRequests)
+		return false
+	}
+	l.mu.Unlock()
+
+	return true
+}
+
+// IncrementDaily は外部モデル用の日次カウンターをインクリメントする。
+func (l *AIRateLimiter) IncrementDaily(clientID string) {
+	if l.dailyLimit <= 0 {
+		return
+	}
+
+	today := l.now().Format("2006-01-02")
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	counter := l.daily[clientID]
+	if counter.day != today {
+		counter = dailyCounter{day: today}
+	}
+	counter.count++
+	l.daily[clientID] = counter
+}
+
+// IncrementDeepSeekDaily は DeepSeek Free 用の日次カウンターをインクリメントする。
+func (l *AIRateLimiter) IncrementDeepSeekDaily(clientID string) {
+	if l.deepseekLimit <= 0 {
+		return
+	}
+
+	today := l.now().Format("2006-01-02")
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	counter := l.deepseekDaily[clientID]
+	if counter.day != today {
+		counter = dailyCounter{day: today}
+	}
+	counter.count++
+	l.deepseekDaily[clientID] = counter
+}
+
+// GetDailyLimit は外部モデル用の日次制限値を返す。
+func (l *AIRateLimiter) GetDailyLimit() int {
+	return l.dailyLimit
+}
+
+// GetDeepSeekDailyLimit は DeepSeek Free 用の日次制限値を返す。
+func (l *AIRateLimiter) GetDeepSeekDailyLimit() int {
+	return l.deepseekLimit
+}
+
+// GetRemainingDaily は外部モデル用の残り回数を返す。
+func (l *AIRateLimiter) GetRemainingDaily(clientID string) int {
+	if l.dailyLimit <= 0 {
+		return -1 // 制限なし
+	}
+	today := l.now().Format("2006-01-02")
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	counter := l.daily[clientID]
+	if counter.day != today {
+		return l.dailyLimit
+	}
+	remaining := l.dailyLimit - counter.count
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
+
+// GetRemainingDeepSeekDaily は DeepSeek Free 用の残り回数を返す。
+func (l *AIRateLimiter) GetRemainingDeepSeekDaily(clientID string) int {
+	if l.deepseekLimit <= 0 {
+		return -1 // 制限なし
+	}
+	today := l.now().Format("2006-01-02")
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	counter := l.deepseekDaily[clientID]
+	if counter.day != today {
+		return l.deepseekLimit
+	}
+	remaining := l.deepseekLimit - counter.count
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
+
+// AnonymousClientID はリクエストから匿名クライアントIDを生成する。
+func AnonymousClientID(r *http.Request) string {
 	ip := clientIP(r)
-	// 戻ってきたipアドレスを２進数のバイトに変換し、256bit、３２バイト、1文字４バイト分の長さ、１６進数の文字列６４文字に変換？
 	sum := sha256.Sum256([]byte(ip))
 	return hex.EncodeToString(sum[:])[:16]
 }

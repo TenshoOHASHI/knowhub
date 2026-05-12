@@ -42,6 +42,11 @@ type AIHandler struct {
 	searchCacheMu   sync.RWMutex
 	searchCache     map[string]cachedSearchEngine
 	lastArticleHash string // 記事更新検出用のハッシュ
+
+	// サーバー側 DeepSeek 設定（無料提供用）
+	deepseekAPIKey    string
+	deepseekModel     string
+	deepseekMaxTokens int
 }
 
 // cachedSearchEngine はキャッシュされた検索エンジンとそのメタデータ
@@ -52,18 +57,30 @@ type cachedSearchEngine struct {
 	articleHash string    // 記事のハッシュ（更新検出用）
 }
 
-func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient, searxngURL string) *AIHandler {
+func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollamaModel string, wikiClient wikiPb.WikiServicesClient, searxngURL string, deepseekAPIKey, deepseekModel string, deepseekMaxTokens int) *AIHandler {
 	return &AIHandler{
-		searchEngine: se,
-		llmProvider:  llm,
-		ollamaURL:    ollamaURL,
-		ollamaModel:  ollamaModel,
-		wikiClient:   wikiClient,
-		searxngURL:   searxngURL,
-		graphPath:    "./data/knowledge_graph.json",   // グラフ永続化パス
-		vectorPath:   "./data/vector_embeddings.json", // ベクトル埋め込み永続化パス
-		searchCache:  make(map[string]cachedSearchEngine),
+		searchEngine:      se,
+		llmProvider:       llm,
+		ollamaURL:         ollamaURL,
+		ollamaModel:       ollamaModel,
+		wikiClient:        wikiClient,
+		searxngURL:        searxngURL,
+		graphPath:         "./data/knowledge_graph.json",   // グラフ永続化パス
+		vectorPath:        "./data/vector_embeddings.json", // ベクトル埋め込み永続化パス
+		searchCache:       make(map[string]cachedSearchEngine),
+		deepseekAPIKey:    deepseekAPIKey,
+		deepseekModel:     deepseekModel,
+		deepseekMaxTokens: deepseekMaxTokens,
 	}
+}
+
+// resolveDeepSeekConfig はリクエストのモデル・APIキーからDeepSeek設定を解決する。
+// サーバー側の無料DeepSeekを使う場合はサーバー側設定を返し、ユーザーが自分のキーを持っている場合はそのまま返す。
+func (h *AIHandler) resolveDeepSeekConfig(model, apiKey string) (resolvedAPIKey string, maxTokens int) {
+	if apiKey == "" && strings.HasPrefix(model, "deepseek") && h.deepseekAPIKey != "" {
+		return h.deepseekAPIKey, h.deepseekMaxTokens
+	}
+	return apiKey, 0 // 0 = 制限なし
 }
 
 // ensureGraph はキャッシュがあれば返し、なければ構築する
@@ -374,13 +391,14 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	)
 
 	// LLM プロバイダー選択（リクエストで動的切替）
+	resolvedKey, maxTokens := h.resolveDeepSeekConfig(req.Model, req.ApiKey)
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, resolvedKey, maxTokens)
 	}
 
 	// Embedding プロバイダー生成（model + apiKey から自動判定）
-	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, resolvedKey, req.Model)
 
 	// Step 1: 関連記事を検索
 	var results []search.SearchResult
@@ -488,7 +506,7 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 			Answer: "Wiki内には関連する記事は見つかりませんでした。\n\n" +
 				"以下のような質問を試してみてください:\n" +
 				"- 「TenHubについて教えて」\n" +
-				"- 「gRPCの実装方法を教えて」\n" +
+				"- 「Ten Botについて」\n" +
 				"- 「Dockerの基本を教えて」",
 			Sources: []*pb.Source{},
 		}, nil
@@ -804,13 +822,14 @@ func (h *AIHandler) AskWithAgent(ctx context.Context, req *pb.AgentQuestionReque
 	}
 
 	// LLM プロバイダー選択
+	resolvedKey, maxTokens := h.resolveDeepSeekConfig(req.Model, req.ApiKey)
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, resolvedKey, maxTokens)
 	}
 
 	// Embedding プロバイダー生成（model + apiKey から自動判定）
-	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, resolvedKey, req.Model)
 
 	// ツール構築
 	var tools []agent.Tool
@@ -907,13 +926,14 @@ func (h *AIHandler) AskWithAgentStream(req *pb.AgentQuestionRequest, stream grpc
 	}
 
 	// LLM プロバイダー選択
+	resolvedKey, maxTokens := h.resolveDeepSeekConfig(req.Model, req.ApiKey)
 	provider := h.llmProvider
 	if req.Model != "" {
-		provider = llm.NewProvider(h.ollamaURL, req.Model, req.ApiKey)
+		provider = llm.NewProvider(h.ollamaURL, req.Model, resolvedKey, maxTokens)
 	}
 
 	// Embedding プロバイダー生成
-	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, req.ApiKey, req.Model)
+	embedder := embedding.NewProvider(h.ollamaURL, h.ollamaModel, resolvedKey, req.Model)
 
 	// ツール構築
 	var tools []agent.Tool

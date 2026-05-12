@@ -6,21 +6,113 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	pb "github.com/TenshoOHASHI/knowhub/proto/ai"
+	"github.com/TenshoOHASHI/knowhub/services/gateway/middleware"
 
 	"google.golang.org/grpc"
 )
 
+// noArticleMessage は記事が見つからなかった場合の固定メッセージのプレフィックス。
+// この応答の場合はレート制限カウントをスキップする。
+const noArticleMessage = "Wiki内には関連する記事は見つかりませんでした。"
+
 type AIHandler struct {
-	client pb.AIServiceClient
+	client      pb.AIServiceClient
+	rateLimiter *middleware.AIRateLimiter
 }
 
-func NewAIHandler(conn *grpc.ClientConn) *AIHandler {
+func NewAIHandler(conn *grpc.ClientConn, rateLimiter *middleware.AIRateLimiter) *AIHandler {
 	return &AIHandler{
-		client: pb.NewAIServiceClient(conn),
+		client:      pb.NewAIServiceClient(conn),
+		rateLimiter: rateLimiter,
 	}
+}
+
+// isAnonymous はリクエストが未ログインユーザーかどうかを判定する。
+func isAnonymous(r *http.Request) bool {
+	userID, ok := r.Context().Value("userID").(string)
+	return !ok || userID == ""
+}
+
+// isDeepSeekFree はモデルとAPIキーからDeepSeek Free利用かどうかを判定する。
+func isDeepSeekFree(model, apiKey string) bool {
+	return apiKey == "" && strings.HasPrefix(model, "deepseek")
+}
+
+// checkInputLength は質問文字数を検証する（1000文字制限）。
+func checkInputLength(w http.ResponseWriter, question string) bool {
+	if len([]rune(question)) > 1000 {
+		http.Error(w, "質問は1000文字以内にしてください", http.StatusBadRequest)
+		return false
+	}
+	return true
+}
+
+// checkRateLimit はリクエスト前のレート制限チェックを行う（カウントなし）。
+// モデル種別に応じて専用カウンターをチェックする。
+func (h *AIHandler) checkRateLimit(w http.ResponseWriter, r *http.Request, model, apiKey string) bool {
+	if !isAnonymous(r) {
+		return true
+	}
+	clientID := middleware.AnonymousClientID(r)
+	if isDeepSeekFree(model, apiKey) {
+		return h.rateLimiter.CheckDeepSeekDaily(w, clientID)
+	}
+	// 外部モデル（自分のAPI Key使用）の日次チェック
+	return h.rateLimiter.CheckDaily(w, clientID)
+}
+
+// incrementRateLimit はレスポンスが成功した場合にレート制限カウンターをインクリメントする。
+func (h *AIHandler) incrementRateLimit(r *http.Request, model, apiKey string) {
+	if !isAnonymous(r) {
+		return
+	}
+	clientID := middleware.AnonymousClientID(r)
+	if isDeepSeekFree(model, apiKey) {
+		h.rateLimiter.IncrementDeepSeekDaily(clientID)
+	} else {
+		h.rateLimiter.IncrementDaily(clientID)
+	}
+}
+
+// setRateLimitHeaders はレスポンスヘッダーに残り回数を設定する。
+func (h *AIHandler) setRateLimitHeaders(w http.ResponseWriter, r *http.Request, model, apiKey string) {
+	if !isAnonymous(r) {
+		return
+	}
+	clientID := middleware.AnonymousClientID(r)
+	if isDeepSeekFree(model, apiKey) {
+		limit := h.rateLimiter.GetDeepSeekDailyLimit()
+		remaining := h.rateLimiter.GetRemainingDeepSeekDaily(clientID)
+		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
+		w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
+	} else {
+		limit := h.rateLimiter.GetDailyLimit()
+		remaining := h.rateLimiter.GetRemainingDaily(clientID)
+		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
+		w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
+	}
+}
+
+// rateLimitJSON は残り回数情報をJSON文字列として返す（SSE用）。
+func (h *AIHandler) rateLimitJSON(r *http.Request, model, apiKey string) string {
+	if !isAnonymous(r) {
+		return ""
+	}
+	clientID := middleware.AnonymousClientID(r)
+	var limit, remaining int
+	if isDeepSeekFree(model, apiKey) {
+		limit = h.rateLimiter.GetDeepSeekDailyLimit()
+		remaining = h.rateLimiter.GetRemainingDeepSeekDaily(clientID)
+	} else {
+		limit = h.rateLimiter.GetDailyLimit()
+		remaining = h.rateLimiter.GetRemainingDaily(clientID)
+	}
+	return fmt.Sprintf(`{"limit":%d,"remaining":%d}`, limit, remaining)
 }
 
 // SearchArticles — POST /api/ai/search
@@ -85,6 +177,14 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !checkInputLength(w, req.Question) {
+		return
+	}
+
+	if !h.checkRateLimit(w, r, req.Model, req.ApiKey) {
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -100,6 +200,12 @@ func (h *AIHandler) AskQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 記事が見つからなかった場合はレート制限をカウントしない
+	if !strings.HasPrefix(resp.Answer, noArticleMessage) {
+		h.incrementRateLimit(r, req.Model, req.ApiKey)
+	}
+
+	h.setRateLimitHeaders(w, r, req.Model, req.ApiKey)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
@@ -181,6 +287,14 @@ func (h *AIHandler) AskWithAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !checkInputLength(w, req.Question) {
+		return
+	}
+
+	if !h.checkRateLimit(w, r, req.Model, req.ApiKey) {
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -198,20 +312,17 @@ func (h *AIHandler) AskWithAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 記事が見つからなかった場合はレート制限をカウントしない
+	if !strings.HasPrefix(resp.Answer, noArticleMessage) {
+		h.incrementRateLimit(r, req.Model, req.ApiKey)
+	}
+
+	h.setRateLimitHeaders(w, r, req.Model, req.ApiKey)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
 
 // AskWithAgentStream — POST /api/ai/agent/stream (SSE)
-//
-// 処理フロー (直列):
-//  1. SSE ヘッダーを設定して HTTP 接続を維持
-//  2. gRPC サーバーストリーミングを開始 (AI Service に接続)
-//  3. Recv() でイベントを1つずつ受信 → writeSSE() で SSE 形式に変換 → Flush() で即座に送信
-//  4. Recv() が io.EOF を返したらストリーム終了
-//
-// Flush() が重要: これがないと ResponseWriter のバッファに溜まり、
-// ブラウザに一気に届いてリアルタイム性が失われる。
 func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Question        string `json:"question"`
@@ -227,10 +338,15 @@ func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !checkInputLength(w, req.Question) {
+		return
+	}
+
+	if !h.checkRateLimit(w, r, req.Model, req.ApiKey) {
+		return
+	}
+
 	// SSE ヘッダー設定
-	// text/event-stream: ブラウザに「これはSSEストリームだ」と伝える
-	// no-cache: プロキシ/CDNがレスポンスをキャッシュしないようにする
-	// keep-alive: HTTP接続を維持してサーバーから複数回データを送れるようにする
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -240,7 +356,6 @@ func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	// gRPC サーバーストリーミング開始
-	// AI Service との間に持続的な接続が確立される
 	stream, err := h.client.AskWithAgentStream(ctx, &pb.AgentQuestionRequest{
 		Question:        req.Question,
 		Model:           req.Model,
@@ -258,13 +373,16 @@ func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 
 	flusher, canFlush := w.(http.Flusher)
 
-	// 直列処理ループ: AI Service からのイベントを1つずつ受信 → SSE変換 → 送信
+	var finalAnswer string
 	for {
-		// Recv() は次のイベントが届くまでブロックする (HTTP/2 フレームとして届く)
-		// io.EOF = ストリーム終了 (AI Service が全イベント送信完了)
 		event, err := stream.Recv()
 		if err != nil {
 			break
+		}
+
+		// final_answer イベントから回答を取得
+		if event.EventType == "final_answer" && event.Final != nil {
+			finalAnswer = event.Final.Answer
 		}
 
 		data, err := json.Marshal(event)
@@ -272,13 +390,21 @@ func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// SSE 形式で書き出し:
-		//   "event: step\ndata: {...}\n\n"
-		// \n\n (空行) がメッセージの区切り
 		writeSSE(w, event.EventType, string(data))
 
-		// Flush() で ResponseWriter のバッファを即座にブラウザに送信
-		// これがないとバッファに溜まり、リアルタイム表示ができない
+		if canFlush {
+			flusher.Flush()
+		}
+	}
+
+	// ストリーム完了後、記事が見つかった場合のみレート制限をカウント
+	if finalAnswer != "" && !strings.HasPrefix(finalAnswer, noArticleMessage) {
+		h.incrementRateLimit(r, req.Model, req.ApiKey)
+	}
+
+	// 残り回数をSSEイベントとして送信
+	if rlJSON := h.rateLimitJSON(r, req.Model, req.ApiKey); rlJSON != "" {
+		writeSSE(w, "rate_limit", rlJSON)
 		if canFlush {
 			flusher.Flush()
 		}
@@ -286,16 +412,6 @@ func (h *AIHandler) AskWithAgentStream(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeSSE は SSE (Server-Sent Events) 形式でイベントを書き込む
-//
-// SSE メッセージフォーマット:
-//
-//	event: <イベント種別>\n
-//	data: <JSONペイロード>\n
-//	\n    ← 空行がメッセージの終了を示す
-//
-// 例: writeSSE(w, "step", `{"phase":"llm_thinking"}`)
-//
-//	→ "event: step\ndata: {"phase":"llm_thinking"}\n\n"
 func writeSSE(w http.ResponseWriter, eventType, data string) {
 	fmt.Fprintf(w, "event: %s\ndata: %s\n\n", eventType, data)
 }

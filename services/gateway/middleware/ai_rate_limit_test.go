@@ -8,7 +8,7 @@ import (
 )
 
 func TestAIRateLimiterRejectsConcurrentAnonymousRequest(t *testing.T) {
-	limiter := NewAIRateLimiter(1, 0)
+	limiter := NewAIRateLimiter(1, 0, 0)
 
 	entered := make(chan struct{})
 	release := make(chan struct{})
@@ -43,7 +43,7 @@ func TestAIRateLimiterRejectsConcurrentAnonymousRequest(t *testing.T) {
 }
 
 func TestAIRateLimiterBypassesLoggedInUser(t *testing.T) {
-	limiter := NewAIRateLimiter(1, 0)
+	limiter := NewAIRateLimiter(1, 0, 0)
 	limiter.anonSemaphore <- struct{}{}
 
 	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -63,8 +63,17 @@ func TestAIRateLimiterBypassesLoggedInUser(t *testing.T) {
 }
 
 func TestAIRateLimiterRejectsAnonymousDailyLimit(t *testing.T) {
-	limiter := NewAIRateLimiter(0, 2)
+	limiter := NewAIRateLimiter(0, 2, 0)
+
+	// ハンドラーレベルでチェック→カウントをシミュレート
 	handler := limiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		clientID := AnonymousClientID(r)
+		// ハンドラーでチェック
+		if !limiter.CheckDaily(w, clientID) {
+			return
+		}
+		// カウント
+		limiter.IncrementDaily(clientID)
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
@@ -85,5 +94,27 @@ func TestAIRateLimiterRejectsAnonymousDailyLimit(t *testing.T) {
 
 	if resp.Code != http.StatusTooManyRequests {
 		t.Fatalf("expected 429 after daily limit, got %d", resp.Code)
+	}
+}
+
+func TestAIRateLimiterDeepSeekFreeDailyLimit(t *testing.T) {
+	limiter := NewAIRateLimiter(0, 5, 2)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/ai/ask", nil)
+	req.RemoteAddr = "203.0.113.10:12345"
+	clientID := AnonymousClientID(req)
+
+	// 2回分のDeepSeekカウントをインクリメント
+	limiter.IncrementDeepSeekDaily(clientID)
+	limiter.IncrementDeepSeekDaily(clientID)
+
+	// 3回目のチェックで拒否されるはず
+	resp := httptest.NewRecorder()
+	if limiter.CheckDeepSeekDaily(resp, clientID) {
+		t.Fatal("expected DeepSeek daily check to fail after 2 uses")
+	}
+
+	if resp.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429, got %d", resp.Code)
 	}
 }

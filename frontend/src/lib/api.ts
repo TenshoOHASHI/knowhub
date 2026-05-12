@@ -277,12 +277,17 @@ export interface AskSource {
 
 // model: バックエンドでプロバイダーを動的選択
 // apiKey: ボディで送信（HTTPSで暗号化されるため十分安全）
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+}
+
 export async function askQuestion(
   question: string,
   model: string,
   apiKey: string,
   searchEngine: string = '',
-): Promise<{ answer: string; sources: AskSource[] }> {
+): Promise<{ answer: string; sources: AskSource[]; rateLimit?: RateLimitInfo }> {
   const res = await fetch(`${API_BASE}/ai/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -294,7 +299,18 @@ export async function askQuestion(
     }),
   });
   if (!res.ok) throw new Error(await buildAIErrorMessage(res, '質問に失敗しました'));
-  return res.json();
+  const data = await res.json();
+  const rateLimit = parseRateLimitHeaders(res);
+  return { ...data, rateLimit };
+}
+
+function parseRateLimitHeaders(res: Response): RateLimitInfo | undefined {
+  const limit = res.headers.get('X-RateLimit-Limit');
+  const remaining = res.headers.get('X-RateLimit-Remaining');
+  if (limit && remaining) {
+    return { limit: Number(limit), remaining: Number(remaining) };
+  }
+  return undefined;
 }
 
 // agent chat
@@ -366,6 +382,7 @@ export interface AgentStreamCallbacks {
   onStep: (step: AgentStreamStepEvent) => void;
   onFinal: (final: AgentStreamFinalEvent) => void;
   onError: (error: string) => void;
+  onRateLimit?: (info: RateLimitInfo) => void;
 }
 
 /**
@@ -538,6 +555,11 @@ export async function askWithAgentStream(
               callbacks.onError(
                 parsed.error?.message || parsed.message || 'Unknown error',
               );
+              break;
+            case 'rate_limit':
+              if (callbacks.onRateLimit && parsed.limit !== undefined) {
+                callbacks.onRateLimit(parsed);
+              }
               break;
           }
         } catch {
