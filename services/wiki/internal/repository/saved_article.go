@@ -58,7 +58,7 @@ func (r *mysqlSavedArticleRepository) IsSaved(ctx context.Context, articleID, fi
 }
 
 func (r *mysqlSavedArticleRepository) ListByFingerprint(ctx context.Context, fingerprint string) ([]*model.Article, error) {
-	query := `SELECT a.id, a.title, a.content, a.category_id, a.visibility, a.created_at, a.updated_at
+	query := `SELECT a.id, a.title, a.content, a.category_id, a.visibility, a.is_pinned, a.created_at, a.updated_at
 		FROM saved_articles s
 		JOIN articles a ON s.article_id = a.id
 		WHERE s.fingerprint = ?
@@ -73,7 +73,7 @@ func (r *mysqlSavedArticleRepository) ListByFingerprint(ctx context.Context, fin
 	var articles []*model.Article
 	for rows.Next() {
 		var article model.Article
-		if err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.CreatedAt, &article.UpdatedAt); err != nil {
+		if err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.IsPinned, &article.CreatedAt, &article.UpdatedAt); err != nil {
 			return nil, err
 		}
 		articles = append(articles, &article)

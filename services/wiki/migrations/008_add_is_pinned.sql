@@ -1,0 +1,1 @@
+ALTER TABLE articles ADD COLUMN is_pinned BOOLEAN NOT NULL DEFAULT 0 AFTER visibility;

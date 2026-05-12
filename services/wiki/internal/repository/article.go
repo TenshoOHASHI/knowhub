@@ -29,7 +29,7 @@ func NewMysqlRepository(db dbutil.DB) ArticleRepository {
 }
 
 func (r *mysqlRepository) FindById(ctx context.Context, id string) (*model.Article, error) {
-	query := `SELECT id, title, content, category_id, visibility, created_at, updated_at From articles WHERE id=?`
+	query := `SELECT id, title, content, category_id, visibility, is_pinned, created_at, updated_at From articles WHERE id=?`
 
 	// 1件取得
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -37,7 +37,7 @@ func (r *mysqlRepository) FindById(ctx context.Context, id string) (*model.Artic
 	// 型を定義
 	var article model.Article
 	// DBデータを構造体にマッピング
-	err := row.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.CreatedAt, &article.UpdatedAt)
+	err := row.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.IsPinned, &article.CreatedAt, &article.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -51,7 +51,7 @@ func (r *mysqlRepository) FindById(ctx context.Context, id string) (*model.Artic
 }
 
 func (r *mysqlRepository) FindAll(ctx context.Context) ([]*model.Article, error) {
-	query := `SELECT id, title, content, category_id, visibility, created_at, updated_at FROM articles`
+	query := `SELECT id, title, content, category_id, visibility, is_pinned, created_at, updated_at FROM articles ORDER BY is_pinned DESC, created_at DESC`
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (r *mysqlRepository) FindAll(ctx context.Context) ([]*model.Article, error)
 	var articles []*model.Article
 	for rows.Next() {
 		var article model.Article
-		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.CreatedAt, &article.UpdatedAt)
+		err := rows.Scan(&article.ID, &article.Title, &article.Content, &article.CategoryID, &article.Visibility, &article.IsPinned, &article.CreatedAt, &article.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -73,13 +73,14 @@ func (r *mysqlRepository) FindAll(ctx context.Context) ([]*model.Article, error)
 
 func (r *mysqlRepository) Create(ctx context.Context, article *model.Article) error {
 	// プレスホルダー(SQLインジェクション対策)
-	query := `INSERT INTO articles (id, title, content, category_id, visibility, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO articles (id, title, content, category_id, visibility, is_pinned, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := r.db.ExecContext(ctx, query,
 		article.ID,
 		article.Title,
 		article.Content,
 		article.CategoryID,
 		article.Visibility,
+		article.IsPinned,
 		article.CreatedAt,
 		article.UpdatedAt,
 	)
@@ -90,14 +91,21 @@ func (r *mysqlRepository) Create(ctx context.Context, article *model.Article) er
 }
 
 func (r *mysqlRepository) Save(ctx context.Context, article *model.Article) error {
+	// ピン留め設定時、同カテゴリの既存ピン記事を解除
+	if article.IsPinned && article.CategoryID != "" {
+		unpinQuery := `UPDATE articles SET is_pinned = 0 WHERE category_id = ? AND is_pinned = 1 AND id != ?`
+		r.db.ExecContext(ctx, unpinQuery, article.CategoryID, article.ID)
+	}
+
 	// プレスホルダー
-	query := `UPDATE articles SET title=?, content=?, category_id=?, visibility=?, updated_at=? WHERE id=?`
+	query := `UPDATE articles SET title=?, content=?, category_id=?, visibility=?, is_pinned=?, updated_at=? WHERE id=?`
 
 	_, err := r.db.ExecContext(ctx, query,
 		article.Title,
 		article.Content,
 		article.CategoryID,
 		article.Visibility,
+		article.IsPinned,
 		article.UpdatedAt,
 		article.ID,
 	)
