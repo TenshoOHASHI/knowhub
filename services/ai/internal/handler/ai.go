@@ -60,8 +60,8 @@ func NewAIHandler(se search.SearchEngine, llm llm.LLMProvider, ollamaURL, ollama
 		ollamaModel:  ollamaModel,
 		wikiClient:   wikiClient,
 		searxngURL:   searxngURL,
-		graphPath:    "./data/knowledge_graph.json",            // グラフ永続化パス
-		vectorPath:   "./data/vector_embeddings.json",         // ベクトル埋め込み永続化パス
+		graphPath:    "./data/knowledge_graph.json",   // グラフ永続化パス
+		vectorPath:   "./data/vector_embeddings.json", // ベクトル埋め込み永続化パス
 		searchCache:  make(map[string]cachedSearchEngine),
 	}
 }
@@ -428,10 +428,10 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 
 	// Step 2: コンテキストを構築（記事取得を並列化）
 	type articleFetchResult struct {
-		index    int
-		result   search.SearchResult
-		article  *wikiPb.Article
-		err      error
+		index   int
+		result  search.SearchResult
+		article *wikiPb.Article
+		err     error
 	}
 
 	fetchResults := make([]articleFetchResult, len(relevantResults))
@@ -485,7 +485,11 @@ func (h *AIHandler) AskQuestion(ctx context.Context, req *pb.QuestionRequest) (*
 	if strings.TrimSpace(contextText) == "" {
 		slog.Info("RAG context is empty, returning fixed message without LLM call")
 		return &pb.QuestionResponse{
-			Answer:  "Wiki内には関連する記事は見つかりませんでした。",
+			Answer: "Wiki内には関連する記事は見つかりませんでした。\n\n" +
+				"以下のような質問を試してみてください:\n" +
+				"- 「TenHubについて教えて」\n" +
+				"- 「gRPCの実装方法を教えて」\n" +
+				"- 「Dockerの基本を教えて」",
 			Sources: []*pb.Source{},
 		}, nil
 	}

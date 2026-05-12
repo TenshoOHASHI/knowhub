@@ -250,20 +250,23 @@ body {
   border-left: 4px solid #3b82f6;
   padding: 0.75rem 1rem;
   margin: 1.25rem 0;
-  background: #f8fafc;
+  background: #f5f7fa;
+  color: #1e293b;
   border-radius: 0 0.375rem 0.375rem 0;
 }
 
 @media (prefers-color-scheme: dark) {
   .article-content .article-blockquote {
     border-left-color: #60a5fa;
-    background: #1e293b;
+    background: #333336;
+    color: #e2e8f0;
   }
 }
 
 .dark .article-content .article-blockquote {
   border-left-color: #60a5fa;
   background: #1e293b;
+  color: #e2e8f0;
 }
 
 /* ===== Chat Robot Animations ===== */
