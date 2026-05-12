@@ -13,8 +13,12 @@ const MESSAGES = [
   '一生懸命考えてるよ！',
 ];
 
+function randomMessage() {
+  return MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+}
+
 export default function FloatingRobot({ visible }: { visible: boolean }) {
-  const [currentMessage, setCurrentMessage] = useState(MESSAGES[0]);
+  const [currentMessage, setCurrentMessage] = useState(randomMessage);
   const [position, setPosition] = useState(20);
   const [direction, setDirection] = useState<'down' | 'up'>('down');
   const moveRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -22,13 +26,7 @@ export default function FloatingRobot({ visible }: { visible: boolean }) {
 
   // 縦方向の歩行移動
   useEffect(() => {
-    if (!visible) {
-      setPosition(20);
-      setDirection('down');
-      return;
-    }
-
-    if (moveRef.current) clearInterval(moveRef.current);
+    if (!visible) return;
 
     let pos = 20;
     let dir: 'down' | 'up' = 'down';
@@ -47,18 +45,20 @@ export default function FloatingRobot({ visible }: { visible: boolean }) {
 
     return () => {
       if (moveRef.current) clearInterval(moveRef.current);
+      setPosition(20);
+      setDirection('down');
     };
   }, [visible]);
 
   // メッセージ切替
   useEffect(() => {
     if (!visible) return;
-    setCurrentMessage(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
     messageRef.current = setInterval(() => {
-      setCurrentMessage(MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
+      setCurrentMessage(randomMessage());
     }, 3500);
     return () => {
       if (messageRef.current) clearInterval(messageRef.current);
+      setCurrentMessage(randomMessage());
     };
   }, [visible]);
 
