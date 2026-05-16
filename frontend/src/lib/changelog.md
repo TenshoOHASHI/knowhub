@@ -3,6 +3,7 @@
 - Frontend: CategoryManager の sortByTree を再帰DFSに書き換え、最大5階層まで展開可能に拡張
 - Frontend: カテゴリ作成フォームで depth >= 4 のカテゴリを選択不可に（6階層目の作成防止）
 - Frontend: カテゴリ一覧のインデントを5段階に拡張（ml-0/6/12/18/24）
+- Frontend: WikiClient のカテゴリフィルタを子孫カテゴリ含む方式に変更（親カテゴリ選択時に全階層の記事を表示）
 - Infrastructure: 本番構成に DeepSeek Free 関連の設定とレート制限設定を追加
 ## 2026-05-13 TenHub 本番デプロイ
 - Deploy: デプロイ名を TenHub Production として整理

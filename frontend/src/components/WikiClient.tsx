@@ -3,34 +3,8 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FiSearch, FiCalendar, FiFileText, FiLock, FiX, FiMapPin } from 'react-icons/fi';
-import type { Article, Category } from '@/lib/types';
-import { getCategories } from '@/lib/api';
+import type { Article } from '@/lib/types';
 import { motion } from 'motion/react';
-
-/** 指定カテゴリIDとその全子孫カテゴリIDのセットを返す */
-function getDescendantIds(categoryId: string, categories: Category[]): Set<string> {
-  const childrenMap = new Map<string, string[]>();
-  for (const c of categories) {
-    if (c.parent_id) {
-      const list = childrenMap.get(c.parent_id) || [];
-      list.push(c.id);
-      childrenMap.set(c.parent_id, list);
-    }
-  }
-  const ids = new Set<string>([categoryId]);
-  const queue = [categoryId];
-  while (queue.length > 0) {
-    const current = queue.pop()!;
-    const children = childrenMap.get(current) || [];
-    for (const child of children) {
-      if (!ids.has(child)) {
-        ids.add(child);
-        queue.push(child);
-      }
-    }
-  }
-  return ids;
-}
 
 // Markdown記号を除去してプレーンテキストにする
 function stripMarkdown(md: string): string {
@@ -62,16 +36,9 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
 
   const searchParams = useSearchParams();
   const categoryId = searchParams.get('category');
-
-  useEffect(() => {
-    getCategories()
-      .then((data) => setCategories(data.categories || []))
-      .catch(() => {});
-  }, []);
 
   // ダイアログ用のフィルタリング
   const dialogFiltered = articles.filter((a) => {
@@ -81,17 +48,15 @@ export default function WikiClient({ articles }: { articles: Article[] }) {
     );
   });
 
-  // 選択カテゴリの子孫IDセットを構築
-  const categoryIds = categoryId ? getDescendantIds(categoryId, categories) : null;
-
   // 既存の検索バー用のフィルタリング + ピン留め記事を先頭に
   const filtered = articles
     .filter((a) => {
       const q = query.toLowerCase();
       const matchesQuery =
         a.title.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
-      const matchesCategory = !categoryIds || categoryIds.has(a.category_id);
-      return matchesQuery && matchesCategory;
+      const matchesCategory = !categoryId || a.category_id === categoryId;
+      const matchesVisibility = categoryId || a.visibility !== 'locked';
+      return matchesQuery && matchesCategory && matchesVisibility;
     })
     .sort((a, b) => {
       if (a.is_pinned && !b.is_pinned) return -1;

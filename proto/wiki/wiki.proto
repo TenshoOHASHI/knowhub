@@ -63,6 +63,7 @@ message UpdateArticleRequest {
   optional string content = 3;
   optional string visibility = 4;
   optional bool is_pinned = 5;
+  optional string category_id = 6;
   }
 
 

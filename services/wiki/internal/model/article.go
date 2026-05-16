@@ -45,12 +45,15 @@ func NewArticle(title string, content string, categoryID string, visibility stri
 }
 
 // 元の記事を直接変更（インスタンスを生成する必要がない）
-func (a *Article) Update(title string, content string, visibility string, isPinned *bool) {
+func (a *Article) Update(title string, content string, categoryId *string, visibility string, isPinned *bool) {
 	if title != "" {
 		a.Title = title // 既存の値を上書き
 	}
 	if content != "" {
 		a.Content = content
+	}
+	if categoryId != nil {
+		a.CategoryID = *categoryId
 	}
 	if visibility != "" {
 		a.Visibility = visibility

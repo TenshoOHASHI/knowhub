@@ -201,6 +201,7 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		// もし、値がなければ、nilになる、その場合、そのフィールドは更新しない
 		Title      *string `json:"title,omitempty"` // 空値ならjsonに出力しない
 		Content    *string `json:"content,omitempty"`
+		CategoryID *string `json:"category_id,omitempty"`
 		Visibility *string `json:"visibility,omitempty"`
 		IsPinned   *bool   `json:"is_pinned,omitempty"`
 	}
@@ -215,6 +216,7 @@ func (h *WikiHandler) UpdateArticle(w http.ResponseWriter, r *http.Request) {
 		Id:         id,
 		Title:      req.Title,
 		Content:    req.Content, // ポインタアドレスで指定する必要がある、nilになる可能性があるため
+		CategoryId: req.CategoryID,
 		Visibility: req.Visibility,
 		IsPinned:   req.IsPinned,
 	})
