@@ -20,10 +20,10 @@ function getDepth(categoryId: string, categories: Category[]): number {
   return depth;
 }
 
-/** フラットなカテゴリ配列を「親 → 子 → 孫…」の順に3階層まで展開 */
-function sortByTree(categories: Category[]): Category[] {
-  const roots: Category[] = [];
+/** フラットなカテゴリ配列を「親 → 子 → 孫…」の順に最大5階層まで展開 */
+function sortByTree(categories: Category[], maxDepth = 5): Category[] {
   const childrenMap = new Map<string, Category[]>();
+  const roots: Category[] = [];
 
   for (const c of categories) {
     if (!c.parent_id) {
@@ -36,14 +36,18 @@ function sortByTree(categories: Category[]): Category[] {
   }
 
   const result: Category[] = [];
-  for (const root of roots) {
-    result.push(root);
-    const children = childrenMap.get(root.id) || [];
+
+  function walk(node: Category, depth: number) {
+    result.push(node);
+    if (depth >= maxDepth) return;
+    const children = childrenMap.get(node.id) || [];
     for (const child of children) {
-      result.push(child);
-      const grandchildren = childrenMap.get(child.id) || [];
-      result.push(...grandchildren);
+      walk(child, depth + 1);
     }
+  }
+
+  for (const root of roots) {
+    walk(root, 1);
   }
 
   // 親が存在しない孤立した子カテゴリも末尾に追加
@@ -129,8 +133,8 @@ export function CategoryManager() {
             {categories.map((c) => {
               const depth = getDepth(c.id, categories);
               return (
-                <option key={c.id} value={c.id} disabled={depth >= 2}>
-                  {'　'.repeat(depth)}{c.name}{depth >= 2 ? '（これ以上の階層は作成不可）' : ''}
+                <option key={c.id} value={c.id} disabled={depth >= 4}>
+                  {'　'.repeat(depth)}{c.name}{depth >= 4 ? '（これ以上の階層は作成不可）' : ''}
                 </option>
               );
             })}
@@ -159,7 +163,11 @@ export function CategoryManager() {
                     ? 'bg-stone-50 dark:bg-stone-800/50'
                     : depth === 1
                       ? 'bg-stone-50/50 dark:bg-stone-800/30 ml-6'
-                      : 'bg-stone-50/30 dark:bg-stone-800/20 ml-12'
+                      : depth === 2
+                        ? 'bg-stone-50/30 dark:bg-stone-800/20 ml-12'
+                        : depth === 3
+                          ? 'bg-stone-50/20 dark:bg-stone-800/10 ml-18'
+                          : 'bg-stone-50/10 dark:bg-stone-800/5 ml-24'
                 } hover:bg-stone-100 dark:hover:bg-stone-700/50`}
               >
                 <span className='flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300'>
