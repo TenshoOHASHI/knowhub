@@ -529,6 +529,7 @@ type UpdateArticleRequest struct {
 	Content       *string                `protobuf:"bytes,3,opt,name=content,proto3,oneof" json:"content,omitempty"`
 	Visibility    *string                `protobuf:"bytes,4,opt,name=visibility,proto3,oneof" json:"visibility,omitempty"`
 	IsPinned      *bool                  `protobuf:"varint,5,opt,name=is_pinned,json=isPinned,proto3,oneof" json:"is_pinned,omitempty"`
+	CategoryId    *string                `protobuf:"bytes,6,opt,name=category_id,json=categoryId,proto3,oneof" json:"category_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,6 +597,13 @@ func (x *UpdateArticleRequest) GetIsPinned() bool {
 		return *x.IsPinned
 	}
 	return false
+}
+
+func (x *UpdateArticleRequest) GetCategoryId() string {
+	if x != nil && x.CategoryId != nil {
+		return *x.CategoryId
+	}
+	return ""
 }
 
 // 更新した記事を返す
@@ -2247,7 +2255,7 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\aArticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aArticle\"\x14\n" +
 	"\x12ListArticleRequest\">\n" +
 	"\x13ListArticleResponse\x12'\n" +
-	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"\xda\x01\n" +
+	"\aarticle\x18\x01 \x03(\v2\r.wiki.ArticleR\aarticle\"\x90\x02\n" +
 	"\x14UpdateArticleRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12\x1d\n" +
@@ -2255,13 +2263,16 @@ const file_proto_wiki_wiki_proto_rawDesc = "" +
 	"\n" +
 	"visibility\x18\x04 \x01(\tH\x02R\n" +
 	"visibility\x88\x01\x01\x12 \n" +
-	"\tis_pinned\x18\x05 \x01(\bH\x03R\bisPinned\x88\x01\x01B\b\n" +
+	"\tis_pinned\x18\x05 \x01(\bH\x03R\bisPinned\x88\x01\x01\x12$\n" +
+	"\vcategory_id\x18\x06 \x01(\tH\x04R\n" +
+	"categoryId\x88\x01\x01B\b\n" +
 	"\x06_titleB\n" +
 	"\n" +
 	"\b_contentB\r\n" +
 	"\v_visibilityB\f\n" +
 	"\n" +
-	"_is_pinned\"@\n" +
+	"_is_pinnedB\x0e\n" +
+	"\f_category_id\"@\n" +
 	"\x15UpdateArticleResponse\x12'\n" +
 	"\aarticle\x18\x01 \x01(\v2\r.wiki.ArticleR\aarticle\"&\n" +
 	"\x14DeleteArticleRequest\x12\x0e\n" +

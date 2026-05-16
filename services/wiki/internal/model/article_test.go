@@ -99,7 +99,7 @@ func TestUpdate(t *testing.T) {
 	originalContent := article.Content
 	createAt := article.CreatedAt
 
-	article.Update("Go中級", "", "", nil)
+	article.Update("Go中級", "", nil, "", nil)
 
 	if article.Title != "Go中級" {
 		t.Errorf("expected title Go中級, got %v", article.Title)
@@ -122,14 +122,14 @@ func TestUpdate(t *testing.T) {
 func TestUpdate_Visibility(t *testing.T) {
 	article, _ := model.NewArticle("Go入門", "content", "123", "public", false)
 
-	article.Update("", "", "locked", nil)
+	article.Update("", "", nil, "locked", nil)
 
 	if article.Visibility != "locked" {
 		t.Errorf("expected visibility locked, got %s", article.Visibility)
 	}
 
 	// 空文字なら変更されない
-	article.Update("", "", "", nil)
+	article.Update("", "", nil, "", nil)
 	if article.Visibility != "locked" {
 		t.Errorf("expected visibility locked (unchanged), got %s", article.Visibility)
 	}

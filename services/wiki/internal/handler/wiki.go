@@ -103,7 +103,7 @@ func (h *WikiHandler) Update(ctx context.Context, req *pb.UpdateArticleRequest) 
 	}
 
 	// ここの引数はポインターアドレスを渡す必要があるみたいです？
-	article.Update(title, content, visibility, req.IsPinned) // メソッドを呼び出し、既存の値を上書き
+	article.Update(title, content, req.CategoryId, visibility, req.IsPinned) // メソッドを呼び出し、既存の値を上書き
 	err = h.repo.Save(ctx, article)
 	if err != nil {
 		slog.Error("failed to save article", "error", err, "id", req.Id)
