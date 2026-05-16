@@ -9,9 +9,20 @@ export async function GET() {
   const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/dark.png`;
 
   const keywords = [
-    'Go', 'gRPC', 'CQRS', 'Next.js', 'TypeScript',
-    'Docker', 'MySQL', 'Redis', 'Protocol Buffers',
-    'Microservices', 'React', 'JavaScript', 'Tailwind', 'Git',
+    'Go',
+    'gRPC',
+    'CQRS',
+    'Next.js',
+    'TypeScript',
+    'Docker',
+    'MySQL',
+    'Redis',
+    'Protocol Buffers',
+    'Microservices',
+    'React',
+    'JavaScript',
+    'Tailwind',
+    'Git',
   ];
 
   const keywordPositions = [
@@ -41,7 +52,8 @@ export async function GET() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: '"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
+        fontFamily:
+          '"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
         padding: '80px',
         position: 'relative',
       }}
@@ -54,7 +66,8 @@ export async function GET() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: 'linear-gradient(rgba(39, 39, 42, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(39, 39, 42, 0.3) 1px, transparent 1px)',
+          backgroundImage:
+            'linear-gradient(rgba(39, 39, 42, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(39, 39, 42, 0.3) 1px, transparent 1px)',
           backgroundSize: '40px 40px',
         }}
       />
@@ -85,7 +98,8 @@ export async function GET() {
           top: 0,
           bottom: 0,
           width: '4px',
-          background: 'linear-gradient(180deg, #57534e 0%, #a8a29e 50%, #57534e 100%)',
+          background:
+            'linear-gradient(180deg, #57534e 0%, #a8a29e 50%, #57534e 100%)',
         }}
       />
 
@@ -112,7 +126,11 @@ export async function GET() {
             alt='Logo'
             width={115}
             height={100}
-            style={{ width: 115, height: 100, filter: 'brightness(0.7) invert(1)' }}
+            style={{
+              width: 115,
+              height: 100,
+              filter: 'brightness(0.7) invert(1)',
+            }}
           />
           <div
             style={{
@@ -132,7 +150,8 @@ export async function GET() {
           style={{
             width: '80px',
             height: '2px',
-            background: 'linear-gradient(90deg, transparent, #57534e, transparent)',
+            background:
+              'linear-gradient(90deg, transparent, #57534e, transparent)',
             marginBottom: '40px',
           }}
         />

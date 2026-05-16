@@ -1,4 +1,53 @@
-## 2026-05-12 カテゴリ3階層化 + カテゴリ内トップ記事ピン留め
+## 2026-05-16 Hydration修正 + カテゴリ5階層化 + 本番構成更新
+- Frontend: ChatInterface の rateLimits useState 初期値を sessionStorage 直読みから空オブジェクトに変更し、useEffect で復元する方式に修正（SSR/CSR ハイドレーション不一致の解消）
+- Frontend: CategoryManager の sortByTree を再帰DFSに書き換え、最大5階層まで展開可能に拡張
+- Frontend: カテゴリ作成フォームで depth >= 4 のカテゴリを選択不可に（6階層目の作成防止）
+- Frontend: カテゴリ一覧のインデントを5段階に拡張（ml-0/6/12/18/24）
+- Infrastructure: 本番構成に DeepSeek Free 関連の設定とレート制限設定を追加
+## 2026-05-13 TenHub 本番デプロイ
+- Deploy: デプロイ名を TenHub Production として整理
+- Deploy: Tencent Cloud Lighthouse（Ubuntu 22.04 LTS）へ TenHub を本番デプロイ
+- Deploy: GitHub Actions で各サービスの Docker image を GHCR に build/push し、VPS側で pull して反映する運用に整理
+- Deploy: nginx を入口にして、frontend / gateway / auth / wiki / profile / ai / db / cache / searxng を Docker Compose で起動
+- Deploy: www.tenhub.tech のDNS AレコードをVPSへ向け、Let's Encrypt証明書でHTTPS化
+- Deploy: HTTPアクセスをHTTPSへ301リダイレクトし、Cookie Secure / SSL_ENABLED を本番HTTPS構成へ切り替え
+- Deploy: MySQL / Redis / SearXNG / gateway uploads / logs を Docker named volume で永続化
+- Deploy: goose migrator を追加し、本番DB migrationを手動実行できる構成に整理
+- Deploy: OllamaをVPSホスト側のsystemdで起動し、AIコンテナから host.docker.internal 経由で接続する構成を確認
+- Deploy: SearXNGのJSON検索設定を確認し、AI/RAG検索でHTMLではなくJSONレスポンスを扱えるように調整
+- Deploy: Docker logging の max-size / max-file を設定し、コンテナログが肥大化し続けないように制限
+- Deploy: 初回デプロイ期間は 2026-05-06 から 2026-05-13 までの約1週間（VPS準備、SSH、Firewall、Docker、GHCR、DNS、SSL、DB migration、Ollama接続確認を含む）
+- Recommend: 今後は本番更新前に backup -> migration status -> image pull -> compose up -d -> health check -> logs確認 の順で実施
+- Recommend: 次の改善候補は自動バックアップ、migrationの運用手順固定、監視通知、rollback手順、Ollamaから外部API中心への切り替え
+
+## 2026-05-13 DeepSeek Free + モデル種別別レート制限 + 通常RAG参照改善
+- Frontend: モデル選択に DeepSeek (Free) を追加（APIキー不要、初期モデルを deepseek-free に変更）
+- Frontend: DeepSeek Free / 外部モデル のレート制限表示を追加（残り回数を sessionStorage に保持）
+- Frontend: 通常RAG / Agent Stream のレスポンスから X-RateLimit-Limit / X-RateLimit-Remaining を読み取り、UIへ反映
+- Frontend: Agent Stream の rate_limit SSE イベントに対応し、ストリーム完了後も残り回数を更新
+- Frontend: AI APIエラー表示を改善（401はAPIキー不正、429は利用上限、プロバイダーJSONエラーは message を優先表示）
+- Gateway: AI未ログイン利用者の同時実行制限は middleware、日次回数制限は handler で処理する構成に整理
+- Gateway: 日次回数制限を DeepSeek Free 用（AI_DEEPSEEK_FREE_DAILY_LIMIT）と外部モデル用（AI_ANON_DAILY_LIMIT）に分離
+- Gateway: AI回答が成功した場合のみ日次カウンターを加算し、関連記事なしの固定応答では回数を消費しないように変更
+- Gateway: AskQuestion / AskWithAgent / Agent Stream に質問1000文字制限とレート制限ヘッダー返却を追加
+- Backend: AIサービスにサーバー側 DeepSeek 設定（DEEPSEEK_API_KEY / DEEPSEEK_MODEL / DEEPSEEK_MAX_TOKENS）を追加
+- Backend: APIキーなしで deepseek 系モデルを使う場合、サーバー側 DeepSeek APIキーへ解決する resolveDeepSeekConfig を追加
+- Backend: DeepSeek provider の max_tokens 指定に対応し、無料提供時の生成量をサーバー側で制御可能に変更
+- Config: docker-compose.prod.yml に DeepSeek Free 用環境変数とAIレート制限環境変数を追加
+- Test: DeepSeek Free 用日次制限と外部モデル用日次制限のユニットテスト追加
+- Proto: ai.Source に relevance_score フィールド追加 + Go コード再生成
+- Backend: AskQuestion の通常RAG sources に RelevanceScore をマッピング
+- Backend: filterRAGResults 関数追加（検索エンジンごとの閾値で低スコア記事を参照候補から除外）
+- Backend: ragSourceThreshold 関数追加（vector / hybrid / graph / tfidf / bm25 の参照表示閾値を分離）
+- Backend: 検索結果0件でもLLMには回答させ、参照元は空にするように変更
+- Backend: LLM回答が「コンテキストに関連情報なし」と判断した場合、sources を空にする最終ガード追加
+- Frontend: AskSource に relevance_score を追加
+- Frontend: 通常RAGの参照記事をチップUIに変更し、scoreをパーセンテージまたは小数で表示
+- Frontend: sources が空の場合は「参照記事」セクションを非表示
+- Test: RAG参照フィルタと「関連情報なし」判定のユニットテスト追加
+
+
+## 2026-05-12 カテゴリ5階層化 + カテゴリ内トップ記事ピン留め
 - DB: articles に is_pinned カラム追加（BOOLEAN DEFAULT 0）
 - Proto: Article / Create/UpdateRequest に is_pinned フィールド追加 + Go コード再生成
 - Backend: Article model（NewArticle / Update）に IsPinned 追加（Update は *bool で optional 対応）
@@ -11,10 +60,10 @@
 - Frontend: Article interface / saveArticle 引数に is_pinned 追加
 - Frontend: Editor にトップ表示トグルボタン追加（FiMapPin アイコン + amber 系カラー）
 - Frontend: Wiki 一覧でピン留め記事を先頭ソート + 右上に「TOP」バッジ + amber ボーダー表示
-- Frontend: CategoryManager の sortByTree を3階層展開に拡張（ルート→子→孫）
+- Frontend: CategoryManager の sortByTree を再帰DFSに書き換え、最大5階層まで展開可能に拡張
 - Frontend: CategoryManager に getDepth ヘルパー追加（parent_id チェーンで深さ算出）
-- Frontend: カテゴリ作成フォームで depth >= 2 のカテゴリを選択不可に（4階層目の作成防止）
-- Frontend: カテゴリ一覧の孫カテゴリに ml-12 インデント追加
+- Frontend: カテゴリ作成フォームで depth >= 4 のカテゴリを選択不可に（6階層目の作成防止）
+- Frontend: カテゴリ一覧のインデントを5段階に拡張（ml-0/6/12/18/24）
 - Frontend: FloatingRobot の useEffect 内同期 setState を修正（ESLint set-state-in-effect 対応）
 - Test: article model テストを新シグネチャ（isPinned 引数 / *bool 引数）に更新
 - Deploy: 本番用マイグレーション 002_add_is_pinned.sql 追加（goose Up/Down 対応）

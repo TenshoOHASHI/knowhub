@@ -287,7 +287,11 @@ export async function askQuestion(
   model: string,
   apiKey: string,
   searchEngine: string = '',
-): Promise<{ answer: string; sources: AskSource[]; rateLimit?: RateLimitInfo }> {
+): Promise<{
+  answer: string;
+  sources: AskSource[];
+  rateLimit?: RateLimitInfo;
+}> {
   const res = await fetch(`${API_BASE}/ai/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -298,7 +302,8 @@ export async function askQuestion(
       search_engine: searchEngine,
     }),
   });
-  if (!res.ok) throw new Error(await buildAIErrorMessage(res, '質問に失敗しました'));
+  if (!res.ok)
+    throw new Error(await buildAIErrorMessage(res, '質問に失敗しました'));
   const data = await res.json();
   const rateLimit = parseRateLimitHeaders(res);
   return { ...data, rateLimit };
@@ -354,7 +359,9 @@ export async function askWithAgent(
     }),
   });
   if (!res.ok)
-    throw new Error(await buildAIErrorMessage(res, 'Agent の実行に失敗しました'));
+    throw new Error(
+      await buildAIErrorMessage(res, 'Agent の実行に失敗しました'),
+    );
   return res.json();
 }
 
@@ -596,7 +603,9 @@ export async function getKnowledgeGraph(): Promise<{
   const res = await fetch(`${API_BASE}/ai/graph`);
   if (!res.ok) {
     if (res.status === 429) {
-      throw new Error(await buildAIErrorMessage(res, 'グラフの取得に失敗しました'));
+      throw new Error(
+        await buildAIErrorMessage(res, 'グラフの取得に失敗しました'),
+      );
     }
     if (res.status === 504 || res.status === 502)
       throw new Error(
@@ -635,7 +644,10 @@ export async function getRelatedArticles(
 }
 
 // -- Like / Save --
-export async function toggleLike(articleId: string, fingerprint: string): Promise<{ count: number; liked: boolean }> {
+export async function toggleLike(
+  articleId: string,
+  fingerprint: string,
+): Promise<{ count: number; liked: boolean }> {
   const res = await fetch(`${API_BASE}/articles/${articleId}/like`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -645,13 +657,20 @@ export async function toggleLike(articleId: string, fingerprint: string): Promis
   return res.json();
 }
 
-export async function getLikeCount(articleId: string, fingerprint: string): Promise<{ count: number; liked: boolean }> {
-  const res = await fetch(`${API_BASE}/articles/${articleId}/like?fingerprint=${encodeURIComponent(fingerprint)}`);
+export async function getLikeCount(
+  articleId: string,
+  fingerprint: string,
+): Promise<{ count: number; liked: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/articles/${articleId}/like?fingerprint=${encodeURIComponent(fingerprint)}`,
+  );
   if (!res.ok) throw new Error('Failed to get like count');
   return res.json();
 }
 
-export async function getLikeCounts(articleIds: string[]): Promise<{ counts: { article_id: string; count: number }[] }> {
+export async function getLikeCounts(
+  articleIds: string[],
+): Promise<{ counts: { article_id: string; count: number }[] }> {
   const res = await fetch(`${API_BASE}/articles/likes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -661,7 +680,10 @@ export async function getLikeCounts(articleIds: string[]): Promise<{ counts: { a
   return res.json();
 }
 
-export async function saveArticleBookmark(articleId: string, fingerprint: string): Promise<{ saved: boolean }> {
+export async function saveArticleBookmark(
+  articleId: string,
+  fingerprint: string,
+): Promise<{ saved: boolean }> {
   const res = await fetch(`${API_BASE}/articles/${articleId}/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -671,7 +693,10 @@ export async function saveArticleBookmark(articleId: string, fingerprint: string
   return res.json();
 }
 
-export async function unsaveArticleBookmark(articleId: string, fingerprint: string): Promise<{ unsaved: boolean }> {
+export async function unsaveArticleBookmark(
+  articleId: string,
+  fingerprint: string,
+): Promise<{ unsaved: boolean }> {
   const res = await fetch(`${API_BASE}/articles/${articleId}/save`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -681,14 +706,23 @@ export async function unsaveArticleBookmark(articleId: string, fingerprint: stri
   return res.json();
 }
 
-export async function listSavedArticles(fingerprint: string): Promise<{ articles: Article[] }> {
-  const res = await fetch(`${API_BASE}/articles/saved?fingerprint=${encodeURIComponent(fingerprint)}`);
+export async function listSavedArticles(
+  fingerprint: string,
+): Promise<{ articles: Article[] }> {
+  const res = await fetch(
+    `${API_BASE}/articles/saved?fingerprint=${encodeURIComponent(fingerprint)}`,
+  );
   if (!res.ok) throw new Error('Failed to list saved articles');
   return res.json();
 }
 
-export async function isArticleSaved(articleId: string, fingerprint: string): Promise<{ saved: boolean }> {
-  const res = await fetch(`${API_BASE}/articles/${articleId}/saved?fingerprint=${encodeURIComponent(fingerprint)}`);
+export async function isArticleSaved(
+  articleId: string,
+  fingerprint: string,
+): Promise<{ saved: boolean }> {
+  const res = await fetch(
+    `${API_BASE}/articles/${articleId}/saved?fingerprint=${encodeURIComponent(fingerprint)}`,
+  );
   if (!res.ok) throw new Error('Failed to check saved status');
   return res.json();
 }
